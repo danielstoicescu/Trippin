@@ -1,11 +1,11 @@
 {
-  "name": "Barcelona Aventura – Mara, Anne & Daniel",
-  "short_name": "BCN Aventura",
+  "name": "Trippin · Barcelona",
+  "short_name": "Trippin",
   "description": "Ghidul nostru interactiv de vacanță: PortAventura, Ferrari Land și Barcelona.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#EFECE4",
-  "theme_color": "#EFECE4",
+  "background_color": "#F8F6F0",
+  "theme_color": "#F8F6F0",
   "lang": "ro",
   "icons": [
     {

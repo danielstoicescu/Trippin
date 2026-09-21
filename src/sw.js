@@ -4,8 +4,7 @@ const CACHE = `bcn-aventura-${VERSION}`;
 const ASSETS = [
   '/', '/index.html', '/app.js', '/data.js', '/styles.css', '/firebase-config.js', '/manifest.webmanifest',
   '/icon.svg', '/icon-192.png', '/icon-512.png',
-  '/vendor/fontawesome/css/all.min.css', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css',
-  '/vendor/fontawesome/webfonts/fa-solid-900.woff2', '/vendor/fontawesome/webfonts/fa-brands-400.woff2', '/vendor/fontawesome/webfonts/fa-regular-400.woff2',
+  '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/vendor/fonts/fonts.css', '/vendor/fonts/material-symbols-rounded.woff2', '/vendor/fonts/archivo-wdth.woff2', '/vendor/fonts/instrument-sans-latin-ext-400-normal.woff2', '/vendor/fonts/instrument-sans-latin-ext-600-normal.woff2', '/vendor/fonts/instrument-sans-latin-ext-700-normal.woff2',
 ];
 const CACHE_CROSS = [/^https:\/\/www\.gstatic\.com\/firebasejs\//, /^https:\/\/fonts\.(googleapis|gstatic)\.com\//, /^https:\/\/images\.unsplash\.com\//, /^https:\/\/[a-d]\.basemaps\.cartocdn\.com\//];
 

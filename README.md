@@ -7,6 +7,10 @@ contorul de espresso al lui Daniel și „quest log”-ul Marei apar instant pe 
 Fără Firebase, aplicația merge oricum: totul se salvează local, pe telefonul respectiv.
 
 ## Ce face (gândită pentru telefon, în excursie)
+- **Material 3 Expressive** (Android 16/17): button group conectat pentru zile, grupuri de rânduri ca în Settings, foi de jos cu toolbar plutitor, FAB, chip-uri, snackbar, mișcare cu arc. Fonturi și iconițe self-hosted (Archivo, Instrument Sans, Material Symbols Rounded).
+- **Plan**: „Oportunitățile zilei” (gratis / inclus / de neratat, cu link oficial), sfatul zilei, cronologie cu rail de timp și tranziții („730 m · 9 min pe jos”, „metrou / taxi”), recomandări similare pe zone în carusel.
+- **Noi**: bucketlist pentru Mara, Anne și Daniel (bifabil, cu adăugare), contor personal; al lui Daniel are ecran de top-up (cană care se umple, tip de cafea, locul, istoric pe zile).
+- **Instalare**: la prima deschidere apare o foaie cu pașii pentru Android / iPhone (și butonul nativ de instalare pe Android).
 - **Material 3 pe paleta Barcelona**: bară de navigare Plan · Explorare · Info, buton „Adaugă”, chip-uri, foi de detaliu, light mode implicit.
 - **Detaliu pentru fiecare loc**: notă Google (sept. 2026), un review, „cel mai popular”, tips & tricks, program, preț. Pentru locurile adăugate de familie, Daniel completează cu Claude tabelul `CURATED` din `public/data.js`.
 - **Poze originale**: doar ale voastre. „Adaugă poză” pe orice loc (cameră/galerie), comprimată în telefon și salvată în Firestore, vizibilă la toți. Fără poze stock și fără Google Places (ar cere facturare).

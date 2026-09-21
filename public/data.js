@@ -326,3 +326,53 @@ export const ALTERNATIVES = [
 // 'satan\'s coffee corner': { rating: 4.4, ratingCount: 1900, review: '…', popular: ['…'], tips: ['…'], hours: '…', price: '…' }
 export const CURATED = {
 };
+
+// Bucketlist-uri: fiecare are lista lui, bifabilă, cu ce adaugă în plus din aplicație.
+export const PEOPLE_META = {
+  mara:   { name: 'Mara',   tag: 'turns 13 🎂', color: 'p-mara',   counter: { key: 'sweets', label: 'Dulciuri gustate', icon: 'cake', goal: 10, unit: 'dulciuri' } },
+  anne:   { name: 'Anne',   tag: 'design & matcha', color: 'p-anne', counter: { key: 'photos', label: 'Locuri fotografiate', icon: 'photo_camera', goal: 15, unit: 'poze' } },
+  daniel: { name: 'Daniel', tag: 'specialty coffee', color: 'p-daniel', counter: { key: 'coffee', label: 'Espresso pe trip', icon: 'coffee', goal: 20, unit: 'espresso' } },
+};
+export const BUCKET_DEFAULTS = {
+  mara: ['Toboganul de la Sephora', 'Churros din 1968 la San Román', 'Matcha ceremonial la SAISEI', 'Montaditos la Quimet & Quimet', 'Shambhala, rândul din față', 'Un cinnamon roll cu fistic la Demasié'],
+  anne: ['Apus la Bunkers del Carmel', 'Terasele-mirador de la MNAC', 'Un print de la Print Workers', 'Design Museum, expoziția de modă', 'Poza cu reflexia Sagradei în lac', 'Croissantul cu mascarpone de la Hofmann'],
+  daniel: ['Espresso la Nomad Frutas Selectas (top 25 mondial)', "Satan's Coffee Corner în El Call", 'Three Marks, flat white', 'Vermut de casă la Quimet & Quimet', 'La bomba la La Cova Fumada', 'O bere craft pe Carrer de Blai'],
+};
+export const COFFEE_TYPES = [
+  { key: 'espresso', label: 'Espresso', icon: 'coffee', shots: 1 },
+  { key: 'doble', label: 'Doble', icon: 'coffee', shots: 2 },
+  { key: 'cortado', label: 'Cortado', icon: 'local_cafe', shots: 1 },
+  { key: 'flat', label: 'Flat white', icon: 'local_cafe', shots: 2 },
+  { key: 'filtru', label: 'Filtru / batch', icon: 'local_cafe', shots: 1 },
+];
+
+// Oportunitățile zilei: gratis / ieftin / de neratat, cu link oficial. `locId` leagă de un loc din program.
+export const DAY_OPPS = {
+  thu: [
+    { title: 'Halloween la PortAventura, inclus în bilet', when: 'Toată ziua, până pe 15 nov', price: 'Inclus', link: 'https://www.portaventuraworld.com/en/halloween', locId: 'pa-halloween', kind: 'inclus' },
+    { title: 'Single Rider la Shambhala', when: 'Coada separată, de 3× mai rapidă', price: 'Gratis', link: 'https://www.portaventuraworld.com/en/rides/shambhala', locId: 'pa-morning', kind: 'tip' },
+  ],
+  fri: [
+    { title: 'Nomad Frutas Selectas: locul 25 în lume', when: 'Lu–Vi până la 18:00', price: '€', link: 'https://nomadcoffee.es', locId: 'nomad-fs', kind: 'tip' },
+    { title: 'Platja del Bogatell la 12 minute de Rambla', when: 'Oricând', price: 'Gratis', link: 'https://www.barcelona.cat/en/what-to-do-in-bcn/bathing-and-beaches/bogatell-beach', kind: 'gratis' },
+  ],
+  sat: [
+    { title: 'MNAC gratis sâmbăta de la 15:00', when: 'Sâ 15:00 – 18:00, rezervare online', price: 'Gratis (altfel 12 €)', link: 'https://www.museunacional.cat/en', locId: 'mnac', kind: 'gratis' },
+    { title: 'MACBA gratis sâmbăta de la 16:00', when: 'Sâ 16:00 – 20:00', price: 'Gratis (altfel 12 €)', link: 'https://www.macba.cat/en', kind: 'gratis' },
+    { title: 'Toboganul Sephora: doar până sâmbătă', when: 'Lu–Sâ 10:00 – 22:00 · duminică închis', price: 'Gratis', link: 'https://www.sephora.es', locId: 'sephora', kind: 'tip' },
+  ],
+  sun: [
+    { title: 'Museu del Disseny gratis de la 15:00', when: 'Du 15:00 – 19:30, slot online', price: 'Gratis (altfel 6 €)', link: 'https://www.dissenyhub.barcelona/en', locId: 'disseny', kind: 'gratis' },
+    { title: 'MUHBA Plaça del Rei gratis de la 15:00', when: 'Du 15:00 – 20:00', price: 'Gratis (altfel 7 €)', link: 'https://www.barcelona.cat/museuhistoria/en', kind: 'gratis' },
+    { title: 'Castell de Montjuïc gratis de la 15:00', when: 'Du 15:00 – 18:00, bilet online', price: 'Gratis (altfel 12 €)', link: 'https://ajuntament.barcelona.cat/castelldemontjuic/en', kind: 'gratis' },
+    { title: 'Museu Marítim gratis de la 15:00', when: 'Du 15:00 – 20:00', price: 'Gratis (altfel 10 €)', link: 'https://www.mmb.cat/en/', kind: 'gratis' },
+    { title: 'CCCB gratis de la 15:00', when: 'Du 15:00 – 20:00', price: 'Gratis', link: 'https://www.cccb.org/en', kind: 'gratis' },
+    { title: 'Jardí Botànic gratis de la 15:00', when: 'Du 15:00 – 17:00', price: 'Gratis (altfel 5 €)', link: 'https://museuciencies.cat/en/visit/jardi-botanic', kind: 'gratis' },
+    { title: 'Apusul la Bunkers, ~17:35', when: 'Incinta închide la 17:30; exteriorul rămâne', price: 'Gratis', link: 'https://www.barcelona.cat/en/what-to-do-in-bcn/bunkers-del-carmel', locId: 'bunkers', kind: 'tip' },
+  ],
+  mon: [
+    { title: 'Mercat dels Encants, zi de piață', when: 'Lu 9:00 – 20:00 · licitație 7:45 – 9:00', price: 'Gratis', link: 'https://encants.cat', locId: 'encants', kind: 'gratis' },
+    { title: 'Nomad Coffee Lab deschis (doar în săptămână)', when: 'Lu–Vi 8:30 – 17:30', price: '€', link: 'https://nomadcoffee.es', kind: 'tip' },
+    { title: 'Quimet & Quimet deschide la 18:00', when: 'Lu 18:00 – 22:30 · duminică închis', price: '€€', link: 'https://quimetquimet.com', locId: 'quimet', kind: 'tip' },
+  ],
+};
