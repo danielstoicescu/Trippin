@@ -361,16 +361,25 @@ export const ALTERNATIVES = [
 export const CURATED = {
 };
 
-// Bucketlist-uri: fiecare are lista lui, bifabilă, cu ce adaugă în plus din aplicație.
+// Bucketlist-uri: fiecare are lista lui, bifabilă; `loc` leagă task-ul de un loc din program (detalii, navigare).
 export const PEOPLE_META = {
   mara:   { name: 'Mara',   tag: 'turns 13 🎂', color: 'p-mara',   counter: { key: 'sweets', label: 'Dulciuri gustate', icon: 'cake', goal: 10, unit: 'dulciuri' } },
   anne:   { name: 'Anne',   tag: 'design & matcha', color: 'p-anne', counter: { key: 'photos', label: 'Locuri fotografiate', icon: 'photo_camera', goal: 15, unit: 'poze' } },
   daniel: { name: 'Daniel', tag: 'specialty coffee', color: 'p-daniel', counter: { key: 'coffee', label: 'Espresso pe trip', icon: 'coffee', goal: 20, unit: 'espresso' } },
 };
 export const BUCKET_DEFAULTS = {
-  mara: ['Toboganul de la Sephora', 'Churros din 1968 la San Román', 'Matcha ceremonial la SAISEI', 'Montaditos la Quimet & Quimet', 'Shambhala, rândul din față', 'Un cinnamon roll cu fistic la Demasié'],
-  anne: ['Apus la Bunkers del Carmel', 'Terasele-mirador de la MNAC', 'Un print de la Print Workers', 'Design Museum, expoziția de modă', 'Poza cu reflexia Sagradei în lac', 'Croissantul cu mascarpone de la Hofmann'],
-  daniel: ['Espresso la Nomad Frutas Selectas (top 25 mondial)', "Satan's Coffee Corner în El Call", 'Three Marks, flat white', 'Vermut de casă la Quimet & Quimet', 'La bomba la La Cova Fumada', 'O bere craft pe Carrer de Blai'],
+  mara: [
+    { text: 'Toboganul de la Sephora', loc: 'sephora' }, { text: 'Churros din 1968 la San Román', loc: 'churros' }, { text: 'Matcha ceremonial la SAISEI', loc: 'saisei' },
+    { text: 'Montaditos la Quimet & Quimet', loc: 'quimet' }, { text: 'Shambhala, rândul din față', loc: 'pa-morning' }, { text: 'Un cinnamon roll cu fistic la Demasié', loc: 'demasie' },
+  ],
+  anne: [
+    { text: 'Apus la Bunkers del Carmel', loc: 'bunkers' }, { text: 'Terasele-mirador de la MNAC', loc: 'mnac' }, { text: 'Un print de la Print Workers', loc: 'printworkers' },
+    { text: 'Design Museum, expoziția de modă', loc: 'disseny' }, { text: 'Poza cu reflexia Sagradei în lac', loc: 'sagrada' }, { text: 'Croissantul cu mascarpone de la Hofmann', loc: 'hofmann' },
+  ],
+  daniel: [
+    { text: 'Espresso la Nomad Frutas Selectas (top 25 mondial)', loc: 'nomad-fs' }, { text: "Satan's Coffee Corner în El Call", loc: 'satans' }, { text: 'Three Marks, flat white', loc: 'threemarks' },
+    { text: 'Vermut de casă la Quimet & Quimet', loc: 'quimet' }, { text: 'La bomba la La Cova Fumada', loc: 'covafumada' }, { text: 'O bere craft pe Carrer de Blai', loc: 'blai' },
+  ],
 };
 export const COFFEE_TYPES = [
   { key: 'espresso', label: 'Espresso', icon: 'coffee', shots: 1 },

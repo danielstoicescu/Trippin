@@ -47,7 +47,7 @@ body { background: var(--surface); color: var(--on-surface); padding-bottom: cal
 .ic { width: 1em; height: 1em; font-size: 24px; fill: currentColor; flex-shrink: 0; display: inline-block; vertical-align: -0.18em; }
 .ic .o { display: var(--ic-o, block); } .ic .f { display: var(--ic-f, none); } .ic .o.f { display: block; }
 .ms-fill, .nav-btn.selected, .chip.selected { --ic-o: none; --ic-f: block; }
-.i-16 { font-size: 16px; } .i-18 { font-size: 18px; } .i-20 { font-size: 20px; } .i-28 { font-size: 28px; } .i-32 { font-size: 32px; } .i-40 { font-size: 40px; } .i-48 { font-size: 48px; }
+.i-16 { font-size: 16px; } .i-18 { font-size: 18px; } .i-20 { font-size: 20px; } .i-22 { font-size: 22px; } .i-28 { font-size: 28px; } .i-32 { font-size: 32px; } .i-40 { font-size: 40px; } .i-48 { font-size: 48px; }
 
 /* Motive Barcelona: xamfrà (colțul tăiat al Eixample-ului) ca familie de forme. corner-shape (Chrome 139+, Android 2026); fallback: colțuri rotunjite. */
 .xam, .card, .card-low, .card-mid, .card-high, .card-primary, .card-secondary, .card-tertiary, .card-inverse, .thumb, .hero, .carousel-card, .tl .card-item, .fab, .sheet, .group > .row, .btn-group > .seg, .avatar.selected, .pin { corner-shape: bevel; }

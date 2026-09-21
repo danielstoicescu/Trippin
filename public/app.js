@@ -269,7 +269,24 @@ async function savePhoto(id, file) {
 }
 
 // ---------- Noi: bucketlist & contoare ----------
-function bucketOf(person) { const custom = state.shared.bucket[person] || {}; const items = BUCKET_DEFAULTS[person].map((text, i) => ({ id: `${person}-d${i}`, text, done: !!custom[`${person}-d${i}`]?.done })); for (const [id, v] of Object.entries(custom)) if (v && v.text) items.push({ id, text: v.text, done: !!v.done }); return items; }
+function bucketOf(person) { const custom = state.shared.bucket[person] || {}; const items = BUCKET_DEFAULTS[person].map((d, i) => { const def = typeof d === 'string' ? { text: d } : d; const c = custom[`${person}-d${i}`] || {}; return { id: `${person}-d${i}`, text: def.text, loc: c.loc || def.loc || null, done: !!c.done }; }); for (const [id, v] of Object.entries(custom)) if (v && v.text) items.push({ id, text: v.text, loc: v.loc || null, done: !!v.done }); return items; }
+function bucketRowHTML(it, person) {
+  const color = person === 'mara' ? 'secondary' : person === 'anne' ? 'primary' : 'tertiary';
+  const loc = it.loc ? findLoc(it.loc) : null; const visited = loc && !!state.shared.visited[loc.id];
+  const p = loc && coordsOf(loc), d = loc && state.pos && p ? distanceM(state.pos, p) : null;
+  const sub = loc ? [DAY_LABEL[loc.day] || 'recomandare', loc.time || loc.hours || '', d != null ? `${fmtDist(d)}` : (loc.address || '').split(',')[0]].filter(Boolean).join(' · ') : '';
+  return `<div class="row compact ${it.done ? 'done' : ''}" style="padding-right: 8px">
+    <input type="checkbox" class="bucket-check w-6 h-6 shrink-0" style="accent-color: var(--${color})" data-person="${person}" data-id="${esc(it.id)}" ${it.done ? 'checked' : ''} aria-label="Bifează: ${esc(it.text)}">
+    ${loc ? `<button data-action="open-detail" data-id="${esc(loc.id)}" class="press shrink-0" aria-label="Detalii ${esc(loc.title)}">${thumbHTML(loc, 'w-12 h-12')}</button>` : ''}
+    <button data-action="${loc ? 'open-detail' : 'bucket-noop'}" data-id="${loc ? esc(loc.id) : ''}" class="flex-1 min-w-0 text-left press ${loc ? '' : 'cursor-default'}" style="padding: 6px 0">
+      <div class="text-[14.5px] leading-snug ${it.done ? 'line-through muted' : ''}">${esc(it.text)}</div>
+      ${loc ? `<div class="text-[11.5px] muted truncate mt-0.5">${esc(loc.title)} · ${esc(sub)}${visited ? ' · <span style="color: var(--success)">am fost</span>' : ''}</div>` : ''}
+    </button>
+    ${loc ? `<a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="icon-btn icon-btn-sm press shrink-0" style="color: var(--primary)" aria-label="Navighează spre ${esc(loc.title)} (Google Maps)" title="Navighează (Google Maps)">${icon('directions_walk', 'i-22')}</a>` : ''}
+    ${it.id.includes('-d') ? '' : `<button data-action="bucket-del" data-person="${person}" data-id="${esc(it.id)}" class="icon-btn icon-btn-sm press muted shrink-0" aria-label="Șterge">${icon('close', 'i-20')}</button>`}
+  </div>`;
+}
+function locOptionsHTML() { const groups = DAYS.map((d) => `<optgroup label="${DAY_LABEL[d]}">${dayItems(d, true).map((l) => `<option value="${esc(l.id)}">${esc(l.title)}</option>`).join('')}</optgroup>`).join(''); return `<option value="">Fără loc anume</option>${groups}<optgroup label="Recomandări">${ALTERNATIVES.map((a, i) => `<option value="alt-${i}">${esc(a.title)}</option>`).join('')}</optgroup>`; }
 function counterOf(key) { if (key === 'coffee') return (state.shared.coffeeLog || []).reduce((s, x) => s + (x.shots || 1), 0) || state.shared.coffeeCount || 0; return (state.shared.counters || {})[key] || 0; }
 function cupSVG(pct, cls = '') {
   const h = 78, y = 24 + (1 - pct) * h;
@@ -308,9 +325,13 @@ function renderUs() {
     </div>
     ${counterCard}
     <div class="group">
-      ${items.map((it) => `<label class="row compact press cursor-pointer"><input type="checkbox" class="bucket-check w-6 h-6 shrink-0" style="accent-color: var(--${person === 'mara' ? 'secondary' : person === 'anne' ? 'primary' : 'tertiary'})" data-person="${person}" data-id="${esc(it.id)}" ${it.done ? 'checked' : ''}><span class="flex-1 text-[14.5px] ${it.done ? 'line-through muted' : ''}">${esc(it.text)}</span>${it.id.includes('-d') ? '' : `<button data-action="bucket-del" data-person="${person}" data-id="${esc(it.id)}" class="icon-btn icon-btn-sm press muted" aria-label="Șterge">${icon('close', 'i-20')}</button>`}</label>`).join('')}
-      <form class="row compact" data-action="bucket-add" data-person="${person}">${icon('add_task', 'muted')}<input type="text" id="bucketInput" maxlength="120" placeholder="Adaugă ceva pe lista lui ${esc(meta.name)}…" class="flex-1 min-w-0 bg-transparent text-[14.5px] focus:outline-none"><button class="btn btn-sm btn-tonal press" type="submit">Adaugă</button></form>
-    </div>`;
+      ${items.map((it) => bucketRowHTML(it, person)).join('')}
+      <form class="row" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 16px" data-action="bucket-add" data-person="${person}">
+        <div class="flex items-center gap-3">${icon('add_task', 'muted')}<input type="text" id="bucketInput" maxlength="120" placeholder="Adaugă ceva pe lista lui ${esc(meta.name)}…" class="flex-1 min-w-0 bg-transparent text-[14.5px] focus:outline-none" aria-label="Task nou"><button class="btn btn-sm btn-tonal press" type="submit">Adaugă</button></div>
+        <label class="flex items-center gap-2 text-[12px] muted">${icon('place', 'i-18')}<span class="shrink-0">Leagă de un loc</span><select id="bucketLoc" class="flex-1 min-w-0 text-[13px] field-input" style="padding: 6px 10px; border-radius: 999px">${locOptionsHTML()}</select></label>
+      </form>
+    </div>
+    <p class="text-[12px] muted px-2">Atinge un task ca să vezi locul, orele și traseul; ${icon('directions_walk', 'i-16')} te duce direct în Google Maps.</p>`;
 }
 function coffeeSheetHTML() {
   const cnt = counterOf('coffee'), goal = PEOPLE_META.daniel.counter.goal, log = (state.shared.coffeeLog || []).slice(-6).reverse();
@@ -534,13 +555,13 @@ document.addEventListener('click', (e) => {
     'open-coffee': openCoffee, 'coffee-add': coffeeAdd, 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
     'coffee-type': () => { coffeeSel.type = el.dataset.type; $$('#coffeeTypes .chip').forEach((c) => c.classList.toggle('selected', c === el)); },
     'coffee-place': () => { coffeeSel.place = el.dataset.place; $$('#coffeePlaces .chip').forEach((c) => c.classList.toggle('selected', c === el)); },
-    'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta)), 'bucket-del': () => bucketDel(el.dataset.person, id),
+    'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta)), 'bucket-del': () => bucketDel(el.dataset.person, id), 'bucket-noop': () => {},
   };
   actions[a]?.();
 });
 document.addEventListener('submit', (e) => {
   if (e.target.id === 'addLocationForm') return handleAddSubmit(e);
-  if (e.target.dataset.action === 'bucket-add') { e.preventDefault(); const inp = e.target.querySelector('input'); const text = inp.value.trim(); if (!text) return; bucketSet(e.target.dataset.person, 'c' + Date.now(), { text, done: false, by: me() }); inp.value = ''; toast('Adăugat pe listă.', 'add_task'); }
+  if (e.target.dataset.action === 'bucket-add') { e.preventDefault(); const inp = e.target.querySelector('input'); const text = inp.value.trim(); if (!text) return; const loc = e.target.querySelector('#bucketLoc')?.value || ''; bucketSet(e.target.dataset.person, 'c' + Date.now(), { text, done: false, by: me(), ...(loc ? { loc } : {}) }); inp.value = ''; toast(loc ? 'Adăugat pe listă, legat de loc.' : 'Adăugat pe listă.', 'add_task'); }
 });
 document.addEventListener('change', async (e) => {
   if (e.target.matches('.bucket-check')) bucketSet(e.target.dataset.person, e.target.dataset.id, { done: e.target.checked }).then(() => { if (e.target.checked) toast('Bifat!', 'celebration'); });
