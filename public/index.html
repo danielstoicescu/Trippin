@@ -25,13 +25,13 @@
     <!-- Top app bar (small) -->
     <header class="sticky top-0 z-[800] px-2 pt-[env(safe-area-inset-top)]" style="background: color-mix(in srgb, var(--surface) 90%, transparent); backdrop-filter: blur(14px);">
       <div class="h-16 flex items-center gap-2 px-2">
-        <div class="w-10 h-10 shrink-0 xamfra-sm t-display text-[19px] grid place-items-center" style="background: var(--secondary); color: var(--on-secondary)">13</div>
+        <div class="w-10 h-10 shrink-0 xam-sm t-display text-[19px] grid place-items-center" style="background: var(--secondary); color: var(--on-secondary)">13</div>
         <div class="min-w-0 flex-1">
-          <div class="t-headline text-[17px] uppercase">Trippin <span style="color: var(--secondary)">BCN</span></div>
-          <div id="syncStatus" class="t-label muted flex items-center gap-1 whitespace-nowrap truncate"><span class="material-symbols-rounded i-16">sync</span>Se conectează…</div>
+          <div class="t-headline text-[17px] uppercase flex items-center gap-2">Trippin <span style="color: var(--secondary)">BCN</span><span id="syncDot" class="sync-dot" data-mode="connecting" role="status" aria-label="Se conectează…" title="Se conectează la programul comun…"></span></div>
+          <button id="weather" data-action="open-weather" class="t-label muted flex items-center gap-1 whitespace-nowrap max-w-full press rounded-full -ml-1 px-1 h-6" aria-label="Vremea live în Barcelona"></button>
         </div>
         <button data-action="open-install" class="icon-btn press" aria-label="Instalează pe telefon" title="Instalează pe telefon"><span class="material-symbols-rounded">download</span></button>
-        <button data-action="toggle-theme" class="icon-btn press" aria-label="Schimbă tema"><span id="themeIcon" class="material-symbols-rounded">dark_mode</span></button>
+        <button data-action="toggle-theme" class="icon-btn press" aria-label="Schimbă tema"><span id="themeIcon" class="inline-flex"></span></button>
       </div>
     </header>
 
@@ -46,7 +46,7 @@
 
     <!-- ===================== PLAN ===================== -->
     <section id="view-plan" data-view="plan" class="px-4 pt-3 space-y-4">
-      <div class="flex items-end justify-between gap-3">
+      <div class="flex items-end justify-between gap-3 panot -mx-4 px-4 pt-2 pb-3">
         <div class="min-w-0">
           <div class="eyebrow muted" id="planEyebrow">Plan</div>
           <h2 class="t-display text-[40px]" id="planHeadline">Joi 5</h2>
@@ -117,6 +117,7 @@
         <div id="notesStatus" class="text-[11px] muted">&nbsp;</div>
       </div>
       <div class="group">
+        <div id="syncText" class="row compact"><span class="material-symbols-rounded i-20">sync</span><span class="flex-1 text-[13px]">Se conectează la programul comun…</span></div>
         <a href="tel:112" class="row compact press"><span class="material-symbols-rounded" style="color: var(--secondary)">call</span><span class="flex-1 font-semibold">Urgențe 112</span><span class="material-symbols-rounded muted i-20">open_in_new</span></a>
         <a href="https://www.google.com/maps/search/?api=1&query=Carrer+de+Bac+de+Roda+Barcelona" target="_blank" rel="noopener" class="row compact press"><span class="material-symbols-rounded" style="color: var(--primary)">home</span><span class="flex-1 font-semibold">Spre cazare (Bac de Roda)</span><span class="material-symbols-rounded muted i-20">open_in_new</span></a>
         <a href="https://www.google.com/maps/search/?api=1&query=farmacia+Poblenou+Barcelona" target="_blank" rel="noopener" class="row compact press"><span class="material-symbols-rounded" style="color: var(--success)">local_pharmacy</span><span class="flex-1 font-semibold">Farmacie aproape</span><span class="material-symbols-rounded muted i-20">open_in_new</span></a>
@@ -200,7 +201,7 @@
     </div>
   </div>
 
-  <div id="toast" class="snackbar hidden-toast"><span id="toastIcon" class="material-symbols-rounded" style="color: var(--tertiary)">check_circle</span><span id="toastMessage">Mesaj</span></div>
+  <div id="toast" class="snackbar hidden-toast"><span id="toastIcon" class="inline-flex shrink-0" style="color: var(--tertiary)"></span><span id="toastMessage">Mesaj</span></div>
   <input type="file" id="photoInput" accept="image/*" capture="environment" class="hidden">
 
   <script src="/firebase-config.js"></script>

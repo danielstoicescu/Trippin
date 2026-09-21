@@ -1,12 +1,13 @@
 // Trippin · Barcelona – Mara (13), Anne & Daniel. Offline-first, Material 3 Expressive, mobil.
 import { TRIP, ZONES, DAY_ZONES, DAY_TIPS, DAY_OPPS, ITINERARY, ALTERNATIVES, CURATED, PEOPLE_META, BUCKET_DEFAULTS, COFFEE_TYPES } from './data.js';
+import { ICONS } from './icons.js';
 
 const TRIP_ID = TRIP.id;
 const DAYS = ['thu', 'fri', 'sat', 'sun', 'mon'];
 const DAY_LABEL = { thu: 'Joi 5', fri: 'Vineri 6', sat: 'Sâmbătă 7', sun: 'Duminică 8', mon: 'Luni 9' };
 const DAY_SUB = { thu: 'PortAventura · Salou', fri: 'Tren · Poblenou · pho & tapas', sat: 'El Call · Sephora · MNAC · Blai', sun: 'Sagrada · matcha · Design · Bunkers', mon: 'Encants · Cova Fumada · Quimet' };
 const PEOPLE = ['Daniel', 'Mara', 'Anne'];
-const LS = { locations: 'bcn_locations', shared: 'bcn_shared', photos: 'bcn_photos', theme: 'bcn_theme', alerted: 'bcn_alerted', view: 'bcn_view', me: 'bcn_me', install: 'bcn_install_seen' };
+const LS = { locations: 'bcn_locations', shared: 'bcn_shared', photos: 'bcn_photos', theme: 'bcn_theme', alerted: 'bcn_alerted', view: 'bcn_view', me: 'bcn_me', install: 'bcn_install_seen', weather: 'bcn_weather', img: 'bcn_img' };
 const SUMMARY_TEXT = `Trippin · Barcelona (Mara 13, Anne & Daniel), 4–9 nov:
 • Joi 5: PortAventura (Shambhala, Dragon Khan, Halloween)
 • Vineri 6: tren spre BCN, Nomad Coffee, Demasié, Banh Mi Club, Bitácora
@@ -27,7 +28,8 @@ let fb = null;
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const icon = (name, cls = '') => `<span class="material-symbols-rounded ${cls}">${name}</span>`;
+const icon = (name, cls = '', style = '') => { const p = ICONS[name] || ICONS.info; return `<svg class="ic ${cls}" viewBox="0 -960 960 960" aria-hidden="true"${style ? ` style="${style}"` : ''}>${p.length > 1 ? `<path class="o" d="${p[0]}"/><path class="f" d="${p[1]}"/>` : `<path class="o f" d="${p[0]}"/>`}</svg>`; };
+function hydrateIcons(root = document) { root.querySelectorAll('span.material-symbols-rounded').forEach((el) => { const t = document.createElement('template'); t.innerHTML = icon(el.textContent.trim(), el.className.replace('material-symbols-rounded', '').trim(), el.getAttribute('style') || ''); el.replaceWith(t.content.firstChild); }); }
 const mapsSearch = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q + (/(barcelona|salou|vila-seca|portaventura)/i.test(q) ? '' : ' Barcelona'))}`;
 const placeQuery = (loc) => loc.placeQuery || (loc.address ? `${loc.title}, ${loc.address}` : loc.title);
 const allLocs = () => [...ITINERARY, ...state.custom];
@@ -51,8 +53,69 @@ const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSSt
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 
 let toastTimer;
-function toast(message, ic = 'check_circle', ms = 3200) { $('#toastMessage').textContent = message; $('#toastIcon').textContent = ic; $('#toast').classList.remove('hidden-toast'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.add('hidden-toast'), ms); }
-function setSyncStatus(mode, detail) { const el = $('#syncStatus'); if (!el) return; el.innerHTML = mode === 'online' ? `${icon('cloud_done', 'i-16')}Live · Mara · Anne · Daniel` : mode === 'local' ? `${icon('mobile', 'i-16')}Doar pe acest telefon` : `${icon('sync', 'i-16')}Se conectează…`; el.style.color = mode === 'online' ? 'var(--success)' : ''; el.title = detail || ''; }
+function toast(message, ic = 'check_circle', ms = 3200) { $('#toastMessage').textContent = message; $('#toastIcon').innerHTML = icon(ic); $('#toast').classList.remove('hidden-toast'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.add('hidden-toast'), ms); }
+function setSyncStatus(mode, detail) {
+  const text = mode === 'online' ? 'Sincronizat live: ce bifați voi vede toată familia' : mode === 'local' ? 'Fără conexiune la baza comună: se salvează doar pe acest telefon' : 'Se conectează la programul comun…';
+  const dot = $('#syncDot'); if (dot) { dot.dataset.mode = mode; dot.title = text + (detail ? ' (' + detail + ')' : ''); dot.setAttribute('aria-label', text); }
+  const row = $('#syncText'); if (row) row.innerHTML = `${icon(mode === 'online' ? 'cloud_done' : mode === 'local' ? 'cloud_off' : 'sync', 'i-20', mode === 'online' ? 'color: var(--success)' : '')}<span class="flex-1 text-[13px]">${esc(text)}</span>`;
+}
+
+// ---------- Vremea (Open-Meteo, fără cheie) ----------
+const WMO = (c, day = 1) => c === 0 ? [day ? 'sunny' : 'clear_night', 'senin'] : c <= 2 ? [day ? 'partly_cloudy_day' : 'partly_cloudy_night', 'parțial noros'] : c === 3 ? ['cloud', 'noros'] : c <= 48 ? ['foggy', 'ceață'] : c <= 57 ? ['rainy', 'burniță'] : c <= 67 ? ['rainy', 'ploaie'] : c <= 77 ? ['weather_snowy', 'ninsoare'] : c <= 82 ? ['rainy', 'averse'] : ['thunderstorm', 'furtună'];
+let weather = null;
+function renderWeather() {
+  const el = $('#weather'); if (!el) return;
+  if (!weather) { el.innerHTML = `${icon('thermostat', 'i-18')}<span>${navigator.onLine ? 'Vremea în Barcelona…' : 'Vremea: fără semnal'}</span>`; return; }
+  const c = weather.current, [ic, label] = WMO(c.weather_code, c.is_day);
+  el.innerHTML = `${icon(ic, 'i-18 ms-fill', 'color: var(--tertiary)')}<span class="tabular font-bold" style="color: var(--on-surface)">${Math.round(c.temperature_2m)}°</span><span class="muted truncate">${label} · ${Math.round(weather.daily.temperature_2m_min[0])}–${Math.round(weather.daily.temperature_2m_max[0])}° · BCN</span>`;
+}
+async function loadWeather() {
+  const cached = lsGet(LS.weather, null); if (cached && cached.data) { weather = cached.data; renderWeather(); }
+  if (cached && Date.now() - cached.at < 20 * 60000) return;
+  try {
+    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.3874&longitude=2.1686&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,relative_humidity_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&timezone=Europe%2FMadrid&forecast_days=7');
+    if (!r.ok) throw new Error(r.status); weather = await r.json(); lsSet(LS.weather, { at: Date.now(), data: weather }); renderWeather();
+  } catch (e) { console.warn('meteo', e); renderWeather(); }
+}
+function weatherSheetHTML() {
+  if (!weather) return `<div class="sheet-handle"></div><p class="t-body p-4">Nu am putut lua vremea (fără semnal?). Încerc din nou când revine conexiunea.</p>`;
+  const c = weather.current, d = weather.daily, [ic, label] = WMO(c.weather_code, c.is_day);
+  const DOW = ['Du', 'Lu', 'Ma', 'Mi', 'Jo', 'Vi', 'Sâ'];
+  const rows = d.time.map((t, i) => { const [wi, wl] = WMO(d.weather_code[i]); const dt = new Date(t + 'T12:00:00'); const trip = DAYS.find((k) => TRIP.days[k] === t); return `<div class="row compact ${trip ? 'selected' : ''}"><div class="w-14 text-[13px] font-bold">${i === 0 ? 'Azi' : DOW[dt.getDay()] + ' ' + dt.getDate()}</div>${icon(wi, 'i-28 ms-fill', 'color: var(--tertiary)')}<div class="flex-1 text-[13px]">${wl}${trip ? ` · <b>${DAY_LABEL[trip]}</b>` : ''}</div><div class="text-[12px] muted tabular">${d.precipitation_probability_max[i]}% ${icon('water_drop', 'i-16')}</div><div class="tabular text-[14px] font-bold w-16 text-right">${Math.round(d.temperature_2m_min[i])}–${Math.round(d.temperature_2m_max[i])}°</div></div>`; }).join('');
+  return `<div class="sheet-handle"></div>
+    <div class="flex items-start justify-between gap-2"><div><div class="eyebrow muted">Vremea live · Barcelona</div><h3 class="t-headline text-[26px]">${label[0].toUpperCase() + label.slice(1)}</h3></div><button data-action="close-modal" class="icon-btn icon-btn-sm press" aria-label="Închide">${icon('close')}</button></div>
+    <div class="card-tertiary xam p-4 mt-3 flex items-center gap-4">${icon(ic, 'i-48 ms-fill')}<div><div class="t-display text-[56px] tabular">${Math.round(c.temperature_2m)}°</div><div class="text-[13px] opacity-80">se simte ${Math.round(c.apparent_temperature)}° · vânt ${Math.round(c.wind_speed_10m)} km/h · umiditate ${c.relative_humidity_2m}%</div></div></div>
+    <div class="text-[12px] muted mt-3 mb-2 px-1">Apus azi la ${(d.sunset[0] || '').slice(11, 16)} · răsărit ${(d.sunrise[0] || '').slice(11, 16)}. Sursa: Open-Meteo, actualizat ${new Date(lsGet(LS.weather, { at: Date.now() }).at).toTimeString().slice(0, 5)}.</div>
+    <div class="group">${rows}</div>
+    <p class="text-[12px] muted mt-3 px-1">În noiembrie, Barcelona are de obicei 12–18 °C și 5–6 zile cu ploaie pe lună: jachetă subțire, o umbrelă mică, pantofi buni pentru Bunkers.</p>`;
+}
+function openWeather() { $('#coffeeBody').innerHTML = weatherSheetHTML(); $('#coffeeSheet').classList.remove('hidden'); loadWeather(); }
+
+// ---------- Poze reale (Wikimedia Commons, licență liberă, cu atribuire) ----------
+const imgCache = lsGet(LS.img, {});
+const COMMONS_FILE = (f) => `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(f)}?width=900`;
+const COMMONS_PAGE = (f) => `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(f.replace(/ /g, '_'))}`;
+const inflight = new Set(); let rerenderTimer;
+function stockOf(loc) {
+  if (loc.isCustom) return null; const c = imgCache[loc.id];
+  if (c && c.url) return c; if (c && c.none && Date.now() - c.at < 7 * 86400000) return null;
+  if (loc.img?.file && !(c && c.failed)) return { url: COMMONS_FILE(loc.img.file), page: COMMONS_PAGE(loc.img.file), credit: 'Wikimedia Commons' };
+  ensureStock(loc); return null;
+}
+async function ensureStock(loc) {
+  if (inflight.has(loc.id) || !navigator.onLine) return; inflight.add(loc.id);
+  const q = loc.img?.q || loc.placeQuery || loc.title;
+  try {
+    const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(q + ' filetype:bitmap')}&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=900&format=json&origin=*`);
+    const j = await r.json(); const pg = Object.values(j.query?.pages || {})[0]; const ii = pg?.imageinfo?.[0]; if (!ii) throw new Error('no image');
+    const artist = (ii.extmetadata?.Artist?.value || '').replace(/<[^>]+>/g, '').trim();
+    imgCache[loc.id] = { url: ii.thumburl || ii.url, page: ii.descriptionurl, credit: artist ? artist.slice(0, 40) : 'Wikimedia Commons' };
+  } catch { imgCache[loc.id] = { none: true, at: Date.now() }; }
+  lsSet(LS.img, imgCache); inflight.delete(loc.id);
+  clearTimeout(rerenderTimer); rerenderTimer = setTimeout(() => { renderAll(); refreshDetail(); }, 400);
+}
+window.__imgFail = (el, id) => { el.remove(); const loc = findLoc(id); if (!loc) return; imgCache[id] = { failed: true }; lsSet(LS.img, imgCache); ensureStock(loc); };
+const stockImg = (loc, cls = '') => { const st = stockOf(loc); return st ? `<img src="${esc(st.url)}" class="${cls}" alt="" loading="lazy" onerror="__imgFail(this,'${esc(loc.id)}')">` : ''; };
 function ripple(e) { const el = e.target.closest('.press'); if (!el) return; const r = el.getBoundingClientRect(), d = Math.max(r.width, r.height); const s = document.createElement('span'); s.className = 'ripple'; s.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`; el.appendChild(s); setTimeout(() => s.remove(), 650); }
 
 // ---------- Timp ----------
@@ -66,7 +129,7 @@ const cat = (c) => CAT[c] || { cls: 'cat-none', icon: 'place', label: 'Loc', bad
 const SOURCE = { instagram: 'Reel Instagram', tiktok: 'TikTok', youtube: 'YouTube', gmaps: 'Google Maps', web: 'Link' };
 function dayItems(day, includeSkipped = false) { return allLocs().filter((l) => l.day === day && (includeSkipped || !state.shared.skipped[l.id])).map((l, i) => ({ l, i })).sort((a, b) => startMin(a.l) - startMin(b.l) || a.i - b.i).map((x) => x.l); }
 const photoOf = (id) => state.photos[id]?.data || null;
-function thumbHTML(loc, sizeCls = '') { const c = cat(loc.cat), ph = photoOf(loc.id); return `<div class="thumb ${c.cls} ${sizeCls}">${ph ? `<img src="${ph}" alt="">` : icon(c.icon, 'ms-fill i-28')}</div>`; }
+function thumbHTML(loc, sizeCls = '') { const c = cat(loc.cat), ph = photoOf(loc.id); return `<div class="thumb ${c.cls} ${sizeCls}">${icon(c.icon, 'ms-fill i-28')}${ph ? `<img src="${ph}" alt="">` : stockImg(loc)}</div>`; }
 const stars = (r) => (r ? `<span class="inline-flex items-center gap-0.5 font-bold" style="color: var(--tertiary)">${icon('star', 'ms-fill i-16')}${Number(r).toFixed(1)}</span>` : '');
 function transitHTML(a, b) {
   const pa = coordsOf(a), pb = coordsOf(b); if (!pa || !pb) return '';
@@ -92,7 +155,7 @@ function timelineHTML(list) {
           <div class="text-[12.5px] variant mt-0.5 truncate">${esc(loc.short || loc.catLabel || '')}</div>
           ${meta ? `<div class="text-[12px] muted mt-0.5 truncate">${meta}</div>` : ''}
         </div>
-        ${visited ? icon('check_circle', 'ms-fill') : `<span class="material-symbols-rounded muted">expand_more</span>`}
+        ${visited ? icon('check_circle', 'ms-fill') : `${icon('expand_more', 'muted')}`}
       </button></div>`;
     if (!skipped) prev = loc;
   }
@@ -102,7 +165,7 @@ function oppsHTML(day) {
   const opps = DAY_OPPS[day] || []; if (!opps.length) return '';
   const KIND = { gratis: ['badge-success', 'sell', 'Gratis'], inclus: ['badge-primary', 'check_circle', 'Inclus'], tip: ['badge-tertiary', 'bolt', 'De neratat'] };
   return `<div class="card-tertiary p-4 space-y-3">
-    <div class="flex items-center justify-between"><div class="t-headline text-[18px]">Oportunitățile zilei</div><span class="material-symbols-rounded ms-fill" style="color: var(--tertiary)">celebration</span></div>
+    <div class="flex items-center justify-between"><div class="t-headline text-[18px]">Oportunitățile zilei</div>${icon('celebration', 'ms-fill', 'color: var(--tertiary)')}</div>
     <div class="group">${opps.map((o) => { const k = KIND[o.kind] || KIND.tip; return `
       <div class="row compact press" style="background: color-mix(in srgb, var(--surface-lowest) 72%, transparent)" ${o.locId ? `data-action="open-detail" data-id="${esc(o.locId)}" role="button"` : `data-action="open-link" data-href="${esc(o.link)}" role="button"`}>
         <div class="min-w-0 flex-1">
@@ -125,7 +188,8 @@ function renderDay() {
 }
 function altCardHTML(a, i) {
   const c = cat(a.cat), ph = null, d = state.pos && typeof a.lat === 'number' ? distanceM(state.pos, { lat: a.lat, lng: a.lng }) : null;
-  return `<button class="carousel-card press ${c.cls}" data-action="open-detail" data-id="alt-${i}">
+  const loc = altAsLoc(i);
+  return `<button class="carousel-card press ${c.cls}" data-action="open-detail" data-id="alt-${i}">${stockImg(loc, 'cc-img')}
     <div class="flex flex-wrap gap-1 mb-2">${a.free ? '<span class="badge badge-success">gratis</span>' : ''}${a.verify ? '<span class="badge badge-tertiary">verifică</span>' : ''}${d != null ? `<span class="badge badge-inverse">${fmtDist(d)}</span>` : ''}</div>
     <div class="t-title text-[16px]">${esc(a.title)}</div>
     <div class="text-[12px] opacity-90 mt-1 line-clamp-2">${esc(a.hours || a.note)}</div>
@@ -144,10 +208,10 @@ function nextStopHTML() {
   const next = stops.find(isNow) || (todayKey() === state.day ? stops.find((l) => startMin(l) >= nowMin - 15) : null) || stops[0];
   const p = coordsOf(next), d = state.pos && p ? distanceM(state.pos, p) : null;
   const label = isNow(next) ? 'Acum' : todayKey() === state.day ? 'Următorul pas' : 'Primul pas';
-  return `<div class="card-primary p-3 flex items-center gap-3 press" data-action="open-detail" data-id="${esc(next.id)}" role="button">
+  return `<div class="card-primary p-3 flex items-center gap-3 press" style="background: var(--primary); color: var(--on-primary)" data-action="open-detail" data-id="${esc(next.id)}" role="button">
     ${thumbHTML(next, 'w-16 h-16')}
-    <div class="min-w-0 flex-1"><div class="eyebrow opacity-70">${label} · ${esc(next.time || '')}</div><div class="t-title text-[16px]">${esc(next.title)}</div><div class="text-[12px] opacity-80 truncate">${d != null ? `${fmtDist(d)} · ${walkMin(d)} min pe jos` : esc(next.address || '')}</div></div>
-    <a href="${esc(mapsNav(next))}" target="_blank" rel="noopener" class="icon-btn filled press shrink-0" aria-label="Navighează" onclick="event.stopPropagation()">${icon('directions_walk')}</a>
+    <div class="min-w-0 flex-1"><div class="eyebrow opacity-75">${label} · ${esc(next.time || '')}</div><div class="t-title text-[16px]">${esc(next.title)}</div><div class="text-[12px] opacity-85 truncate">${d != null ? `${fmtDist(d)} · ${walkMin(d)} min pe jos` : esc(next.address || '')}</div></div>
+    <a href="${esc(mapsNav(next))}" target="_blank" rel="noopener" class="icon-btn press shrink-0" style="background: var(--surface-lowest); color: var(--primary)" aria-label="Navighează spre următorul pas (Google Maps)" title="Navighează (Google Maps)" onclick="event.stopPropagation()">${icon('directions_walk')}</a>
   </div>`;
 }
 function renderNextStop() { const h = nextStopHTML(); const a = $('#nextStop'); if (a) a.innerHTML = h; const b = $('#nextStopExplore'); if (b) b.innerHTML = h; }
@@ -157,15 +221,19 @@ function detailHTML(raw) {
   const loc = enriched(raw), c = cat(loc.cat), id = loc.id;
   const visited = !!state.shared.visited[id], skipped = !!state.shared.skipped[id];
   const p = coordsOf(loc), d = state.pos && p ? distanceM(state.pos, p) : null; const ph = photoOf(id);
-  const hero = ph ? `<div class="relative h-60 overflow-hidden" style="border-radius: var(--xl)"><img src="${ph}" class="w-full h-full object-cover" alt=""><div class="absolute bottom-3 left-3 badge badge-inverse">${icon('photo_camera', 'i-16')} ${esc(state.photos[id].by || 'noi')}</div><button data-action="add-photo" data-id="${esc(id)}" class="btn btn-sm btn-surface press absolute bottom-3 right-3">${icon('add_a_photo', 'i-18')} Altă poză</button></div>`
-    : `<div class="relative h-40 ${c.cls} grid place-items-center text-white/85" style="border-radius: var(--xl)">${icon(c.icon, 'ms-fill i-48')}<button data-action="add-photo" data-id="${esc(id)}" class="btn btn-sm btn-surface press absolute bottom-3 right-3">${icon('add_a_photo', 'i-18')} Adaugă poză</button></div>`;
+  const st = ph ? null : stockOf(loc);
+  const hero = ph ? `<div class="hero xam relative h-60 overflow-hidden"><img src="${ph}" class="w-full h-full object-cover" alt=""><div class="absolute bottom-3 left-3 badge badge-inverse">${icon('photo_camera', 'i-16')} ${esc(state.photos[id].by || 'noi')}</div><button data-action="add-photo" data-id="${esc(id)}" class="btn btn-sm btn-surface press absolute bottom-3 right-3">${icon('add_a_photo', 'i-18')} Altă poză</button></div>`
+    : `<div class="hero xam relative h-56 ${c.cls} grid place-items-center text-white/85">${icon(c.icon, 'ms-fill i-48')}${st ? `<img src="${esc(st.url)}" class="absolute inset-0 w-full h-full object-cover" alt="" onerror="__imgFail(this,'${esc(id)}')"><a href="${esc(st.page)}" target="_blank" rel="noopener" class="absolute bottom-3 left-3 badge badge-inverse" style="opacity:.85" onclick="event.stopPropagation()">${icon('image', 'i-16')} ${esc(st.credit)}</a>` : ''}<button data-action="add-photo" data-id="${esc(id)}" class="btn btn-sm btn-surface press absolute bottom-3 right-3">${icon('add_a_photo', 'i-18')} ${st ? 'Poza noastră' : 'Adaugă poză'}</button></div>`;
   const chips = [`<span class="badge ${c.badge}">${icon(c.icon, 'i-16')} ${esc(loc.catLabel || c.label)}</span>`, loc.time ? `<span class="badge badge-neutral">${icon('schedule', 'i-16')} ${esc(loc.time)}</span>` : '', loc.free ? `<span class="badge badge-success">gratis</span>` : '', loc.verify ? '<span class="badge badge-tertiary">verifică orele</span>' : '', d != null ? `<span class="badge badge-primary">${icon('directions_walk', 'i-16')} ${fmtDist(d)} · ${walkMin(d)} min</span>` : '', loc.isCustom ? `<span class="badge badge-secondary">${esc(loc.addedBy || 'noi')}</span>` : '', loc.isAlt ? '<span class="badge badge-neutral">recomandare</span>' : ''].filter(Boolean).join('');
   const rating = loc.rating ? `<div class="card p-4 flex items-center gap-4"><div class="t-display text-[40px]" style="color: var(--tertiary)">${Number(loc.rating).toFixed(1)}</div><div><div class="text-[18px] leading-none" style="color: var(--tertiary)">${'★'.repeat(Math.round(loc.rating))}<span class="muted">${'★'.repeat(5 - Math.round(loc.rating))}</span></div><div class="text-[12px] muted mt-1">${loc.ratingCount ? fmtCount(loc.ratingCount) + ' recenzii pe Google · ' : ''}sept. 2026</div></div></div>` : '';
   const section = (ic, title, body, cls = 'card') => `<div class="${cls} p-4"><div class="eyebrow muted mb-2 flex items-center gap-1.5">${icon(ic, 'i-18')} ${title}</div>${body}</div>`;
   const review = loc.review ? section('format_quote', 'Un review', `<p class="text-[14px] leading-relaxed italic variant">„${esc(loc.review)}”</p>`) : '';
-  const popular = loc.popular?.length ? section('thumb_up', 'Cel mai popular', `<ul class="space-y-2">${loc.popular.map((x) => `<li class="flex gap-2 text-[14px]"><span class="material-symbols-rounded i-18" style="color: var(--secondary)">check</span><span>${esc(x)}</span></li>`).join('')}</ul>`) : '';
-  const tips = loc.tips?.length ? section('tips_and_updates', 'Tips & tricks', `<ul class="space-y-2">${loc.tips.map((x) => `<li class="flex gap-2 text-[14px]"><span class="material-symbols-rounded i-18" style="color: var(--tertiary)">bolt</span><span>${esc(x)}</span></li>`).join('')}</ul>`, 'card-tertiary') : '';
-  const info = [loc.hours ? `<div class="row compact">${icon('schedule', 'muted')}<div class="text-[14px]">${esc(loc.hours)}</div></div>` : '', loc.price ? `<div class="row compact">${icon('euro', 'muted')}<div class="text-[14px]">${esc(loc.price)}</div></div>` : '', loc.address ? `<a href="${esc(mapsSearch(placeQuery(loc)))}" target="_blank" rel="noopener" class="row compact press">${icon('place', 'muted')}<div class="text-[14px] flex-1">${esc(loc.address)}${p && !p.exact ? ' <span class="muted">(aprox.)</span>' : ''}</div>${icon('open_in_new', 'muted i-20')}</a>` : '', loc.link ? `<a href="${esc(loc.link)}" target="_blank" rel="noopener" class="row compact press">${icon('link', 'muted')}<div class="text-[14px] flex-1" style="color: var(--primary)">Deschide ${esc(SOURCE[loc.source] || 'linkul')}</div>${icon('open_in_new', 'muted i-20')}</a>` : ''].filter(Boolean).join('');
+  const popular = loc.popular?.length ? section('thumb_up', 'Cel mai popular', `<ul class="space-y-2">${loc.popular.map((x) => `<li class="flex gap-2 text-[14px]">${icon('check', 'i-18', 'color: var(--secondary)')}<span>${esc(x)}</span></li>`).join('')}</ul>`) : '';
+  const tips = loc.tips?.length ? section('tips_and_updates', 'Tips & tricks', `<ul class="space-y-2">${loc.tips.map((x) => `<li class="flex gap-2 text-[14px]">${icon('bolt', 'i-18', 'color: var(--tertiary)')}<span>${esc(x)}</span></li>`).join('')}</ul>`, 'card-tertiary') : '';
+  const info = [loc.hours ? `<div class="row compact">${icon('schedule', 'muted')}<div class="text-[14px]">${esc(loc.hours)}</div></div>` : '', loc.price ? `<div class="row compact">${icon('euro', 'muted')}<div class="text-[14px]">${esc(loc.price)}</div></div>` : '', loc.budget ? `<div class="row compact">${icon('payments', 'muted')}<div class="text-[14px]"><span class="muted text-[12px]">Buget estimat · </span>${esc(loc.budget)}</div></div>` : '', loc.address ? `<a href="${esc(mapsSearch(placeQuery(loc)))}" target="_blank" rel="noopener" class="row compact press">${icon('place', 'muted')}<div class="text-[14px] flex-1">${esc(loc.address)}${p && !p.exact ? ' <span class="muted">(aprox.)</span>' : ''}</div>${icon('open_in_new', 'muted i-20')}</a>` : '', loc.link ? `<a href="${esc(loc.link)}" target="_blank" rel="noopener" class="row compact press">${icon('link', 'muted')}<div class="text-[14px] flex-1" style="color: var(--primary)">Deschide ${esc(SOURCE[loc.source] || 'linkul')}</div>${icon('open_in_new', 'muted i-20')}</a>` : ''].filter(Boolean).join('');
+  const links = [`<a href="${esc(mapsSearch(placeQuery(loc)))}" target="_blank" rel="noopener" class="row compact press">${icon('photo_library', '', 'color: var(--primary)')}<div class="flex-1"><div class="text-[14px] font-semibold">Poze, meniu & recenzii pe Google Maps</div><div class="text-[11.5px] muted">Fotografiile clienților, meniul fotografiat, orele de azi</div></div>${icon('open_in_new', 'muted i-20')}</a>`,
+    loc.site ? `<a href="${esc(loc.site)}" target="_blank" rel="noopener" class="row compact press">${icon('language', '', 'color: var(--secondary)')}<div class="flex-1"><div class="text-[14px] font-semibold">Site oficial</div><div class="text-[11.5px] muted truncate">${esc(loc.site.replace(/^https?:\/\/(www\.)?/, '').split('/')[0])}</div></div>${icon('open_in_new', 'muted i-20')}</a>` : '',
+    loc.menu ? `<a href="${esc(loc.menu)}" target="_blank" rel="noopener" class="row compact press">${icon('menu_book', '', 'color: var(--tertiary)')}<div class="flex-1"><div class="text-[14px] font-semibold">${/ticket|entrad|bilet/i.test(loc.menu) ? 'Bilete online' : 'Meniul oficial'}</div><div class="text-[11.5px] muted truncate">${esc(loc.menu.replace(/^https?:\/\/(www\.)?/, ''))}</div></div>${icon('open_in_new', 'muted i-20')}</a>` : ''].filter(Boolean).join('');
   const toolbar = loc.isAlt
     ? `<div class="toolbar"><button data-action="add-alt" data-index="${loc.altIndex}" class="btn btn-filled press flex-1">${icon('add')} Pune în program</button><a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="icon-btn press" aria-label="Navighează">${icon('directions_walk')}</a></div>`
     : `<div class="toolbar">
@@ -178,7 +246,7 @@ function detailHTML(raw) {
       </div>`;
   return `<div class="sheet-handle"></div>
     <div class="flex items-start justify-between gap-2 mb-3"><div class="min-w-0"><div class="flex flex-wrap gap-1 mb-2">${chips}</div><h3 class="t-headline text-[26px]">${esc(loc.title)}</h3>${loc.short ? `<div class="text-[14px] variant mt-1">${esc(loc.short)}</div>` : ''}</div><button data-action="close-modal" class="icon-btn icon-btn-sm press shrink-0" aria-label="Închide">${icon('close')}</button></div>
-    <div class="space-y-3">${hero}${rating}<p class="t-body px-1">${esc(loc.desc || loc.note || '')}</p>${info ? `<div class="group">${info}</div>` : ''}${review}${popular}${tips}
+    <div class="space-y-3">${hero}${rating}<p class="t-body px-1">${esc(loc.desc || loc.note || '')}</p>${info ? `<div class="group">${info}</div>` : ''}${review}${popular}${tips}<div class="group">${links}</div>
     <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11.5px] muted px-1 pb-1">${[['directions_walk','Navigare pe jos (Google Maps)'],['check','Am fost'],['add_a_photo','Adaugă poză'],[loc.isCustom ? 'edit' : 'skip_next', loc.isCustom ? 'Editează' : 'Sari peste'],['push_pin','Fixează poziția exactă']].map(([i, t]) => `<div class="flex items-center gap-1.5">${icon(i, 'i-16')}<span>${t}</span></div>`).join('')}</div></div>${toolbar}`;
 }
 function openDetail(id) { const loc = findLoc(id); if (!loc) return; state.detailId = id; $('#detailBody').innerHTML = detailHTML(loc); $('#detailSheet').classList.remove('hidden'); $('#detailBody').scrollTop = 0; }
@@ -228,7 +296,7 @@ function renderUs() {
         <button data-action="open-coffee" class="icon-btn filled press shrink-0" style="background: var(--tertiary); color: var(--on-tertiary)" aria-label="Adaugă espresso">${icon('add')}</button>
       </div>`
     : `<div class="card p-4 flex items-center gap-4">
-        <div class="ring" style="--p:${cpct}; --ring-color: var(--${person === 'mara' ? 'secondary' : 'primary'})"><span class="material-symbols-rounded ms-fill" style="color: var(--${person === 'mara' ? 'secondary' : 'primary'})">${meta.counter.icon}</span></div>
+        <div class="ring" style="--p:${cpct}; --ring-color: var(--${person === 'mara' ? 'secondary' : 'primary'})">${icon(meta.counter.icon, 'ms-fill', `color: var(--${person === 'mara' ? 'secondary' : 'primary'})`)}</div>
         <div class="min-w-0 flex-1"><div class="eyebrow muted">${esc(meta.counter.label)}</div><div class="t-display text-[36px] tabular">${cnt}<span class="text-[18px] muted"> / ${meta.counter.goal}</span></div></div>
         <div class="flex gap-1"><button data-action="counter" data-key="${meta.counter.key}" data-delta="-1" class="icon-btn tonal press" aria-label="Scade">${icon('remove')}</button><button data-action="counter" data-key="${meta.counter.key}" data-delta="1" class="icon-btn filled press" style="background: var(--${person === 'mara' ? 'secondary' : 'primary'})" aria-label="Adaugă">${icon('add')}</button></div>
       </div>`;
@@ -241,7 +309,7 @@ function renderUs() {
     ${counterCard}
     <div class="group">
       ${items.map((it) => `<label class="row compact press cursor-pointer"><input type="checkbox" class="bucket-check w-6 h-6 shrink-0" style="accent-color: var(--${person === 'mara' ? 'secondary' : person === 'anne' ? 'primary' : 'tertiary'})" data-person="${person}" data-id="${esc(it.id)}" ${it.done ? 'checked' : ''}><span class="flex-1 text-[14.5px] ${it.done ? 'line-through muted' : ''}">${esc(it.text)}</span>${it.id.includes('-d') ? '' : `<button data-action="bucket-del" data-person="${person}" data-id="${esc(it.id)}" class="icon-btn icon-btn-sm press muted" aria-label="Șterge">${icon('close', 'i-20')}</button>`}</label>`).join('')}
-      <form class="row compact" data-action="bucket-add" data-person="${person}"><span class="material-symbols-rounded muted">add_task</span><input type="text" id="bucketInput" maxlength="120" placeholder="Adaugă ceva pe lista lui ${esc(meta.name)}…" class="flex-1 min-w-0 bg-transparent text-[14.5px] focus:outline-none"><button class="btn btn-sm btn-tonal press" type="submit">Adaugă</button></form>
+      <form class="row compact" data-action="bucket-add" data-person="${person}">${icon('add_task', 'muted')}<input type="text" id="bucketInput" maxlength="120" placeholder="Adaugă ceva pe lista lui ${esc(meta.name)}…" class="flex-1 min-w-0 bg-transparent text-[14.5px] focus:outline-none"><button class="btn btn-sm btn-tonal press" type="submit">Adaugă</button></form>
     </div>`;
 }
 function coffeeSheetHTML() {
@@ -294,7 +362,7 @@ function setView(v) {
   if (v === 'us') renderUs();
   if (v === 'info') { const url = location.href.split('#')[0].split('?')[0]; $('#shareUrl').value = url; $('#whatsappShareBtn').href = `https://wa.me/?text=${encodeURIComponent(`${SUMMARY_TEXT}\n\n📱 Ghidul live: ${url}`)}`; }
 }
-function applyThemeIcon() { const dark = document.documentElement.classList.contains('dark'); $('#themeIcon').textContent = dark ? 'light_mode' : 'dark_mode'; $('meta[name="theme-color"]')?.setAttribute('content', dark ? '#131311' : '#F8F6F0'); }
+function applyThemeIcon() { const dark = document.documentElement.classList.contains('dark'); $('#themeIcon').innerHTML = icon(dark ? 'light_mode' : 'dark_mode'); $('meta[name="theme-color"]')?.setAttribute('content', dark ? '#131311' : '#F8F6F0'); }
 function toggleTheme() { const h = document.documentElement; const d = h.classList.toggle('dark'); h.classList.toggle('light', !d); try { localStorage.setItem(LS.theme, d ? 'dark' : 'light'); } catch {} applyThemeIcon(); }
 async function share() { const url = location.href.split('#')[0].split('?')[0]; if (navigator.share && location.protocol === 'https:') { try { await navigator.share({ title: 'Trippin · Barcelona', text: 'Ghidul nostru de vacanță în Barcelona & PortAventura (4–9 noiembrie).', url }); return; } catch (e) { if (e && e.name === 'AbortError') return; } } setView('info'); }
 async function copyText(text, ok) { try { await navigator.clipboard.writeText(text); } catch { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch {} ta.remove(); } toast(ok); }
@@ -455,7 +523,7 @@ document.addEventListener('click', (e) => {
     'open-detail': () => openDetail(id), 'delete-loc': () => deleteLocation(id), 'edit-loc': () => { const l = state.custom.find((x) => x.id === id); if (l) openAdd({ tab: 'manual', editing: l }); },
     'toggle-visited': () => toggleVisited(id), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => { state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); },
     'day-route': dayRoute, 'locate': locate, 'open-link': () => window.open(el.dataset.href, '_blank', 'noopener'), 'close-banner': () => $('#radarBanner').classList.add('hidden'), 'close-sheet': () => $('#pinSheet').classList.add('hidden'), 'install': installApp, 'open-install': openInstallSheet,
-    'open-coffee': openCoffee, 'coffee-add': coffeeAdd, 'coffee-undo': coffeeUndo,
+    'open-coffee': openCoffee, 'coffee-add': coffeeAdd, 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
     'coffee-type': () => { coffeeSel.type = el.dataset.type; $$('#coffeeTypes .chip').forEach((c) => c.classList.toggle('selected', c === el)); },
     'coffee-place': () => { coffeeSel.place = el.dataset.place; $$('#coffeePlaces .chip').forEach((c) => c.classList.toggle('selected', c === el)); },
     'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta)), 'bucket-del': () => bucketDel(el.dataset.person, id),
@@ -472,10 +540,10 @@ document.addEventListener('change', async (e) => {
 });
 document.addEventListener('input', (e) => { if (e.target.id === 'sharedNotes') onNotesInput(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModals(); $('#pinSheet').classList.add('hidden'); } });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderDay(); renderNextStop(); if (state.radarOn) startRadar(); } });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderDay(); renderNextStop(); loadWeather(); if (state.radarOn) startRadar(); } });
 
 // ---------- Start ----------
-applyThemeIcon(); loadLocal(); renderNotes();
+hydrateIcons(); applyThemeIcon(); loadLocal(); renderNotes(); renderWeather(); loadWeather();
 switchDay(todayKey() || 'thu');
 const hasShare = new URL(location.href).searchParams.has('text') || new URL(location.href).searchParams.has('url');
 setView(hasShare ? 'plan' : lsGet(LS.view, 'plan'));

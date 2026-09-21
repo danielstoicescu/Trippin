@@ -43,19 +43,27 @@ body { background: var(--surface); color: var(--on-surface); padding-bottom: cal
 .muted { color: var(--on-surface-muted); } .variant { color: var(--on-surface-variant); }
 .tabular { font-variant-numeric: tabular-nums; }
 
-/* Icons: box stabil chiar dacă fontul întârzie */
-.material-symbols-rounded { font-variation-settings: 'FILL' 0; font-size: 24px; width: 1em; height: 1em; line-height: 1; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
-.ms-fill { font-variation-settings: 'FILL' 1; }
+/* Iconițe: Material Symbols Rounded (400) ca SVG inline; .ms-fill sau nav selectat → varianta plină */
+.ic { width: 1em; height: 1em; font-size: 24px; fill: currentColor; flex-shrink: 0; display: inline-block; vertical-align: -0.18em; }
+.ic .o { display: var(--ic-o, block); } .ic .f { display: var(--ic-f, none); } .ic .o.f { display: block; }
+.ms-fill, .nav-btn.selected, .chip.selected { --ic-o: none; --ic-f: block; }
 .i-16 { font-size: 16px; } .i-18 { font-size: 18px; } .i-20 { font-size: 20px; } .i-28 { font-size: 28px; } .i-32 { font-size: 32px; } .i-40 { font-size: 40px; } .i-48 { font-size: 48px; }
 
-/* Motive Barcelona */
-.xamfra { clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px); }
-.xamfra-sm { clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px); }
-.panot { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%231B1B19' stroke-opacity='.12' stroke-width='1.2'%3E%3Ccircle cx='20' cy='20' r='3'/%3E%3Cpath d='M20 4c4 5 4 9 0 13-4-4-4-8 0-13zM36 20c-5 4-9 4-13 0 4-4 8-4 13 0zM20 36c-4-5-4-9 0-13 4 4 4 8 0 13zM4 20c5-4 9-4 13 0-4 4-8 4-13 0z'/%3E%3C/g%3E%3C/svg%3E"); background-size: 40px 40px; }
-.dark .panot { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23E5E3DC' stroke-opacity='.10' stroke-width='1.2'%3E%3Ccircle cx='20' cy='20' r='3'/%3E%3Cpath d='M20 4c4 5 4 9 0 13-4-4-4-8 0-13zM36 20c-5 4-9 4-13 0 4-4 8-4 13 0zM20 36c-4-5-4-9 0-13 4 4 4 8 0 13zM4 20c5-4 9-4 13 0-4 4-8 4-13 0z'/%3E%3C/g%3E%3C/svg%3E"); }
+/* Motive Barcelona: xamfrà (colțul tăiat al Eixample-ului) ca familie de forme. corner-shape (Chrome 139+, Android 2026); fallback: colțuri rotunjite. */
+.xam, .card, .card-low, .card-mid, .card-high, .card-primary, .card-secondary, .card-tertiary, .card-inverse, .thumb, .hero, .carousel-card, .tl .card-item, .fab, .sheet, .group > .row, .btn-group > .seg, .avatar.selected, .pin { corner-shape: bevel; }
+.xam { border-radius: 18px; }
+.xam-sm { corner-shape: bevel; border-radius: 9px; }
+.sync-dot { width: 9px; height: 9px; border-radius: 999px; background: var(--outline-variant); flex-shrink: 0; }
+.sync-dot[data-mode="online"] { background: var(--success); box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 22%, transparent); }
+.sync-dot[data-mode="connecting"] { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+.panot { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%231B1B19' stroke-opacity='.07' stroke-width='1.2'%3E%3Ccircle cx='20' cy='20' r='3'/%3E%3Cpath d='M20 4c4 5 4 9 0 13-4-4-4-8 0-13zM36 20c-5 4-9 4-13 0 4-4 8-4 13 0zM20 36c-4-5-4-9 0-13 4 4 4 8 0 13zM4 20c5-4 9-4 13 0-4 4-8 4-13 0z'/%3E%3C/g%3E%3C/svg%3E"); background-size: 40px 40px; }
+.panot { background-size: 32px 32px; }
+.dark .panot { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23E5E3DC' stroke-opacity='.06' stroke-width='1.2'%3E%3Ccircle cx='20' cy='20' r='3'/%3E%3Cpath d='M20 4c4 5 4 9 0 13-4-4-4-8 0-13zM36 20c-5 4-9 4-13 0 4-4 8-4 13 0zM20 36c-4-5-4-9 0-13 4 4 4 8 0 13zM4 20c5-4 9-4 13 0-4 4-8 4-13 0z'/%3E%3C/g%3E%3C/svg%3E"); }
 
 /* ===== Suprafețe & forme ===== */
 .card { background: var(--surface-lowest); border-radius: var(--xl); }
+.hero { border-radius: var(--xl); }
 .card-low { background: var(--surface-low); border-radius: var(--xl); }
 .card-mid { background: var(--surface-mid); border-radius: var(--xl); }
 .card-high { background: var(--surface-high); border-radius: var(--xl); }
@@ -115,15 +123,15 @@ body { background: var(--surface); color: var(--on-surface); padding-bottom: cal
 
 /* Avatar / persoane (shape morph cerc → pătrat rotunjit) */
 .avatar { width: 56px; height: 56px; border-radius: 999px; display: grid; place-items: center; font-family: Archivo, system-ui, sans-serif; font-weight: 900; font-size: 22px; color: #fff; transition: border-radius .45s var(--spring), transform .35s var(--spring); }
-.avatar.selected { border-radius: 18px; transform: scale(1.08); }
-.p-mara { background: linear-gradient(135deg, #E4544A, #B4261A); } .p-anne { background: linear-gradient(135deg, #3E6BDB, #153A93); } .p-daniel { background: linear-gradient(135deg, #E8B52E, #9A6F0A); }
+.avatar.selected { border-radius: 16px; transform: scale(1.08); }
+.p-mara { background: #D7301F; } .p-anne { background: #1B49B8; } .p-daniel { background: #D9A21B; }
 
 /* Navigare (M3E short navigation bar) */
 .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 900; background: var(--surface-mid); padding-bottom: env(safe-area-inset-bottom); }
 .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; font-size: 12px; font-weight: 600; color: var(--on-surface-variant); }
 .nav-btn .pill { width: 64px; height: 32px; border-radius: 999px; display: grid; place-items: center; transition: background-color .25s var(--ease), transform .35s var(--spring); }
 .nav-btn.selected { color: var(--on-surface); } .nav-btn.selected .pill { background: var(--secondary-container); color: var(--on-secondary-container); }
-.nav-btn.selected .material-symbols-rounded { font-variation-settings: 'FILL' 1; }
+
 .fab { position: fixed; right: 16px; bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 900; height: 56px; padding: 0 20px 0 16px; border-radius: var(--l); background: var(--secondary); color: var(--on-secondary); display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; box-shadow: var(--shadow-3); }
 
 /* Toolbar plutitor (M3E) */
@@ -160,14 +168,16 @@ body { background: var(--surface); color: var(--on-surface); padding-bottom: cal
 .tl .card-item.done { opacity: .62; } .tl .card-item.skipped { opacity: .5; background: var(--surface-low); }
 .thumb { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; color: #fff; flex-shrink: 0; overflow: hidden; position: relative; }
 .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.cat-mara { background: linear-gradient(135deg, #E4544A, #B4261A); } .cat-coffee { background: linear-gradient(135deg, #E8B52E, #9A6F0A); } .cat-food { background: linear-gradient(135deg, #2E9A76, #175E47); } .cat-art { background: linear-gradient(135deg, #3E6BDB, #153A93); } .cat-none { background: linear-gradient(135deg, #7A7A72, #4B4B46); }
+.cat-mara { background: #D7301F; } .cat-coffee { background: #D9A21B; } .cat-food { background: #1F7A5C; } .cat-art { background: #1B49B8; } .cat-none { background: #5B5B55; }
+.thumb .ic { position: relative; z-index: 0; } .thumb img { z-index: 1; }
 
 /* Carusel */
 .hscroll { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 16px 6px; margin: 0 -16px; -ms-overflow-style: none; scrollbar-width: none; }
 .hscroll::-webkit-scrollbar { display: none; } .hscroll > * { scroll-snap-align: start; flex-shrink: 0; }
 .carousel-card { width: 240px; height: 200px; border-radius: var(--xl); position: relative; overflow: hidden; color: #fff; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; text-align: left; }
-.carousel-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.65), rgba(0,0,0,.05) 60%); }
-.carousel-card > * { position: relative; }
+.carousel-card .cc-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.carousel-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,.08) 60%); z-index: 1; }
+.carousel-card > * { position: relative; z-index: 2; } .carousel-card > .cc-img { z-index: 0; }
 
 /* Progres */
 .ring { --p: 0; width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(var(--ring-color, var(--primary)) calc(var(--p) * 1%), var(--surface-high) 0); display: grid; place-items: center; }

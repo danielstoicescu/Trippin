@@ -4,19 +4,20 @@
   "private": true,
   "description": "Barcelona Aventura – ghid interactiv de vacanță (Mara, Anne & Daniel), găzduit pe Firebase Hosting cu Firestore.",
   "scripts": {
-    "build": "node scripts/build.mjs",
+    "build": "node scripts/icons.mjs && node scripts/build.mjs",
     "watch": "tailwindcss -i ./src/styles.css -o ./public/styles.css --watch",
     "serve": "npx --yes serve public -l 5173",
-    "deploy": "npm run build && firebase deploy --only hosting,firestore:rules"
+    "deploy": "npm run build && firebase deploy --only hosting,firestore:rules",
+    "icons": "node scripts/icons.mjs"
   },
   "devDependencies": {
     "@fontsource-variable/archivo": "^5.3.0",
     "@fontsource/instrument-sans": "^5.3.0",
     "@fortawesome/fontawesome-free": "^6.7.2",
-    "@material-symbols/font-500": "^0.47.4",
     "leaflet": "^1.9.4",
     "playwright-core": "^1.63.0",
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^3.4.19",
+    "@material-symbols/svg-400": "^0.47.4"
   },
   "type": "module"
 }
