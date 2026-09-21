@@ -25,7 +25,7 @@ Fără Firebase, aplicația merge oricum: totul se salvează local, pe telefonul
 
 ### 2. Dă-i lui GitHub voie să publice
 1. **Project settings → Service accounts → Generate new private key** → se descarcă un fișier `.json`.
-2. În GitHub, repo-ul `bcn-aventura` → **Settings → Secrets and variables → Actions → New repository secret**:
+2. În GitHub, repo-ul `Trippin` → **Settings → Secrets and variables → Actions → New repository secret**:
    - `FIREBASE_SERVICE_ACCOUNT` = **tot conținutul** fișierului `.json` (copy/paste).
    - `FIREBASE_PROJECT_ID` = ID-ul proiectului (din Project settings, ex. `bcn-aventura` sau `bcn-aventura-1a2b3`).
 
