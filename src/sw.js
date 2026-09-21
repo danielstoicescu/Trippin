@@ -2,7 +2,7 @@
 const VERSION = '__BUILD__';
 const CACHE = `bcn-aventura-${VERSION}`;
 const ASSETS = [
-  '/', '/index.html', '/app.js', '/data.js', '/icons.js', '/styles.css', '/firebase-config.js', '/manifest.webmanifest',
+  '/', '/index.html', '/app.js', '/data.js', '/icons.js', '/version.js', '/styles.css', '/firebase-config.js', '/manifest.webmanifest',
   '/icon.svg', '/icon-192.png', '/icon-512.png',
   '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/vendor/fonts/fonts.css', '/vendor/fonts/archivo-wdth.woff2', '/vendor/fonts/instrument-sans-latin-ext-400-normal.woff2', '/vendor/fonts/instrument-sans-latin-ext-600-normal.woff2', '/vendor/fonts/instrument-sans-latin-ext-700-normal.woff2',
 ];

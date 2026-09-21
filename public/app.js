@@ -463,7 +463,7 @@ async function handleAddSubmit(e) {
 }
 function useMyPosition() { const b = $('#useMyPosBtn'), lbl = b.querySelector('span:last-child'), done = (pos) => { formPos = pos; lbl.textContent = 'Poziție salvată ✓'; $('#posInfo').textContent = ''; }; if (state.pos) return done(state.pos); if (!navigator.geolocation) return toast('Telefonul nu oferă localizare.', 'my_location'); lbl.textContent = 'Caut poziția…'; navigator.geolocation.getCurrentPosition((p) => done({ lat: p.coords.latitude, lng: p.coords.longitude }), () => { toast('Nu am putut lua poziția.', 'my_location'); lbl.textContent = 'Sunt aici acum'; }, { enableHighAccuracy: true, timeout: 10000 }); }
 function addAlternative(i) { const a = ALTERNATIVES[i]; if (!a) return; openAdd({ prefill: { locTitle: a.title, locCat: a.cat, locDay: state.day, locHours: a.hours || '', locDesc: [a.note, a.price ? `Preț: ${a.price}` : '', a.address ? `Adresă: ${a.address}` : ''].filter(Boolean).join('\n'), pos: typeof a.lat === 'number' ? { lat: a.lat, lng: a.lng } : null } }); $('#locTime').focus(); }
-function handleShareTarget() { const u = new URL(location.href); const shared = [u.searchParams.get('title'), u.searchParams.get('text'), u.searchParams.get('url')].filter(Boolean).join('\n'); if (!shared) return; history.replaceState(null, '', u.pathname); openAdd({ tab: 'link', shared }); }
+function handleShareTarget() { const u = new URL(location.href); if (u.searchParams.has('r')) { u.searchParams.delete('r'); history.replaceState(null, '', u.pathname + (u.search || '')); } const shared = [u.searchParams.get('title'), u.searchParams.get('text'), u.searchParams.get('url')].filter(Boolean).join('\n'); if (!shared) return; history.replaceState(null, '', u.pathname); openAdd({ tab: 'link', shared }); }
 
 // ---------- Radar ----------
 const ALERT_COOLDOWN = 3 * 3600 * 1000;
@@ -504,7 +504,15 @@ function setupPWA() {
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); state.installPrompt = e; $('#installBtn').classList.remove('hidden'); });
   window.addEventListener('appinstalled', () => { $('#installBtn').classList.add('hidden'); closeModals(); toast('Instalată! O găsești pe ecranul principal și în meniul Share.'); });
   const host = location.hostname; if (!('serviceWorker' in navigator) || !(host.endsWith('.web.app') || host.endsWith('.firebaseapp.com') || host === 'localhost' || host === '127.0.0.1')) return;
-  navigator.serviceWorker.register('/sw.js').then((reg) => reg.addEventListener('updatefound', () => { const nw = reg.installing; nw?.addEventListener('statechange', () => { if (nw.state === 'installed' && navigator.serviceWorker.controller) toast('Versiune nouă descărcată. Se aplică la următoarea deschidere.', 'sync'); }); })).catch((e) => console.warn('SW:', e));
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (refreshing) return; refreshing = true; toast('Versiune nouă. Se reîncarcă…', 'sync'); setTimeout(() => location.reload(), 700); });
+  navigator.serviceWorker.register('/sw.js').then((reg) => { reg.update().catch(() => {}); setInterval(() => reg.update().catch(() => {}), 30 * 60000); }).catch((e) => console.warn('SW:', e));
+}
+async function hardRefresh() {
+  toast('Actualizez aplicația…', 'sync', 6000);
+  try { const regs = navigator.serviceWorker ? await navigator.serviceWorker.getRegistrations() : []; for (const r of regs) await r.unregister(); const keys = await caches.keys(); await Promise.all(keys.map((k) => caches.delete(k))); } catch (e) { console.warn(e); }
+  lsSet(LS.img, {}); lsSet(LS.weather, null);
+  const u = new URL(location.href); u.searchParams.set('r', Date.now()); location.replace(u.toString());
 }
 async function installApp() { const p = state.installPrompt; if (!p) return openInstallSheet(); p.prompt(); await p.userChoice; state.installPrompt = null; $('#installBtn').classList.add('hidden'); }
 
@@ -522,7 +530,7 @@ document.addEventListener('click', (e) => {
     'copy-link': () => copyText($('#shareUrl').value, 'Linkul a fost copiat.'), 'copy-summary': () => copyText(`${SUMMARY_TEXT}\n\n📱 ${location.href.split('#')[0].split('?')[0]}`, 'Rezumatul a fost copiat.'),
     'open-detail': () => openDetail(id), 'delete-loc': () => deleteLocation(id), 'edit-loc': () => { const l = state.custom.find((x) => x.id === id); if (l) openAdd({ tab: 'manual', editing: l }); },
     'toggle-visited': () => toggleVisited(id), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => { state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); },
-    'day-route': dayRoute, 'locate': locate, 'open-link': () => window.open(el.dataset.href, '_blank', 'noopener'), 'close-banner': () => $('#radarBanner').classList.add('hidden'), 'close-sheet': () => $('#pinSheet').classList.add('hidden'), 'install': installApp, 'open-install': openInstallSheet,
+    'day-route': dayRoute, 'locate': locate, 'open-link': () => window.open(el.dataset.href, '_blank', 'noopener'), 'close-banner': () => $('#radarBanner').classList.add('hidden'), 'close-sheet': () => $('#pinSheet').classList.add('hidden'), 'install': installApp, 'open-install': openInstallSheet, 'refresh': hardRefresh,
     'open-coffee': openCoffee, 'coffee-add': coffeeAdd, 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
     'coffee-type': () => { coffeeSel.type = el.dataset.type; $$('#coffeeTypes .chip').forEach((c) => c.classList.toggle('selected', c === el)); },
     'coffee-place': () => { coffeeSel.place = el.dataset.place; $$('#coffeePlaces .chip').forEach((c) => c.classList.toggle('selected', c === el)); },
@@ -543,7 +551,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeMod
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderDay(); renderNextStop(); loadWeather(); if (state.radarOn) startRadar(); } });
 
 // ---------- Start ----------
-hydrateIcons(); applyThemeIcon(); loadLocal(); renderNotes(); renderWeather(); loadWeather();
+hydrateIcons(); applyThemeIcon(); { const b = $('#buildStamp'); if (b && window.BUILD) b.textContent = `${window.BUILD.slice(6, 8)}.${window.BUILD.slice(4, 6)} ${window.BUILD.slice(8, 10)}:${window.BUILD.slice(10, 12)}`; } loadLocal(); renderNotes(); renderWeather(); loadWeather();
 switchDay(todayKey() || 'thu');
 const hasShare = new URL(location.href).searchParams.has('text') || new URL(location.href).searchParams.has('url');
 setView(hasShare ? 'plan' : lsGet(LS.view, 'plan'));

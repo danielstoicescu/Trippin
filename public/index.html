@@ -137,6 +137,11 @@
         <p>Din Google Maps vin numele și poziția. Din Instagram vine doar linkul: scrii tu numele, linkul rămâne pe card. Notele, review-urile și „ce e popular” pentru locurile noi le adaugă Daniel cu Claude.</p>
       </div>
     </section>
+
+    <footer class="px-4 pt-8 pb-2 flex items-center justify-between gap-3">
+      <div class="text-[11px] muted leading-snug">Trippin · versiunea <span id="buildStamp" class="tabular">…</span><br>Arată ciudat? Apasă Actualizează.</div>
+      <button data-action="refresh" class="btn btn-sm btn-tonal press shrink-0" aria-label="Actualizează aplicația"><span class="material-symbols-rounded i-18">sync</span> Actualizează</button>
+    </footer>
   </div>
 
   <nav class="nav" aria-label="Navigare">
@@ -204,6 +209,7 @@
   <div id="toast" class="snackbar hidden-toast"><span id="toastIcon" class="inline-flex shrink-0" style="color: var(--tertiary)"></span><span id="toastMessage">Mesaj</span></div>
   <input type="file" id="photoInput" accept="image/*" capture="environment" class="hidden">
 
+  <script src="/version.js"></script>
   <script src="/firebase-config.js"></script>
   <script src="/vendor/leaflet/leaflet.js"></script>
   <script type="module" src="/app.js"></script>
