@@ -269,7 +269,47 @@ async function savePhoto(id, file) {
 }
 
 // ---------- Noi: bucketlist & contoare ----------
-function bucketOf(person) { const custom = state.shared.bucket[person] || {}; const items = BUCKET_DEFAULTS[person].map((d, i) => { const def = typeof d === 'string' ? { text: d } : d; const c = custom[`${person}-d${i}`] || {}; return { id: `${person}-d${i}`, text: def.text, loc: c.loc || def.loc || null, done: !!c.done }; }); for (const [id, v] of Object.entries(custom)) if (v && v.text) items.push({ id, text: v.text, loc: v.loc || null, done: !!v.done }); return items; }
+function bucketOf(person) {
+  const custom = state.shared.bucket[person] || {}; const items = [];
+  BUCKET_DEFAULTS[person].forEach((d, i) => { const def = typeof d === 'string' ? { text: d } : d; const id = `${person}-d${i}`; const c = custom[id] || {}; if (c.hidden) return; items.push({ id, text: c.text || def.text, loc: c.loc !== undefined ? c.loc : def.loc || null, done: !!c.done, def: true }); });
+  for (const [id, v] of Object.entries(custom)) if (v && v.text && !id.includes('-d') && !v.hidden) items.push({ id, text: v.text, loc: v.loc || null, done: !!v.done });
+  return items;
+}
+// Editor de task (foaie): text + alegerea locului din program, din recomandări sau un loc nou din link / Google Maps
+let bucketEdit = null, pendingBucketLink = null;
+const fold = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+function pickable() { return [...allLocs(), ...ALTERNATIVES.map((a, i) => altAsLoc(i))]; }
+function pickSub(loc) { return [loc.isAlt ? 'recomandare' : loc.isCustom ? `adăugat de ${loc.addedBy || 'noi'}` : DAY_LABEL[loc.day], loc.time || loc.hours || '', (loc.address || '').split(',')[0]].filter(Boolean).join(' · '); }
+function pickListHTML(q) {
+  const f = fold(q).trim(); let list = pickable();
+  if (f) list = list.filter((l) => fold(l.title + ' ' + (l.short || '') + ' ' + (l.address || '') + ' ' + (l.catLabel || '')).includes(f));
+  else list = [...list.filter((l) => l.day === state.day && !l.isAlt), ...list.filter((l) => l.day !== state.day && !l.isAlt), ...list.filter((l) => l.isAlt)];
+  list = list.slice(0, f ? 12 : 8);
+  if (!list.length) return `<div class="row compact text-[13px] muted">Nimic cu „${esc(q)}”. Încearcă alt cuvânt sau adaugă un loc nou mai jos.</div>`;
+  return list.map((l) => `<button type="button" data-action="bucket-pick" data-loc="${esc(l.id)}" class="row compact press ${bucketEdit?.loc === l.id ? 'selected' : ''}">${thumbHTML(l, 'w-11 h-11')}<div class="min-w-0 flex-1 text-left"><div class="t-title text-[14px] truncate">${esc(l.title)}</div><div class="text-[11.5px] muted truncate">${esc(pickSub(l))}</div></div>${bucketEdit?.loc === l.id ? icon('check_circle', 'ms-fill', 'color: var(--primary)') : icon('add', 'muted i-20')}</button>`).join('');
+}
+function bucketSheetHTML() {
+  const e = bucketEdit, meta = PEOPLE_META[e.person], loc = e.loc ? findLoc(e.loc) : null;
+  return `<div class="sheet-handle"></div>
+    <div class="flex items-start justify-between gap-2"><div><div class="eyebrow muted">Bucketlist · ${esc(meta.name)}</div><h3 class="t-headline text-[24px]">${e.id ? 'Editează task-ul' : 'Task nou'}</h3></div><button data-action="close-modal" class="icon-btn icon-btn-sm press" aria-label="Închide">${icon('close')}</button></div>
+    <div class="field mt-3"><label for="bucketText">Ce vrem să facem</label><input type="text" id="bucketText" maxlength="120" value="${esc(e.text)}" placeholder="Ex: Gelato cu fistic la Gocce di Latte" autocomplete="off"></div>
+    <div class="eyebrow muted mt-4 mb-2">Locul</div>
+    ${loc ? `<div class="card-primary p-3 flex items-center gap-3 mb-2">${thumbHTML(loc, 'w-12 h-12')}<div class="min-w-0 flex-1"><div class="t-title text-[14px] truncate">${esc(loc.title)}</div><div class="text-[11.5px] opacity-80 truncate">${esc(pickSub(loc))}</div></div><button type="button" data-action="bucket-pick" data-loc="" class="icon-btn icon-btn-sm press" style="color: inherit" aria-label="Scoate locul" title="Fără loc">${icon('close', 'i-20')}</button></div>` : `<p class="text-[12.5px] muted mb-2 px-1">Alege un loc din program ca task-ul să aibă detalii, ore și traseu. Poți sări peste.</p>`}
+    <div class="field"><input type="search" id="bucketSearch" placeholder="Caută: Sephora, Quimet, MNAC, gelato…" autocomplete="off" aria-label="Caută un loc"></div>
+    <div id="bucketPickList" class="group mt-2">${pickListHTML('')}</div>
+    <button type="button" data-action="bucket-newloc" class="btn btn-m btn-tonal-2 press w-full mt-3">${icon('link', 'i-20')} Loc nou din Reel, link sau Google Maps</button>
+    <div class="toolbar mt-4"><button type="button" data-action="bucket-save" class="btn btn-filled press flex-1">${icon('check')} ${e.id ? 'Salvează' : 'Adaugă pe listă'}</button>${e.id ? `<button type="button" data-action="bucket-delete" class="icon-btn press" style="color: var(--secondary)" aria-label="Șterge task-ul" title="Șterge">${icon('delete')}</button>` : ''}</div>`;
+}
+function openBucketEditor(person, item = null) { bucketEdit = item ? { ...item, person } : { person, id: null, text: '', loc: null, done: false }; $('#coffeeBody').innerHTML = bucketSheetHTML(); $('#coffeeSheet').classList.remove('hidden'); $('#coffeeBody').scrollTop = 0; if (!item) setTimeout(() => $('#bucketText')?.focus(), 350); }
+function bucketRefreshSheet() { const q = $('#bucketSearch')?.value || ''; $('#coffeeBody').innerHTML = bucketSheetHTML(); if (q) { $('#bucketSearch').value = q; $('#bucketPickList').innerHTML = pickListHTML(q); } }
+function bucketPick(locId) { bucketEdit.text = $('#bucketText').value; bucketEdit.loc = locId || null; const loc = locId ? findLoc(locId) : null; if (loc && !bucketEdit.text.trim()) bucketEdit.text = loc.title; bucketRefreshSheet(); if (locId) toast(`Legat de ${loc?.title || 'loc'}.`, 'place', 1800); }
+async function bucketSave() {
+  const text = ($('#bucketText')?.value || bucketEdit.text || '').trim(); if (!text) { toast('Scrie ce vreți să faceți.', 'edit'); $('#bucketText')?.focus(); return; }
+  const id = bucketEdit.id || 'c' + Date.now(); await bucketSet(bucketEdit.person, id, { text, loc: bucketEdit.loc || null, done: !!bucketEdit.done, by: me() });
+  closeModals(); toast(bucketEdit.id ? 'Task salvat.' : 'Adăugat pe listă.', 'add_task'); bucketEdit = null;
+}
+async function bucketDelete() { const { person, id, def } = bucketEdit; if (def) await bucketSet(person, id, { hidden: true }); else await bucketDel(person, id); closeModals(); bucketEdit = null; toast('Șters de pe listă.', 'delete'); }
+function bucketNewLoc() { pendingBucketLink = { person: bucketEdit.person, id: bucketEdit.id, text: ($('#bucketText')?.value || '').trim(), done: !!bucketEdit.done }; openAdd({ tab: 'link' }); toast('După ce salvezi locul, îl leg automat de task.', 'link', 4000); }
 function bucketRowHTML(it, person) {
   const color = person === 'mara' ? 'secondary' : person === 'anne' ? 'primary' : 'tertiary';
   const loc = it.loc ? findLoc(it.loc) : null; const visited = loc && !!state.shared.visited[loc.id];
@@ -283,10 +323,10 @@ function bucketRowHTML(it, person) {
       ${loc ? `<div class="text-[11.5px] muted truncate mt-0.5">${esc(loc.title)} · ${esc(sub)}${visited ? ' · <span style="color: var(--success)">am fost</span>' : ''}</div>` : ''}
     </button>
     ${loc ? `<a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="icon-btn icon-btn-sm press shrink-0" style="color: var(--primary)" aria-label="Navighează spre ${esc(loc.title)} (Google Maps)" title="Navighează (Google Maps)">${icon('directions_walk', 'i-22')}</a>` : ''}
-    ${it.id.includes('-d') ? '' : `<button data-action="bucket-del" data-person="${person}" data-id="${esc(it.id)}" class="icon-btn icon-btn-sm press muted shrink-0" aria-label="Șterge">${icon('close', 'i-20')}</button>`}
+    <button data-action="bucket-edit" data-person="${person}" data-id="${esc(it.id)}" class="icon-btn icon-btn-sm press muted shrink-0" aria-label="Editează task-ul" title="Editează">${icon('edit', 'i-20')}</button>
   </div>`;
 }
-function locOptionsHTML() { const groups = DAYS.map((d) => `<optgroup label="${DAY_LABEL[d]}">${dayItems(d, true).map((l) => `<option value="${esc(l.id)}">${esc(l.title)}</option>`).join('')}</optgroup>`).join(''); return `<option value="">Fără loc anume</option>${groups}<optgroup label="Recomandări">${ALTERNATIVES.map((a, i) => `<option value="alt-${i}">${esc(a.title)}</option>`).join('')}</optgroup>`; }
+function locOptionsHTML_unused() { const groups = DAYS.map((d) => `<optgroup label="${DAY_LABEL[d]}">${dayItems(d, true).map((l) => `<option value="${esc(l.id)}">${esc(l.title)}</option>`).join('')}</optgroup>`).join(''); return `<option value="">Fără loc anume</option>${groups}<optgroup label="Recomandări">${ALTERNATIVES.map((a, i) => `<option value="alt-${i}">${esc(a.title)}</option>`).join('')}</optgroup>`; }
 function counterOf(key) { if (key === 'coffee') return (state.shared.coffeeLog || []).reduce((s, x) => s + (x.shots || 1), 0) || state.shared.coffeeCount || 0; return (state.shared.counters || {})[key] || 0; }
 function cupSVG(pct, cls = '') {
   const h = 78, y = 24 + (1 - pct) * h;
@@ -326,12 +366,9 @@ function renderUs() {
     ${counterCard}
     <div class="group">
       ${items.map((it) => bucketRowHTML(it, person)).join('')}
-      <form class="row" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 16px" data-action="bucket-add" data-person="${person}">
-        <div class="flex items-center gap-3">${icon('add_task', 'muted')}<input type="text" id="bucketInput" maxlength="120" placeholder="Adaugă ceva pe lista lui ${esc(meta.name)}…" class="flex-1 min-w-0 bg-transparent text-[14.5px] focus:outline-none" aria-label="Task nou"><button class="btn btn-sm btn-tonal press" type="submit">Adaugă</button></div>
-        <label class="flex items-center gap-2 text-[12px] muted">${icon('place', 'i-18')}<span class="shrink-0">Leagă de un loc</span><select id="bucketLoc" class="flex-1 min-w-0 text-[13px] field-input" style="padding: 6px 10px; border-radius: 999px">${locOptionsHTML()}</select></label>
-      </form>
+      <button data-action="bucket-new" data-person="${person}" class="row compact press" style="color: var(--primary)">${icon('add_task')}<span class="flex-1 font-semibold text-[14.5px]">Adaugă pe lista lui ${esc(meta.name)}</span>${icon('expand_more', 'i-20')}</button>
     </div>
-    <p class="text-[12px] muted px-2">Atinge un task ca să vezi locul, orele și traseul; ${icon('directions_walk', 'i-16')} te duce direct în Google Maps.</p>`;
+    <p class="text-[12px] muted px-2">Atinge un task ca să vezi locul, orele și traseul; ${icon('directions_walk', 'i-16')} te duce în Google Maps; ${icon('edit', 'i-16')} editează textul, locul sau șterge.</p>`;
 }
 function coffeeSheetHTML() {
   const cnt = counterOf('coffee'), goal = PEOPLE_META.daniel.counter.goal, log = (state.shared.coffeeLog || []).slice(-6).reverse();
@@ -429,8 +466,9 @@ async function connectFirebase() {
 }
 async function saveShared(patch) { Object.assign(state.shared, patch); if (fb && state.online) { const { db, fs } = fb; await fs.setDoc(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), { ...patch, updatedAt: fs.serverTimestamp() }, { merge: true }); } else persistLocal(); }
 async function saveLocation(data, editingId) {
-  if (fb && state.online && !(editingId && String(editingId).startsWith('local-'))) { const { db, fs } = fb; if (editingId) await fs.updateDoc(fs.doc(db, 'trips', TRIP_ID, 'locations', editingId), data); else await fs.addDoc(fs.collection(db, 'trips', TRIP_ID, 'locations'), { ...data, createdAt: fs.serverTimestamp() }); }
-  else { if (editingId) state.custom = state.custom.map((l) => (l.id === editingId ? { ...l, ...data } : l)); else state.custom.push({ ...data, id: 'local-' + Date.now(), isCustom: true, createdAt: new Date().toISOString() }); persistLocal(); renderAll(); }
+  if (fb && state.online && !(editingId && String(editingId).startsWith('local-'))) { const { db, fs } = fb; if (editingId) { await fs.updateDoc(fs.doc(db, 'trips', TRIP_ID, 'locations', editingId), data); return editingId; } const ref = await fs.addDoc(fs.collection(db, 'trips', TRIP_ID, 'locations'), { ...data, createdAt: fs.serverTimestamp() }); return ref.id; }
+  if (editingId) { state.custom = state.custom.map((l) => (l.id === editingId ? { ...l, ...data } : l)); persistLocal(); renderAll(); return editingId; }
+  const id = 'local-' + Date.now(); state.custom.push({ ...data, id, isCustom: true, createdAt: new Date().toISOString() }); persistLocal(); renderAll(); return id;
 }
 async function deleteLocation(id) { if (!confirm('Ștergi acest loc din programul comun?')) return; if (fb && state.online && !String(id).startsWith('local-')) { const { db, fs } = fb; await fs.deleteDoc(fs.doc(db, 'trips', TRIP_ID, 'locations', id)); } else { state.custom = state.custom.filter((l) => l.id !== id); persistLocal(); renderAll(); } closeModals(); toast('Locul a fost șters.', 'delete'); }
 async function toggleVisited(k) { const v = { ...state.shared.visited, [k]: !state.shared.visited[k] }; state.shared.visited = v; renderAll(); refreshDetail(); await saveShared({ visited: v }); }
@@ -479,7 +517,11 @@ async function handleAddSubmit(e) {
   const data = { title, day: $('#locDay').value, cat: $('#locCat').value, time: $('#locTime').value.trim() || 'Flexibil', desc, hours: $('#locHours').value.trim(), mapLink: mapsSearch(title), addedBy: PEOPLE.includes($('#locAddedBy').value) ? $('#locAddedBy').value : 'Daniel', nearPoblenou: $('#locNear').checked, link: $('#locLink').value.trim(), source: $('#locSource').value.trim() };
   lsSet(LS.me, data.addedBy); if (!data.hours) delete data.hours; if (!data.link) { delete data.link; delete data.source; } if (formPos) { data.lat = formPos.lat; data.lng = formPos.lng; }
   const editingId = $('#editingId').value || null; btn.disabled = true; btn.textContent = 'Se salvează…';
-  try { await saveLocation(data, editingId); switchDay(data.day); closeModals(); resetForm(); toast(editingId ? 'Modificările au fost salvate.' : state.online ? `Salvat și sincronizat de ${data.addedBy}.` : `Salvat pe acest telefon de ${data.addedBy}.`); }
+  try {
+    const newId = await saveLocation(data, editingId); closeModals(); resetForm();
+    if (pendingBucketLink && !editingId) { const pb = pendingBucketLink; pendingBucketLink = null; await bucketSet(pb.person, pb.id || 'c' + Date.now(), { text: pb.text || data.title, loc: newId, done: pb.done, by: me() }); state.person = pb.person; setView('us'); toast(`„${data.title}” e în program și legat de task.`, 'add_task'); }
+    else { switchDay(data.day); toast(editingId ? 'Modificările au fost salvate.' : state.online ? `Salvat și sincronizat de ${data.addedBy}.` : `Salvat pe acest telefon de ${data.addedBy}.`); }
+  }
   catch (err) { console.error(err); toast('Eroare la salvare: ' + (err.message || err), 'info'); } finally { btn.disabled = false; btn.textContent = editingId ? 'Salvează modificările' : 'Salvează în programul comun'; }
 }
 function useMyPosition() { const b = $('#useMyPosBtn'), lbl = b.querySelector('span:last-child'), done = (pos) => { formPos = pos; lbl.textContent = 'Poziție salvată ✓'; $('#posInfo').textContent = ''; }; if (state.pos) return done(state.pos); if (!navigator.geolocation) return toast('Telefonul nu oferă localizare.', 'my_location'); lbl.textContent = 'Caut poziția…'; navigator.geolocation.getCurrentPosition((p) => done({ lat: p.coords.latitude, lng: p.coords.longitude }), () => { toast('Nu am putut lua poziția.', 'my_location'); lbl.textContent = 'Sunt aici acum'; }, { enableHighAccuracy: true, timeout: 10000 }); }
@@ -532,6 +574,7 @@ function setupPWA() {
 async function hardRefresh() {
   toast('Actualizez aplicația…', 'sync', 6000);
   try { const regs = navigator.serviceWorker ? await navigator.serviceWorker.getRegistrations() : []; for (const r of regs) await r.unregister(); const keys = await caches.keys(); await Promise.all(keys.map((k) => caches.delete(k))); } catch (e) { console.warn(e); }
+  try { await Promise.all(['/index.html', '/app.js', '/data.js', '/icons.js', '/version.js', '/styles.css', '/sw.js', '/manifest.webmanifest'].map((u) => fetch(u, { cache: 'reload' }).catch(() => null))); } catch {}
   lsSet(LS.img, {}); lsSet(LS.weather, null);
   const u = new URL(location.href); u.searchParams.set('r', Date.now()); location.replace(u.toString());
 }
@@ -555,19 +598,19 @@ document.addEventListener('click', (e) => {
     'open-coffee': openCoffee, 'coffee-add': coffeeAdd, 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
     'coffee-type': () => { coffeeSel.type = el.dataset.type; $$('#coffeeTypes .chip').forEach((c) => c.classList.toggle('selected', c === el)); },
     'coffee-place': () => { coffeeSel.place = el.dataset.place; $$('#coffeePlaces .chip').forEach((c) => c.classList.toggle('selected', c === el)); },
-    'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta)), 'bucket-del': () => bucketDel(el.dataset.person, id), 'bucket-noop': () => {},
+    'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta)), 'bucket-del': () => bucketDel(el.dataset.person, id), 'bucket-noop': () => {}, 'bucket-new': () => openBucketEditor(el.dataset.person), 'bucket-edit': () => { const it = bucketOf(el.dataset.person).find((x) => x.id === id); if (it) openBucketEditor(el.dataset.person, it); }, 'bucket-pick': () => bucketPick(el.dataset.loc), 'bucket-save': bucketSave, 'bucket-delete': bucketDelete, 'bucket-newloc': bucketNewLoc,
   };
   actions[a]?.();
 });
 document.addEventListener('submit', (e) => {
   if (e.target.id === 'addLocationForm') return handleAddSubmit(e);
-  if (e.target.dataset.action === 'bucket-add') { e.preventDefault(); const inp = e.target.querySelector('input'); const text = inp.value.trim(); if (!text) return; const loc = e.target.querySelector('#bucketLoc')?.value || ''; bucketSet(e.target.dataset.person, 'c' + Date.now(), { text, done: false, by: me(), ...(loc ? { loc } : {}) }); inp.value = ''; toast(loc ? 'Adăugat pe listă, legat de loc.' : 'Adăugat pe listă.', 'add_task'); }
+  if (e.target.closest('#coffeeBody') && bucketEdit) { e.preventDefault(); bucketSave(); }
 });
 document.addEventListener('change', async (e) => {
   if (e.target.matches('.bucket-check')) bucketSet(e.target.dataset.person, e.target.dataset.id, { done: e.target.checked }).then(() => { if (e.target.checked) toast('Bifat!', 'celebration'); });
   if (e.target.id === 'photoInput' && e.target.files?.[0] && state.photoTarget) { try { await savePhoto(state.photoTarget, e.target.files[0]); } catch (err) { console.error(err); toast('Nu am putut salva poza: ' + (err.message || err), 'image'); } }
 });
-document.addEventListener('input', (e) => { if (e.target.id === 'sharedNotes') onNotesInput(); });
+document.addEventListener('input', (e) => { if (e.target.id === 'sharedNotes') onNotesInput(); if (e.target.id === 'bucketSearch') $('#bucketPickList').innerHTML = pickListHTML(e.target.value); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModals(); $('#pinSheet').classList.add('hidden'); } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderDay(); renderNextStop(); loadWeather(); if (state.radarOn) startRadar(); } });
 

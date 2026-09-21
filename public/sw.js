@@ -1,5 +1,5 @@
 // Service worker: aplicația se deschide și fără semnal (roaming / metrou).
-const VERSION = '202609212112';
+const VERSION = '202609212117';
 const CACHE = `bcn-aventura-${VERSION}`;
 const ASSETS = [
   '/', '/index.html', '/app.js', '/data.js', '/icons.js', '/version.js', '/styles.css', '/firebase-config.js', '/manifest.webmanifest',
@@ -9,7 +9,8 @@ const ASSETS = [
 const CACHE_CROSS = [/^https:\/\/www\.gstatic\.com\/firebasejs\//, /^https:\/\/(commons|upload)\.wikimedia\.org\/(wiki\/Special:FilePath|wikipedia\/commons)\//, /^https:\/\/[a-d]\.basemaps\.cartocdn\.com\//];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: 'reload' = ocolește cache-ul HTTP al browserului, ca versiunea nouă să nu precacheze fișiere vechi
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
