@@ -35,7 +35,7 @@ const placeQuery = (loc) => loc.placeQuery || (loc.address ? `${loc.title}, ${lo
 const allLocs = () => [...ITINERARY, ...state.custom];
 function altAsLoc(i) { const a = ALTERNATIVES[i]; return a ? { ...a, id: 'alt-' + i, isAlt: true, altIndex: i, radius: 150 } : null; }
 const findLoc = (id) => allLocs().find((l) => l.id === id) || (String(id).startsWith('alt-') ? altAsLoc(Number(id.slice(4))) : null);
-function enriched(loc) { const c = loc.isCustom ? CURATED[(loc.title || '').trim().toLowerCase()] : null; return c ? { ...c, ...loc, rating: loc.rating ?? c.rating, review: loc.review ?? c.review, popular: loc.popular ?? c.popular, tips: loc.tips ?? c.tips, hours: loc.hours || c.hours, price: loc.price || c.price } : loc; }
+function enriched(loc) { const c = loc.isCustom ? CURATED[(loc.title || '').trim().toLowerCase()] : null; return c ? { ...c, ...loc, rating: loc.rating ?? c.rating, review: loc.review ?? c.review, popular: loc.popular ?? c.popular, tips: loc.tips ?? c.tips, hours: loc.hours || c.hours, price: loc.price || c.price, address: loc.address || c.address, placeQuery: loc.placeQuery || c.placeQuery, site: loc.site || c.site, img: loc.img || c.img } : loc; }
 function coordsOf(loc) { const pin = state.shared.pins[loc.id]; if (pin && typeof pin.lat === 'number') return { lat: pin.lat, lng: pin.lng, exact: true }; if (typeof loc.lat === 'number' && typeof loc.lng === 'number') return { lat: loc.lat, lng: loc.lng, exact: !loc.approx }; return null; }
 const destOf = (loc) => { const p = coordsOf(loc); if (p && p.exact) return `${p.lat},${p.lng}`; const a = loc.placeQuery || loc.address || loc.title; return /(barcelona|salou|vila-seca|portaventura)/i.test(a) ? a : `${a}, Barcelona`; };
 const mapsNav = (loc, mode = 'walking') => `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destOf(loc))}&travelmode=${mode}`;
@@ -97,14 +97,14 @@ const COMMONS_FILE = (f) => `https://commons.wikimedia.org/wiki/Special:FilePath
 const COMMONS_PAGE = (f) => `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(f.replace(/ /g, '_'))}`;
 const inflight = new Set(); let rerenderTimer;
 function stockOf(loc) {
-  if (loc.isCustom) return null; const c = imgCache[loc.id];
+  if (loc.isCustom && (loc.title || '').length < 5) return null; const c = imgCache[loc.id];
   if (c && c.url) return c; if (c && c.none && Date.now() - c.at < 7 * 86400000) return null;
   if (loc.img?.file && !(c && c.failed)) return { url: COMMONS_FILE(loc.img.file), page: COMMONS_PAGE(loc.img.file), credit: 'Wikimedia Commons' };
   ensureStock(loc); return null;
 }
 async function ensureStock(loc) {
   if (inflight.has(loc.id) || !navigator.onLine) return; inflight.add(loc.id);
-  const q = loc.img?.q || loc.placeQuery || loc.title;
+  const e = loc.isCustom ? enriched(loc) : loc; const q = e.img?.q || e.placeQuery || (loc.isCustom ? `${loc.title} Barcelona` : loc.title);
   try {
     const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(q + ' filetype:bitmap')}&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=900&format=json&origin=*`);
     const j = await r.json(); const pg = Object.values(j.query?.pages || {})[0]; const ii = pg?.imageinfo?.[0]; if (!ii) throw new Error('no image');
@@ -128,7 +128,7 @@ const CAT = { mara: { cls: 'cat-mara', icon: 'auto_awesome', label: 'Mara', badg
 const cat = (c) => CAT[c] || { cls: 'cat-none', icon: 'place', label: 'Loc', badge: 'badge-neutral' };
 const SOURCE = { instagram: 'Reel Instagram', tiktok: 'TikTok', youtube: 'YouTube', gmaps: 'Google Maps', web: 'Link' };
 function dayItems(day, includeSkipped = false) { return allLocs().filter((l) => l.day === day && (includeSkipped || !state.shared.skipped[l.id])).map((l, i) => ({ l, i })).sort((a, b) => startMin(a.l) - startMin(b.l) || a.i - b.i).map((x) => x.l); }
-const photoOf = (id) => state.photos[id]?.data || null;
+const photoOf = (id) => state.photos[id]?.data || state.photos[id]?.url || null;
 function thumbHTML(loc, sizeCls = '') { const c = cat(loc.cat), ph = photoOf(loc.id); return `<div class="thumb ${c.cls} ${sizeCls}">${icon(c.icon, 'ms-fill i-28')}${ph ? `<img src="${ph}" alt="">` : stockImg(loc)}</div>`; }
 const stars = (r) => (r ? `<span class="inline-flex items-center gap-0.5 font-bold" style="color: var(--tertiary)">${icon('star', 'ms-fill i-16')}${Number(r).toFixed(1)}</span>` : '');
 function transitHTML(a, b) {
@@ -151,7 +151,7 @@ function timelineHTML(list) {
         ${thumbHTML(loc)}
         <div class="min-w-0 flex-1">
           ${now || loc.isCustom || loc.verify || skipped ? `<div class="flex flex-wrap gap-1 mb-1">${now ? '<span class="badge badge-inverse">ACUM</span>' : ''}${loc.isCustom ? `<span class="badge badge-secondary">${esc(loc.addedBy || 'noi')}</span>` : ''}${loc.verify ? '<span class="badge badge-tertiary">verifică orele</span>' : ''}${skipped ? '<span class="badge badge-neutral">sărit</span>' : ''}</div>` : ''}
-          <div class="t-title text-[15.5px] ${visited ? 'line-through' : ''}">${esc(loc.title)}</div>
+          <div class="t-title text-[15.5px] ${visited ? 'line-through' : ''}">${esc(loc.title)} ${whoHTML(loc.id)}</div>
           <div class="text-[12.5px] variant mt-0.5 truncate">${esc(loc.short || loc.catLabel || '')}</div>
           ${meta ? `<div class="text-[12px] muted mt-0.5 truncate">${meta}</div>` : ''}
         </div>
@@ -191,7 +191,7 @@ function altCardHTML(a, i) {
   const loc = altAsLoc(i);
   return `<button class="carousel-card press ${c.cls}" data-action="open-detail" data-id="alt-${i}">${stockImg(loc, 'cc-img')}
     <div class="flex flex-wrap gap-1 mb-2">${a.free ? '<span class="badge badge-success">gratis</span>' : ''}${a.verify ? '<span class="badge badge-tertiary">verifică</span>' : ''}${d != null ? `<span class="badge badge-inverse">${fmtDist(d)}</span>` : ''}</div>
-    <div class="t-title text-[16px]">${esc(a.title)}</div>
+    <div class="t-title text-[16px]">${esc(a.title)} ${whoHTML('alt-' + i)}</div>
     <div class="text-[12px] opacity-90 mt-1 line-clamp-2">${esc(a.hours || a.note)}</div>
   </button>`;
 }
@@ -210,7 +210,7 @@ function nextStopHTML() {
   const label = isNow(next) ? 'Acum' : todayKey() === state.day ? 'Următorul pas' : 'Primul pas';
   return `<div class="card-primary p-3 flex items-center gap-3 press" style="background: var(--primary); color: var(--on-primary)" data-action="open-detail" data-id="${esc(next.id)}" role="button">
     ${thumbHTML(next, 'w-16 h-16')}
-    <div class="min-w-0 flex-1"><div class="eyebrow opacity-75">${label} · ${esc(next.time || '')}</div><div class="t-title text-[16px]">${esc(next.title)}</div><div class="text-[12px] opacity-85 truncate">${d != null ? `${fmtDist(d)} · ${walkMin(d)} min pe jos` : esc(next.address || '')}</div></div>
+    <div class="min-w-0 flex-1"><div class="eyebrow opacity-75">${label} · ${esc(next.time || '')}</div><div class="t-title text-[16px]">${esc(next.title)} ${whoHTML(next.id)}</div><div class="text-[12px] opacity-85 truncate">${d != null ? `${fmtDist(d)} · ${walkMin(d)} min pe jos` : esc(next.address || '')}</div></div>
     <a href="${esc(mapsNav(next))}" target="_blank" rel="noopener" class="icon-btn press shrink-0" style="background: var(--surface-lowest); color: var(--primary)" aria-label="Navighează spre următorul pas (Google Maps)" title="Navighează (Google Maps)" onclick="event.stopPropagation()">${icon('directions_walk')}</a>
   </div>`;
 }
@@ -222,9 +222,9 @@ function detailHTML(raw) {
   const visited = !!state.shared.visited[id], skipped = !!state.shared.skipped[id];
   const p = coordsOf(loc), d = state.pos && p ? distanceM(state.pos, p) : null; const ph = photoOf(id);
   const st = ph ? null : stockOf(loc);
-  const hero = ph ? `<div class="hero xam relative h-60 overflow-hidden"><img src="${ph}" class="w-full h-full object-cover" alt=""><div class="absolute bottom-3 left-3 badge badge-inverse">${icon('photo_camera', 'i-16')} ${esc(state.photos[id].by || 'noi')}</div><button data-action="add-photo" data-id="${esc(id)}" class="btn btn-sm btn-surface press absolute bottom-3 right-3">${icon('add_a_photo', 'i-18')} Altă poză</button></div>`
-    : `<div class="hero xam relative h-56 ${c.cls} grid place-items-center text-white/85">${icon(c.icon, 'ms-fill i-48')}${st ? `<img src="${esc(st.url)}" class="absolute inset-0 w-full h-full object-cover" alt="" onerror="__imgFail(this,'${esc(id)}')"><a href="${esc(st.page)}" target="_blank" rel="noopener" class="absolute bottom-3 left-3 badge badge-inverse" style="opacity:.85" onclick="event.stopPropagation()">${icon('image', 'i-16')} ${esc(st.credit)}</a>` : ''}<button data-action="add-photo" data-id="${esc(id)}" class="btn btn-sm btn-surface press absolute bottom-3 right-3">${icon('add_a_photo', 'i-18')} ${st ? 'Poza noastră' : 'Adaugă poză'}</button></div>`;
-  const chips = [`<span class="badge ${c.badge}">${icon(c.icon, 'i-16')} ${esc(loc.catLabel || c.label)}</span>`, loc.time ? `<span class="badge badge-neutral">${icon('schedule', 'i-16')} ${esc(loc.time)}</span>` : '', loc.free ? `<span class="badge badge-success">gratis</span>` : '', loc.verify ? '<span class="badge badge-tertiary">verifică orele</span>' : '', d != null ? `<span class="badge badge-primary">${icon('directions_walk', 'i-16')} ${fmtDist(d)} · ${walkMin(d)} min</span>` : '', loc.isCustom ? `<span class="badge badge-secondary">${esc(loc.addedBy || 'noi')}</span>` : '', loc.isAlt ? '<span class="badge badge-neutral">recomandare</span>' : ''].filter(Boolean).join('');
+  const hero = ph ? `<div class="hero xam relative h-60 overflow-hidden"><img src="${ph}" class="w-full h-full object-cover" alt=""><div class="absolute bottom-4 left-5 badge badge-inverse">${icon('photo_camera', 'i-16')} ${esc(state.photos[id].by || 'noi')}</div><button data-action="add-photo" data-id="${esc(id)}" class="btn btn-sm btn-surface press absolute bottom-4 right-5">${icon('add_a_photo', 'i-18')} Altă poză</button></div>`
+    : `<div class="hero xam relative h-56 ${c.cls} grid place-items-center text-white/85">${icon(c.icon, 'ms-fill i-48')}${st ? `<img src="${esc(st.url)}" class="absolute inset-0 w-full h-full object-cover" alt="" onerror="__imgFail(this,'${esc(id)}')"><a href="${esc(st.page)}" target="_blank" rel="noopener" class="absolute bottom-4 left-5 badge badge-inverse" style="opacity:.85" onclick="event.stopPropagation()">${icon('image', 'i-16')} ${esc(st.credit)}</a>` : ''}<button data-action="add-photo" data-id="${esc(id)}" class="btn btn-sm btn-surface press absolute bottom-4 right-5">${icon('add_a_photo', 'i-18')} ${st ? 'Poza noastră' : 'Adaugă poză'}</button></div>`;
+  const chips = [`<span class="badge ${c.badge}">${icon(c.icon, 'i-16')} ${esc(loc.catLabel || c.label)}</span>`, loc.time ? `<span class="badge badge-neutral">${icon('schedule', 'i-16')} ${esc(loc.time)}</span>` : '', loc.free ? `<span class="badge badge-success">gratis</span>` : '', loc.verify ? '<span class="badge badge-tertiary">verifică orele</span>' : '', d != null ? `<span class="badge badge-primary">${icon('directions_walk', 'i-16')} ${fmtDist(d)} · ${walkMin(d)} min</span>` : '', loc.isCustom ? `<span class="badge badge-secondary">${esc(loc.addedBy || 'noi')}</span>` : '', loc.isAlt ? '<span class="badge badge-neutral">recomandare</span>' : '', whoHas(id).length ? `<span class="badge badge-neutral">${whoHTML(id)} bucketlist</span>` : ''].filter(Boolean).join('');
   const rating = loc.rating ? `<div class="card p-4 flex items-center gap-4"><div class="t-display text-[40px]" style="color: var(--tertiary)">${Number(loc.rating).toFixed(1)}</div><div><div class="text-[18px] leading-none" style="color: var(--tertiary)">${'★'.repeat(Math.round(loc.rating))}<span class="muted">${'★'.repeat(5 - Math.round(loc.rating))}</span></div><div class="text-[12px] muted mt-1">${loc.ratingCount ? fmtCount(loc.ratingCount) + ' recenzii pe Google · ' : ''}sept. 2026</div></div></div>` : '';
   const section = (ic, title, body, cls = 'card') => `<div class="${cls} p-4"><div class="eyebrow muted mb-2 flex items-center gap-1.5">${icon(ic, 'i-18')} ${title}</div>${body}</div>`;
   const review = loc.review ? section('format_quote', 'Un review', `<p class="text-[14px] leading-relaxed italic variant">„${esc(loc.review)}”</p>`) : '';
@@ -246,7 +246,7 @@ function detailHTML(raw) {
       </div>`;
   return `<div class="sheet-handle"></div>
     <div class="flex items-start justify-between gap-2 mb-3"><div class="min-w-0"><div class="flex flex-wrap gap-1 mb-2">${chips}</div><h3 class="t-headline text-[26px]">${esc(loc.title)}</h3>${loc.short ? `<div class="text-[14px] variant mt-1">${esc(loc.short)}</div>` : ''}</div><button data-action="close-modal" class="icon-btn icon-btn-sm press shrink-0" aria-label="Închide">${icon('close')}</button></div>
-    <div class="space-y-3">${hero}${rating}<p class="t-body px-1">${esc(loc.desc || loc.note || '')}</p>${info ? `<div class="group">${info}</div>` : ''}${review}${popular}${tips}<div class="group">${links}</div>
+    <div class="space-y-3">${hero}${personTogglesHTML(loc)}${rating}<p class="t-body px-1">${esc(loc.desc || loc.note || '')}</p>${info ? `<div class="group">${info}</div>` : ''}${review}${popular}${tips}<div class="group">${links}</div>
     <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11.5px] muted px-1 pb-1">${[['directions_walk','Navigare pe jos (Google Maps)'],['check','Am fost'],['add_a_photo','Adaugă poză'],[loc.isCustom ? 'edit' : 'skip_next', loc.isCustom ? 'Editează' : 'Sari peste'],['push_pin','Fixează poziția exactă']].map(([i, t]) => `<div class="flex items-center gap-1.5">${icon(i, 'i-16')}<span>${t}</span></div>`).join('')}</div></div>${toolbar}`;
 }
 function openDetail(id) { const loc = findLoc(id); if (!loc) return; state.detailId = id; $('#detailBody').innerHTML = detailHTML(loc); $('#detailSheet').classList.remove('hidden'); $('#detailBody').scrollTop = 0; }
@@ -260,6 +260,24 @@ function compressImage(file, max = 1100, q = 0.74) {
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Nu am putut citi imaginea.')); }; img.src = url;
   });
 }
+function photoSheetHTML(id) { const loc = findLoc(id), cur = state.photos[id]; return `<div class="sheet-handle"></div>
+    <div class="flex items-start justify-between gap-2"><div><div class="eyebrow muted">${esc(loc?.title || '')}</div><h3 class="t-headline text-[24px]">Poza locului</h3></div><button data-action="close-modal" class="icon-btn icon-btn-sm press" aria-label="Închide">${icon('close')}</button></div>
+    <div class="group mt-4">
+      <button data-action="photo-file" data-id="${esc(id)}" class="row press">${icon('add_a_photo', '', 'color: var(--primary)')}<div class="flex-1 text-left"><div class="font-semibold text-[14.5px]">Din telefon</div><div class="text-[12px] muted">Cameră sau galerie; se comprimă și se vede la toți</div></div>${icon('expand_more', 'muted i-20')}</button>
+      <form class="row" style="flex-direction: column; align-items: stretch; gap: 8px" data-action="photo-url" data-id="${esc(id)}">
+        <div class="flex items-center gap-3">${icon('link', '', 'color: var(--secondary)')}<div class="flex-1"><div class="font-semibold text-[14.5px]">Link de pe net</div><div class="text-[12px] muted">Instagram, site-ul localului, Google: copiază adresa imaginii (apasă lung pe poză → „Copiază adresa imaginii”)</div></div></div>
+        <div class="flex gap-2"><input type="url" id="photoUrl" inputmode="url" placeholder="https://…jpg" value="${esc(cur?.url || '')}" class="flex-1 min-w-0" aria-label="Link poză"><button type="submit" class="btn btn-tonal press shrink-0">Salvează</button></div>
+      </form>
+    </div>
+    ${cur ? `<button data-action="photo-remove" data-id="${esc(id)}" class="btn btn-text press w-full mt-3" style="color: var(--secondary)">${icon('delete', 'i-20')} Scoate poza noastră (rămâne cea din Commons)</button>` : ''}`; }
+function openPhotoSheet(id) { $('#coffeeBody').innerHTML = photoSheetHTML(id); $('#coffeeSheet').classList.remove('hidden'); }
+async function savePhotoUrl(id, url) {
+  url = (url || '').trim(); if (!/^https:\/\/\S+$/i.test(url) || url.length > 600) return toast('Linkul trebuie să înceapă cu https:// și să fie o imagine.', 'link');
+  const doc = { url, by: me(), at: new Date().toISOString() }; state.photos[id] = doc;
+  if (fb && state.online) { const { db, fs } = fb; await fs.setDoc(fs.doc(db, 'trips', TRIP_ID, 'photos', id), { ...doc, at: fs.serverTimestamp() }); } else lsSet(LS.photos, state.photos);
+  $('#coffeeSheet').classList.add('hidden'); renderAll(); refreshDetail(); toast('Poza din link a fost pusă pentru toți.', 'image');
+}
+async function removePhoto(id) { delete state.photos[id]; if (fb && state.online) { const { db, fs } = fb; await fs.deleteDoc(fs.doc(db, 'trips', TRIP_ID, 'photos', id)); } else lsSet(LS.photos, state.photos); $('#coffeeSheet').classList.add('hidden'); renderAll(); refreshDetail(); toast('Poza a fost scoasă.', 'delete'); }
 async function savePhoto(id, file) {
   toast('Comprim poza…', 'hourglass', 8000);
   const data = await compressImage(file); if (data.length > 950000) return toast('Poza e prea mare chiar și comprimată.', 'image');
@@ -268,11 +286,33 @@ async function savePhoto(id, file) {
   bumpCounter('photos', 1, me()); renderAll(); refreshDetail(); toast('Poza a fost salvată pentru toți.');
 }
 
+// ---------- Acasă ----------
+const baseLoc = () => ({ id: 'home', title: TRIP.base.title, address: TRIP.base.address, placeQuery: TRIP.base.placeQuery, lat: TRIP.base.lat, lng: TRIP.base.lng, approx: true, cat: 'none', time: '', hours: 'Oricând' });
+function homeHTML(compact = false) {
+  const b = baseLoc(), p = coordsOf(b), d = state.pos && p ? distanceM(state.pos, p) : null;
+  return `<div class="home-card xam p-3 flex items-center gap-3">
+    <div class="thumb w-14 h-14" style="background: var(--tertiary); color: #fff">${icon('home', 'ms-fill i-28')}</div>
+    <div class="min-w-0 flex-1"><div class="eyebrow opacity-70">Acasă · Poblenou</div><div class="t-title text-[15.5px] truncate">Carrer de Pellaires 35</div><div class="text-[12px] opacity-80 truncate">${d != null ? `${fmtDist(d)} · ${walkMin(d)} min pe jos · ${Math.round(d / 400) + 8} min transport` : '08019 Barcelona · L4 Poblenou'}</div></div>
+    <a href="${esc(mapsNav(b, 'walking'))}" target="_blank" rel="noopener" class="icon-btn press shrink-0" style="background: var(--surface-lowest); color: var(--tertiary)" aria-label="Acasă pe jos (Google Maps)" title="Pe jos">${icon('directions_walk')}</a>
+    <a href="${esc(mapsNav(b, 'transit'))}" target="_blank" rel="noopener" class="icon-btn filled press shrink-0" style="background: var(--tertiary); color: #fff" aria-label="Acasă cu metroul sau taxi (Google Maps)" title="Metrou / taxi">${icon('subway')}</a>
+  </div>`;
+}
+function renderHome() { for (const id of ['homePlan', 'homeExplore', 'homeInfo']) { const el = $('#' + id); if (el) el.innerHTML = homeHTML(); } }
+
+// ---------- Cine are locul pe bucketlist ----------
+const PERSONS = ['mara', 'anne', 'daniel'];
+const isDefaultId = (id) => /^(mara|anne|daniel)-d\d+$/.test(id);
+function bucketEntryFor(person, locId) { return bucketOf(person).find((it) => it.loc === locId) || null; }
+function whoHas(locId) { return PERSONS.filter((p) => bucketEntryFor(p, locId)); }
+function whoHTML(locId, lg = false) { const w = whoHas(locId); return w.length ? `<span class="who ${lg ? 'lg' : ''}" title="Pe bucketlist: ${w.map((p) => PEOPLE_META[p].name).join(', ')}">${w.map((p) => `<i class="p-${p}">${PEOPLE_META[p].name[0]}</i>`).join('')}</span>` : ''; }
+function personTogglesHTML(loc) { return `<div class="card p-3"><div class="eyebrow muted mb-2 flex items-center gap-1.5">${icon('add_task', 'i-18')} Pe bucketlist-ul lui</div><div class="flex flex-wrap gap-2">${PERSONS.map((p) => { const on = !!bucketEntryFor(p, loc.id); return `<button data-action="bucket-toggle" data-person="${p}" data-id="${esc(loc.id)}" class="ptoggle press ${p[0]} ${on ? 'on' : ''}" aria-pressed="${on}"><span class="avatar p-${p}">${PEOPLE_META[p].name[0]}</span>${PEOPLE_META[p].name}${on ? icon('check', 'i-18') : icon('add', 'i-18')}</button>`; }).join('')}</div></div>`; }
+async function bucketToggle(person, loc) { const it = bucketEntryFor(person, loc.id); if (it) { if (isDefaultId(it.id)) await bucketSet(person, it.id, { hidden: true }); else await bucketDel(person, it.id); toast(`Scos de pe lista lui ${PEOPLE_META[person].name}.`, 'delete'); } else { await bucketSet(person, 'l-' + loc.id, { text: loc.title, loc: loc.id, done: false, by: me() }); toast(`„${loc.title}” e pe lista lui ${PEOPLE_META[person].name}.`, 'add_task'); } renderAll(); refreshDetail(); }
+
 // ---------- Noi: bucketlist & contoare ----------
 function bucketOf(person) {
   const custom = state.shared.bucket[person] || {}; const items = [];
   BUCKET_DEFAULTS[person].forEach((d, i) => { const def = typeof d === 'string' ? { text: d } : d; const id = `${person}-d${i}`; const c = custom[id] || {}; if (c.hidden) return; items.push({ id, text: c.text || def.text, loc: c.loc !== undefined ? c.loc : def.loc || null, done: !!c.done, def: true }); });
-  for (const [id, v] of Object.entries(custom)) if (v && v.text && !id.includes('-d') && !v.hidden) items.push({ id, text: v.text, loc: v.loc || null, done: !!v.done });
+  for (const [id, v] of Object.entries(custom)) if (v && v.text && !isDefaultId(id) && !v.hidden) items.push({ id, text: v.text, loc: v.loc || null, done: !!v.done });
   return items;
 }
 // Editor de task (foaie): text + alegerea locului din program, din recomandări sau un loc nou din link / Google Maps
@@ -311,7 +351,7 @@ async function bucketSave() {
 async function bucketDelete() { const { person, id, def } = bucketEdit; if (def) await bucketSet(person, id, { hidden: true }); else await bucketDel(person, id); closeModals(); bucketEdit = null; toast('Șters de pe listă.', 'delete'); }
 function bucketNewLoc() { pendingBucketLink = { person: bucketEdit.person, id: bucketEdit.id, text: ($('#bucketText')?.value || '').trim(), done: !!bucketEdit.done }; openAdd({ tab: 'link' }); toast('După ce salvezi locul, îl leg automat de task.', 'link', 4000); }
 function bucketRowHTML(it, person) {
-  const color = person === 'mara' ? 'secondary' : person === 'anne' ? 'primary' : 'tertiary';
+  const color = 'p-' + person;
   const loc = it.loc ? findLoc(it.loc) : null; const visited = loc && !!state.shared.visited[loc.id];
   const p = loc && coordsOf(loc), d = loc && state.pos && p ? distanceM(state.pos, p) : null;
   const sub = loc ? [DAY_LABEL[loc.day] || 'recomandare', loc.time || loc.hours || '', d != null ? `${fmtDist(d)}` : (loc.address || '').split(',')[0]].filter(Boolean).join(' · ') : '';
@@ -353,14 +393,14 @@ function renderUs() {
         <button data-action="open-coffee" class="icon-btn filled press shrink-0" style="background: var(--tertiary); color: var(--on-tertiary)" aria-label="Adaugă espresso">${icon('add')}</button>
       </div>`
     : `<div class="card p-4 flex items-center gap-4">
-        <div class="ring" style="--p:${cpct}; --ring-color: var(--${person === 'mara' ? 'secondary' : 'primary'})">${icon(meta.counter.icon, 'ms-fill', `color: var(--${person === 'mara' ? 'secondary' : 'primary'})`)}</div>
+        <div class="ring" style="--p:${cpct}; --ring-color: var(--p-${person})">${icon(meta.counter.icon, 'ms-fill', `color: var(--p-${person})`)}</div>
         <div class="min-w-0 flex-1"><div class="eyebrow muted">${esc(meta.counter.label)}</div><div class="t-display text-[36px] tabular">${cnt}<span class="text-[18px] muted"> / ${meta.counter.goal}</span></div></div>
-        <div class="flex gap-1"><button data-action="counter" data-key="${meta.counter.key}" data-delta="-1" class="icon-btn tonal press" aria-label="Scade">${icon('remove')}</button><button data-action="counter" data-key="${meta.counter.key}" data-delta="1" class="icon-btn filled press" style="background: var(--${person === 'mara' ? 'secondary' : 'primary'})" aria-label="Adaugă">${icon('add')}</button></div>
+        <div class="flex gap-1"><button data-action="counter" data-key="${meta.counter.key}" data-delta="-1" class="icon-btn tonal press" aria-label="Scade">${icon('remove')}</button><button data-action="counter" data-key="${meta.counter.key}" data-delta="1" class="icon-btn filled press" style="background: var(--p-${person}); color: var(--p-${person}-on)" aria-label="Adaugă">${icon('add')}</button></div>
       </div>`;
   $('#usContent').innerHTML = `
-    <div class="card-${person === 'mara' ? 'secondary' : person === 'anne' ? 'primary' : 'tertiary'} p-4 flex items-center gap-4">
-      <div class="ring" style="--p:${pct}; --ring-color: var(--${person === 'mara' ? 'secondary' : person === 'anne' ? 'primary' : 'tertiary'})"><span class="t-title text-[14px]">${pct}%</span></div>
-      <div class="min-w-0 flex-1"><div class="eyebrow opacity-70">${esc(meta.tag)}</div><div class="t-headline text-[22px]">Bucketlist</div><div class="text-[13px] opacity-80">${done} din ${items.length} bifate</div></div>
+    <div class="card p-4 flex items-center gap-4" style="background: var(--p-${person}); color: var(--p-${person}-on)">
+      <div class="ring" style="--p:${pct}; --ring-color: var(--p-${person}-on); color: var(--on-surface)"><span class="t-title text-[14px]">${pct}%</span></div>
+      <div class="min-w-0 flex-1"><div class="eyebrow opacity-80">${esc(meta.tag)}</div><div class="t-headline text-[22px]">Bucketlist</div><div class="text-[13px] opacity-85">${done} din ${items.length} bifate · ${items.filter((i) => i.loc).length} legate de locuri</div></div>
       ${done === items.length && items.length ? icon('celebration', 'ms-fill i-32') : ''}
     </div>
     ${counterCard}
@@ -407,7 +447,7 @@ function switchDay(day) {
 }
 function setFilter(c) { state.filter = c; $$('.chip[data-cat]').forEach((b) => b.classList.toggle('selected', b.dataset.cat === c)); renderDay(); }
 function renderNotes() { const ta = $('#sharedNotes'); if (ta && document.activeElement !== ta) ta.value = state.shared.notes || ''; }
-function renderAll() { renderDay(); renderMap(); renderNextStop(); renderNearby(); renderUs(); }
+function renderAll() { renderDay(); renderMap(); renderNextStop(); renderNearby(); renderUs(); renderHome(); }
 function setView(v) {
   if (!['plan', 'explore', 'us', 'info'].includes(v)) v = 'plan';
   state.view = v; lsSet(LS.view, v);
@@ -459,10 +499,15 @@ async function connectFirebase() {
     const [{ initializeApp }, fs] = await Promise.all([import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`), import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`)]);
     const app = initializeApp(cfg); let db; try { db = fs.initializeFirestore(app, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) }); } catch { db = fs.getFirestore(app); }
     fb = { db, fs }; let first = true;
-    fs.onSnapshot(fs.query(fs.collection(db, 'trips', TRIP_ID, 'locations'), fs.orderBy('createdAt', 'asc')), (snap) => { state.custom = snap.docs.map((d) => ({ id: d.id, isCustom: true, ...d.data() })); lsSet(LS.locations, state.custom); renderAll(); refreshDetail(); if (first) { first = false; state.online = true; setSyncStatus('online'); } }, (err) => { console.error(err); state.online = false; setSyncStatus('local', err.message); toast('Nu m-am putut conecta la baza de date. Salvez local.', 'info'); });
+    fs.onSnapshot(fs.query(fs.collection(db, 'trips', TRIP_ID, 'locations'), fs.orderBy('createdAt', 'asc')), (snap) => { state.custom = snap.docs.map((d) => ({ id: d.id, isCustom: true, ...d.data() })); lsSet(LS.locations, state.custom); renderAll(); refreshDetail(); if (first) { first = false; state.online = true; setSyncStatus('online'); syncLocalLocations(); } }, (err) => { console.error(err); state.online = false; setSyncStatus('local', err.message); toast('Nu m-am putut conecta la baza de date. Salvez local.', 'info'); });
     fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
     fs.onSnapshot(fs.collection(db, 'trips', TRIP_ID, 'photos'), (snap) => { state.photos = {}; snap.forEach((d) => { state.photos[d.id] = d.data(); }); renderAll(); refreshDetail(); }, (err) => console.error(err));
   } catch (err) { console.error(err); setSyncStatus('local', err.message); }
+}
+async function syncLocalLocations() {
+  const local = lsGet(LS.locations, []).filter((l) => String(l.id).startsWith('local-')); if (!local.length || !fb) return;
+  for (const l of local) { const { id, isCustom, createdAt, ...data } = l; try { await fb.fs.addDoc(fb.fs.collection(fb.db, 'trips', TRIP_ID, 'locations'), { ...data, createdAt: fb.fs.serverTimestamp() }); } catch (e) { console.warn('sync', e); return; } }
+  toast(`${local.length} loc${local.length > 1 ? 'uri' : ''} salvat${local.length > 1 ? 'e' : ''} pe telefon ${local.length > 1 ? 'au' : 'a'} fost trimis${local.length > 1 ? 'e' : ''} în programul comun.`, 'cloud_done');
 }
 async function saveShared(patch) { Object.assign(state.shared, patch); if (fb && state.online) { const { db, fs } = fb; await fs.setDoc(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), { ...patch, updatedAt: fs.serverTimestamp() }, { merge: true }); } else persistLocal(); }
 async function saveLocation(data, editingId) {
@@ -505,7 +550,7 @@ let formPos = null;
 function resetForm() { $('#addLocationForm').reset(); $('#editingId').value = ''; $('#locLink').value = ''; $('#locSource').value = ''; $('#linkInput').value = ''; $('#linkResult').classList.add('hidden'); $('#posInfo').textContent = ''; formPos = null; $('#useMyPosBtn span:last-child').textContent = 'Sunt aici acum'; $('#addTitle').textContent = 'Adaugă un loc'; $('#saveLocBtn').textContent = 'Salvează în programul comun'; $('#locDay').value = state.day; $('#locAddedBy').value = me(); }
 function openAdd({ tab = 'manual', prefill = {}, shared = null, editing = null } = {}) {
   closeModals(); resetForm(); setAddTab(tab);
-  if (editing) { $('#addTitle').textContent = 'Editează locul'; $('#saveLocBtn').textContent = 'Salvează modificările'; $('#editingId').value = editing.id; $('#locTitle').value = editing.title || ''; $('#locAddedBy').value = editing.addedBy || 'Daniel'; $('#locDay').value = editing.day; $('#locCat').value = editing.cat; $('#locTime').value = editing.time || ''; $('#locHours').value = editing.hours || ''; $('#locDesc').value = editing.desc || ''; $('#locNear').checked = !!editing.nearPoblenou; $('#locLink').value = editing.link || ''; $('#locSource').value = editing.source || ''; if (typeof editing.lat === 'number') { formPos = { lat: editing.lat, lng: editing.lng }; $('#posInfo').textContent = 'poziție salvată ✓'; } }
+  if (editing) { $('#addTitle').textContent = 'Editează locul'; $('#saveLocBtn').textContent = 'Salvează modificările'; $('#editingId').value = editing.id; $('#locTitle').value = editing.title || ''; $('#locAddedBy').value = editing.addedBy || 'Daniel'; $('#locDay').value = editing.day; $('#locCat').value = editing.cat; $('#locTime').value = editing.time || ''; $('#locHours').value = editing.hours || ''; $('#locDesc').value = editing.desc || ''; $('#locPhoto').value = state.photos[editing.id]?.url || ''; $('#locNear').checked = !!editing.nearPoblenou; $('#locLink').value = editing.link || ''; $('#locSource').value = editing.source || ''; if (typeof editing.lat === 'number') { formPos = { lat: editing.lat, lng: editing.lng }; $('#posInfo').textContent = 'poziție salvată ✓'; } }
   for (const [k, v] of Object.entries(prefill)) { const el = $('#' + k); if (el) el.value = v; }
   if (prefill.pos) { formPos = prefill.pos; $('#posInfo').textContent = 'poziție preluată ✓'; }
   $('#addModal').classList.remove('hidden');
@@ -518,9 +563,10 @@ async function handleAddSubmit(e) {
   lsSet(LS.me, data.addedBy); if (!data.hours) delete data.hours; if (!data.link) { delete data.link; delete data.source; } if (formPos) { data.lat = formPos.lat; data.lng = formPos.lng; }
   const editingId = $('#editingId').value || null; btn.disabled = true; btn.textContent = 'Se salvează…';
   try {
-    const newId = await saveLocation(data, editingId); closeModals(); resetForm();
+    const newId = await saveLocation(data, editingId); const photoUrl = ($('#locPhoto')?.value || '').trim(); closeModals(); resetForm();
+    if (photoUrl && /^https:\/\/\S+$/i.test(photoUrl)) { try { await savePhotoUrl(newId, photoUrl); } catch (err) { console.warn(err); } }
     if (pendingBucketLink && !editingId) { const pb = pendingBucketLink; pendingBucketLink = null; await bucketSet(pb.person, pb.id || 'c' + Date.now(), { text: pb.text || data.title, loc: newId, done: pb.done, by: me() }); state.person = pb.person; setView('us'); toast(`„${data.title}” e în program și legat de task.`, 'add_task'); }
-    else { switchDay(data.day); toast(editingId ? 'Modificările au fost salvate.' : state.online ? `Salvat și sincronizat de ${data.addedBy}.` : `Salvat pe acest telefon de ${data.addedBy}.`); }
+    else { setView('plan'); setFilter('all'); switchDay(data.day); toast(editingId ? 'Modificările au fost salvate.' : `${state.online ? 'Salvat și sincronizat' : 'Salvat pe acest telefon'}: ${DAY_LABEL[data.day]}, ${data.time}.`); setTimeout(() => { const el = $('#loc-' + CSS.escape(newId)); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); } }, 350); }
   }
   catch (err) { console.error(err); toast('Eroare la salvare: ' + (err.message || err), 'info'); } finally { btn.disabled = false; btn.textContent = editingId ? 'Salvează modificările' : 'Salvează în programul comun'; }
 }
@@ -535,7 +581,7 @@ function renderNearby() {
   const list = $('#nearbyList'); if (!list) return;
   if (!state.pos) { list.innerHTML = `<div class="row compact text-[13px] muted">${state.radarOn ? 'Caut poziția…' : 'Apasă „Unde sunt” ca să vezi distanțele.'}</div>`; return; }
   const today = todayKey(); const items = radarTargets().map((it) => ({ ...it, d: distanceM(state.pos, it.p) })).sort((a, b) => (a.kind === 'alt') - (b.kind === 'alt') || a.d - b.d).slice(0, 8);
-  list.innerHTML = items.map(({ loc, d, kind, p }) => `<div class="row compact press" data-action="open-detail" data-id="${esc(loc.id)}" role="button">${thumbHTML(loc, 'w-11 h-11 rounded-xl')}<div class="min-w-0 flex-1"><div class="t-title text-[14px] truncate">${esc(loc.title)}</div><div class="text-[11.5px] muted truncate">${fmtDist(d)} · ${walkMin(d)} min pe jos · ${kind === 'alt' ? 'recomandare' : DAY_LABEL[loc.day]}${loc.time ? ' ' + esc(loc.time) : ''}${!p.exact ? ' · aprox.' : ''}${loc.day === today ? ' · <b style="color: var(--primary)">azi</b>' : ''}</div></div><a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="icon-btn icon-btn-sm press shrink-0" style="background: var(--success); color: #fff" aria-label="Navighează" onclick="event.stopPropagation()">${icon('directions_walk', 'i-20')}</a></div>`).join('');
+  list.innerHTML = items.map(({ loc, d, kind, p }) => `<div class="row compact press" data-action="open-detail" data-id="${esc(loc.id)}" role="button">${thumbHTML(loc, 'w-11 h-11 rounded-xl')}<div class="min-w-0 flex-1"><div class="t-title text-[14px] truncate">${esc(loc.title)} ${whoHTML(loc.id)}</div><div class="text-[11.5px] muted truncate">${fmtDist(d)} · ${walkMin(d)} min pe jos · ${kind === 'alt' ? 'recomandare' : DAY_LABEL[loc.day]}${loc.time ? ' ' + esc(loc.time) : ''}${!p.exact ? ' · aprox.' : ''}${loc.day === today ? ' · <b style="color: var(--primary)">azi</b>' : ''}</div></div><a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="icon-btn icon-btn-sm press shrink-0" style="background: var(--success); color: #fff" aria-label="Navighează" onclick="event.stopPropagation()">${icon('directions_walk', 'i-20')}</a></div>`).join('');
 }
 function checkProximity() {
   if (!state.pos || !state.radarOn) return; const now = Date.now();
@@ -546,19 +592,20 @@ function checkProximity() {
     try { navigator.vibrate?.([200, 100, 200]); } catch {} if ('Notification' in window && Notification.permission === 'granted') { try { new Notification('Sunteți aproape: ' + loc.title, { body: `${fmtDist(d)} · ${loc.hours || loc.time || ''}`, icon: '/icon-192.png', tag: 'bcn-' + loc.id }); } catch {} } break;
   }
 }
-function onPosition(p) { state.pos = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }; const s = $('#radarStatus'); if (s) s.innerHTML = `${icon('radar', 'i-16 mt-0.5')}<span>Radar activ · precizie ±${Math.round(p.coords.accuracy)} m · alertă la ~150 m de un loc din program, cât timp aplicația e deschisă.</span>`; renderNearby(); renderNextStop(); updateMeMarker(); checkProximity(); if (!onPosition._t || Date.now() - onPosition._t > 20000) { onPosition._t = Date.now(); renderDay(); } }
+function onPosition(p) { state.pos = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }; renderHome(); const s = $('#radarStatus'); if (s) s.innerHTML = `${icon('radar', 'i-16 mt-0.5')}<span>Radar activ · precizie ±${Math.round(p.coords.accuracy)} m · alertă la ~150 m de un loc din program, cât timp aplicația e deschisă.</span>`; renderNearby(); renderNextStop(); updateMeMarker(); checkProximity(); if (!onPosition._t || Date.now() - onPosition._t > 20000) { onPosition._t = Date.now(); renderDay(); } }
 function onPosError(err) { const s = $('#radarStatus'); if (s) s.innerHTML = `${icon('info', 'i-16 mt-0.5')}<span>${err.code === 1 ? 'Localizarea e blocată. Permite accesul la locație în setările browserului.' : 'Nu găsesc poziția (GPS slab?). Încerc în continuare…'}</span>`; }
 async function startRadar() { if (!navigator.geolocation) return toast('Telefonul nu oferă localizare.', 'my_location'); state.radarOn = true; renderNearby(); if ('Notification' in window && Notification.permission === 'default') { try { await Notification.requestPermission(); } catch {} } if (state.watchId != null) navigator.geolocation.clearWatch(state.watchId); state.watchId = navigator.geolocation.watchPosition(onPosition, onPosError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }); }
 function locate() { startRadar(); if (state.pos && state.map) state.map.setView([state.pos.lat, state.pos.lng], 16); else toast('Caut poziția…', 'my_location'); }
 
 // ---------- Harta ----------
-function ensureMap() { if (state.map || !window.L || !$('#map')) return; const map = L.map('map', { zoomControl: false }).setView([41.39, 2.17], 12); L.control.zoom({ position: 'topright' }).addTo(map); L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap &copy; CARTO' }).addTo(map); state.map = map; setTimeout(() => map.invalidateSize(), 50); }
+function ensureMap() { if (state.map || !window.L || !$('#map')) return; const map = L.map('map', { zoomControl: false }).setView([41.39, 2.17], 12); L.control.zoom({ position: 'topright' }).addTo(map); const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map); let tileFails = 0; tiles.on('tileerror', () => { if (++tileFails === 6) { tiles.setUrl('https://tile.openstreetmap.de/{z}/{x}/{y}.png'); } }); state.map = map; setTimeout(() => map.invalidateSize(), 50); }
+function homeMarker() { if (!state.map || state.homeMarker) return; const b = TRIP.base; state.homeMarker = L.marker([b.lat, b.lng], { icon: L.divIcon({ className: '', html: `<div class="pin" style="background: var(--tertiary); color: #fff">${icon('home', 'i-18 ms-fill')}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] }), zIndexOffset: 500 }).addTo(state.map); state.homeMarker.on('click', () => showPinSheet(baseLoc())); }
 function updateMeMarker() { if (!state.map || !state.pos) return; const ll = [state.pos.lat, state.pos.lng]; if (!state.meMarker) state.meMarker = L.marker(ll, { icon: L.divIcon({ className: '', html: '<div class="me"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }), zIndexOffset: 1000 }).addTo(state.map); else state.meMarker.setLatLng(ll); }
 function renderMap() {
   if (!state.map) return; state.markers.forEach((m) => m.remove()); state.markers = []; const bounds = []; let n = 0;
   for (const loc of dayItems(state.day)) { const p = coordsOf(loc); n++; if (!p) continue; const cls = state.shared.visited[loc.id] ? 'pin done' : loc.isCustom ? 'pin custom' : 'pin'; const m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: `<div class="${cls}">${n}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] }) }).addTo(state.map); m.on('click', () => showPinSheet(loc)); state.markers.push(m); bounds.push([p.lat, p.lng]); }
   for (const z of DAY_ZONES[state.day] || []) ALTERNATIVES.forEach((a, i) => { if (a.zone !== z || typeof a.lat !== 'number') return; const m = L.marker([a.lat, a.lng], { icon: L.divIcon({ className: '', html: '<div class="pin alt">+</div>', iconSize: [22, 22], iconAnchor: [11, 11] }) }).addTo(state.map); m.on('click', () => showPinSheet(altAsLoc(i))); state.markers.push(m); });
-  updateMeMarker(); if (bounds.length) state.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 }); setTimeout(() => state.map.invalidateSize(), 50);
+  homeMarker(); updateMeMarker(); if (bounds.length) state.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 }); setTimeout(() => state.map.invalidateSize(), 50);
 }
 function showPinSheet(loc) { const c = cat(loc.cat), p = coordsOf(loc), d = state.pos && p ? distanceM(state.pos, p) : null; $('#pinSheetIcon').className = `thumb w-12 h-12 rounded-xl ${c.cls}`; $('#pinSheetIcon').innerHTML = photoOf(loc.id) ? `<img src="${photoOf(loc.id)}" alt="">` : icon(c.icon, 'ms-fill'); $('#pinSheetTitle').textContent = loc.title; $('#pinSheetMeta').textContent = [loc.time, loc.hours, d != null ? `${fmtDist(d)} · ${walkMin(d)} min` : loc.address].filter(Boolean).join(' · '); $('#pinSheetNav').href = mapsNav(loc); $('#pinSheetOpen').dataset.id = loc.id; $('#pinSheet').classList.remove('hidden'); }
 
@@ -593,17 +640,18 @@ document.addEventListener('click', (e) => {
     'use-my-position': useMyPosition, 'add-alt': () => addAlternative(Number(el.dataset.index)),
     'copy-link': () => copyText($('#shareUrl').value, 'Linkul a fost copiat.'), 'copy-summary': () => copyText(`${SUMMARY_TEXT}\n\n📱 ${location.href.split('#')[0].split('?')[0]}`, 'Rezumatul a fost copiat.'),
     'open-detail': () => openDetail(id), 'delete-loc': () => deleteLocation(id), 'edit-loc': () => { const l = state.custom.find((x) => x.id === id); if (l) openAdd({ tab: 'manual', editing: l }); },
-    'toggle-visited': () => toggleVisited(id), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => { state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); },
+    'toggle-visited': () => toggleVisited(id), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => openPhotoSheet(id), 'photo-file': () => { $('#coffeeSheet').classList.add('hidden'); state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); }, 'photo-remove': () => removePhoto(id),
     'day-route': dayRoute, 'locate': locate, 'open-link': () => window.open(el.dataset.href, '_blank', 'noopener'), 'close-banner': () => $('#radarBanner').classList.add('hidden'), 'close-sheet': () => $('#pinSheet').classList.add('hidden'), 'install': installApp, 'open-install': openInstallSheet, 'refresh': hardRefresh,
     'open-coffee': openCoffee, 'coffee-add': coffeeAdd, 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
     'coffee-type': () => { coffeeSel.type = el.dataset.type; $$('#coffeeTypes .chip').forEach((c) => c.classList.toggle('selected', c === el)); },
     'coffee-place': () => { coffeeSel.place = el.dataset.place; $$('#coffeePlaces .chip').forEach((c) => c.classList.toggle('selected', c === el)); },
-    'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta)), 'bucket-del': () => bucketDel(el.dataset.person, id), 'bucket-noop': () => {}, 'bucket-new': () => openBucketEditor(el.dataset.person), 'bucket-edit': () => { const it = bucketOf(el.dataset.person).find((x) => x.id === id); if (it) openBucketEditor(el.dataset.person, it); }, 'bucket-pick': () => bucketPick(el.dataset.loc), 'bucket-save': bucketSave, 'bucket-delete': bucketDelete, 'bucket-newloc': bucketNewLoc,
+    'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta)), 'bucket-del': () => bucketDel(el.dataset.person, id), 'bucket-noop': () => {}, 'bucket-new': () => openBucketEditor(el.dataset.person), 'bucket-edit': () => { const it = bucketOf(el.dataset.person).find((x) => x.id === id); if (it) openBucketEditor(el.dataset.person, it); }, 'bucket-pick': () => bucketPick(el.dataset.loc), 'bucket-toggle': () => { const l = findLoc(id); if (l) bucketToggle(el.dataset.person, l); }, 'bucket-save': bucketSave, 'bucket-delete': bucketDelete, 'bucket-newloc': bucketNewLoc,
   };
   actions[a]?.();
 });
 document.addEventListener('submit', (e) => {
   if (e.target.id === 'addLocationForm') return handleAddSubmit(e);
+  if (e.target.dataset.action === 'photo-url') { e.preventDefault(); return savePhotoUrl(e.target.dataset.id, e.target.querySelector('#photoUrl').value); }
   if (e.target.closest('#coffeeBody') && bucketEdit) { e.preventDefault(); bucketSave(); }
 });
 document.addEventListener('change', async (e) => {

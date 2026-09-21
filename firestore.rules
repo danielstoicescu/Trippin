@@ -46,10 +46,13 @@ service cloud.firestore {
 
     match /trips/bcn-aventura/photos/{locId} {
       allow read: if true;
-      allow write: if request.resource.data.keys().hasOnly(['data', 'by', 'at'])
-        && request.resource.data.data is string && request.resource.data.data.size() <= 960000
-        && request.resource.data.data.matches('data:image/jpeg;base64,.*')
-        && request.resource.data.by in ['Daniel', 'Mara', 'Anne'];
+      // fie o poză comprimată (data URL jpeg), fie un link https de pe net
+      allow write: if request.resource.data.keys().hasOnly(['data', 'url', 'by', 'at'])
+        && request.resource.data.by in ['Daniel', 'Mara', 'Anne']
+        && (
+          ('data' in request.resource.data && request.resource.data.data is string && request.resource.data.data.size() <= 960000 && request.resource.data.data.matches('data:image/jpeg;base64,.*'))
+          || ('url' in request.resource.data && request.resource.data.url is string && request.resource.data.url.size() <= 600 && request.resource.data.url.matches('https://.*'))
+        );
       allow delete: if true;
     }
 

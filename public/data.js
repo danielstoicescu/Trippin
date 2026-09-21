@@ -9,7 +9,7 @@ export const TRIP = {
   id: 'bcn-aventura',
   start: '2026-11-04',
   days: { thu: '2026-11-05', fri: '2026-11-06', sat: '2026-11-07', sun: '2026-11-08', mon: '2026-11-09' },
-  base: { title: 'Cazarea noastră (Bac de Roda, Poblenou)', lat: 41.4045, lng: 2.2075, approx: true },
+  base: { title: 'Acasă · Carrer de Pellaires 35', address: 'Carrer de Pellaires 35, 08019 Barcelona', placeQuery: 'Carrer de Pellaires 35, 08019 Barcelona', lat: 41.4003, lng: 2.2048, approx: true },
 };
 
 export const ZONES = {
@@ -85,9 +85,9 @@ export const ITINERARY = [
     lat: 41.0840, lng: 1.1620, radius: 300, approx: true },
   { id: 'base',
     img: {q: 'Poblenou Barcelona Rambla'}, site: 'https://www.barcelona.cat/en/what-to-do-in-bcn/poblenou', day: 'fri', zone: 'poblenou', cat: 'art', time: '14:00 – 16:00', catLabel: 'Baza noastră',
-    title: 'Sosire la cazare, Bac de Roda', short: 'Lăsați bagajele, respirați',
-    desc: 'Poblenou e cartierul foștilor fabrici, acum cel mai relaxat colț din Barcelona, cu plaja la 10 minute. Scrieți adresa exactă și codul de la ușă în Notițe.',
-    address: 'Carrer de Bac de Roda, Poblenou', placeQuery: 'Carrer de Bac de Roda Barcelona', hours: '', price: '',
+    title: 'Sosire la cazare, Pellaires 35', short: 'Lăsați bagajele, respirați',
+    desc: 'Poblenou e cartierul foștilor fabrici, acum cel mai relaxat colț din Barcelona, cu plaja la 10 minute. Carrer de Pellaires e la 3 minute de Rambla del Poblenou și la 8 de plajă. Codul de la ușă și etajul: în Notițe.',
+    address: 'Carrer de Pellaires 35, 08019 Barcelona (Poblenou)', placeQuery: 'Carrer de Pellaires 35, 08019 Barcelona', hours: '', price: '',
     lat: TRIP.base.lat, lng: TRIP.base.lng, radius: 250, approx: true },
   { id: 'nomad-fs',
     img: {file: 'Cr de Pujades, El Poblenou.jpg',q: 'Carrer de Pujades Poblenou'}, site: 'https://nomadcoffee.es', menu: 'https://nomadcoffee.es/pages/frutas-selectas', budget: '≈ 12–16 € pentru trei (espresso 2 €, latte 3,5 €, pastry 3–4 €)', day: 'fri', zone: 'poblenou', cat: 'coffee', time: '16:30 – 17:45', catLabel: 'Espresso #1',
@@ -359,6 +359,11 @@ export const ALTERNATIVES = [
 // Le completează Daniel cu Claude, manual, când apare un loc nou. Exemplu:
 // 'satan\'s coffee corner': { rating: 4.4, ratingCount: 1900, review: '…', popular: ['…'], tips: ['…'], hours: '…', price: '…' }
 export const CURATED = {
+  'cereria subirà': { rating: 4.6, ratingCount: 1500, hours: 'Lu–Sâ 9:30 – 13:30 & 16:00 – 20:00 (unele surse: 10:00 – 20:00 continuu) · Du închis', price: '€ – €€ (lumânări de la 3–4 €)', address: 'Baixada de la Llibreteria 7 (lângă Plaça de Sant Jaume)', placeQuery: 'Cereria Subirà Barcelona', site: 'https://www.barcelona.cat/en/coneixbcn/pics/cereria-subira-99400286265',
+    review: 'Cel mai fermecător magazin vechi, cu un miros divin de la toate lumânările: un „time capsule” pastel din 1761, cu scara imperială și detaliile mint și roz originale.',
+    popular: ['Lumânări din ceară de albine, făcute manual', 'Lumânări-fructe și lumânări-desert (foarte „Instagram”)', 'Lumânări parfumate în cutie, ca suvenir', 'Scara imperială cu cele două statui de fier'],
+    tips: ['E cel mai vechi magazin din Barcelona încă deschis (1761) și „Establiment Emblemàtic”: intrați și doar ca să vedeți interiorul.', 'La 3 minute de Satan’s Coffee și de churros: se potrivește sâmbătă dimineață, în turul prin Gòtic.', 'Duminica e închis; verificați pauza de prânz.'],
+    img: { q: 'Cereria Subirà Barcelona' } },
 };
 
 // Bucketlist-uri: fiecare are lista lui, bifabilă; `loc` leagă task-ul de un loc din program (detalii, navigare).

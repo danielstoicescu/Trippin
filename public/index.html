@@ -66,6 +66,7 @@
       </div>
 
       <div id="nextStop"></div>
+      <div id="homePlan"></div>
 
       <div class="hscroll" style="scroll-snap-type: none">
         <button data-action="filter" data-cat="all" class="chip press">Toate</button>
@@ -92,6 +93,7 @@
         <div id="map" role="application" aria-label="Harta zilei"></div>
         <button data-action="day-route" class="btn btn-m btn-filled press absolute left-3 bottom-3 z-[400]" style="box-shadow: var(--shadow-3)"><span class="material-symbols-rounded i-20">route</span> Traseul zilei</button>
       </div>
+      <div id="homeExplore"></div>
       <p id="radarStatus" class="text-[12px] muted px-1 flex items-start gap-1.5"><span class="material-symbols-rounded i-16 mt-0.5">info</span><span>Radarul pornește automat aici și dă alertă la ~150 m de un loc din program, cât timp aplicația e deschisă pe ecran.</span></p>
       <div id="nextStopExplore"></div>
       <div><div class="eyebrow muted mb-2 px-1">Lângă mine</div><div id="nearbyList" class="group"></div></div>
@@ -111,15 +113,15 @@
     <!-- ===================== INFO ===================== -->
     <section id="view-info" data-view="info" class="hidden px-4 pt-3 space-y-4">
       <div><div class="eyebrow muted">Info</div><h2 class="t-display text-[34px]">Utile</h2></div>
+      <div id="homeInfo"></div>
       <div class="card p-4 space-y-2">
         <div class="field"><label for="sharedNotes">Notițe comune (adresă, cod ușă, wifi, rezervări)</label>
-        <textarea id="sharedNotes" rows="5" maxlength="2000" placeholder="Ex: Cazare: Carrer de Bac de Roda nr. …, et. 3, cod ușă 1234. Wifi: … Rezervare Bar del Pla sâmbătă 14:00." class="field-input"></textarea></div>
+        <textarea id="sharedNotes" rows="5" maxlength="2000" placeholder="Ex: Cazare: Carrer de Pellaires 35, et. …, cod ușă …. Wifi: … Rezervare Bar del Pla sâmbătă 14:00." class="field-input"></textarea></div>
         <div id="notesStatus" class="text-[11px] muted">&nbsp;</div>
       </div>
       <div class="group">
         <div id="syncText" class="row compact"><span class="material-symbols-rounded i-20">sync</span><span class="flex-1 text-[13px]">Se conectează la programul comun…</span></div>
         <a href="tel:112" class="row compact press"><span class="material-symbols-rounded" style="color: var(--secondary)">call</span><span class="flex-1 font-semibold">Urgențe 112</span><span class="material-symbols-rounded muted i-20">open_in_new</span></a>
-        <a href="https://www.google.com/maps/search/?api=1&query=Carrer+de+Bac+de+Roda+Barcelona" target="_blank" rel="noopener" class="row compact press"><span class="material-symbols-rounded" style="color: var(--primary)">home</span><span class="flex-1 font-semibold">Spre cazare (Bac de Roda)</span><span class="material-symbols-rounded muted i-20">open_in_new</span></a>
         <a href="https://www.google.com/maps/search/?api=1&query=farmacia+Poblenou+Barcelona" target="_blank" rel="noopener" class="row compact press"><span class="material-symbols-rounded" style="color: var(--success)">local_pharmacy</span><span class="flex-1 font-semibold">Farmacie aproape</span><span class="material-symbols-rounded muted i-20">open_in_new</span></a>
         <a href="https://www.tmb.cat/en/barcelona/metro" target="_blank" rel="noopener" class="row compact press"><span class="material-symbols-rounded" style="color: var(--tertiary)">subway</span><span class="flex-1 font-semibold">Metrou (L4 galbenă spre Poblenou)</span><span class="material-symbols-rounded muted i-20">open_in_new</span></a>
       </div>
@@ -185,6 +187,7 @@
           <div class="field"><label for="locTime">Interval orar</label><input type="text" id="locTime" maxlength="60" placeholder="19:30 – 21:00"></div>
           <div class="field"><label for="locHours">Program (opțional)</label><input type="text" id="locHours" maxlength="120" placeholder="Lu–Vi 9–18"></div>
         </div>
+        <div class="field"><label for="locPhoto">Link poză de pe net (opțional)</label><input type="url" id="locPhoto" inputmode="url" maxlength="600" placeholder="https://… (adresa unei imagini de pe Instagram, site sau Google)"></div>
         <div class="field"><label for="locDesc">Note *</label><textarea id="locDesc" rows="3" required maxlength="1500" placeholder="De ce vrem să mergem, ce comandăm, adresa…"></textarea></div>
         <div class="flex flex-wrap items-center gap-2 text-xs">
           <label class="chip"><input type="checkbox" id="locNear" class="w-4 h-4" style="accent-color: var(--tertiary)"> Lângă Poblenou</label>
