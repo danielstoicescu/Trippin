@@ -4,7 +4,7 @@ import { ICONS } from './icons.js';
 
 const TRIP_ID = TRIP.id;
 const DAYS = ['thu', 'fri', 'sat', 'sun', 'mon'];
-const DAY_LABEL = { thu: 'Joi 5', fri: 'Vineri 6', sat: 'Sâmbătă 7', sun: 'Duminică 8', mon: 'Luni 9' };
+const DAY_LABEL = { thu: 'Joi 5', fri: 'Vineri 6', sat: 'Sâmbătă 7', sun: 'Duminică 8', mon: 'Luni 9', pool: 'Dorite' };
 const DAY_SUB = { thu: 'PortAventura · Salou', fri: 'Tren · Poblenou · pho & tapas', sat: 'El Call · Sephora · MNAC · Blai', sun: 'Sagrada · matcha · Design · Bunkers', mon: 'Encants · Cova Fumada · Quimet' };
 const PEOPLE = ['Daniel', 'Mara', 'Anne'];
 const LS = { locations: 'bcn_locations', shared: 'bcn_shared', photos: 'bcn_photos', theme: 'bcn_theme', alerted: 'bcn_alerted', view: 'bcn_view', me: 'bcn_me', install: 'bcn_install_seen', weather: 'bcn_weather', img: 'bcn_img' };
@@ -28,17 +28,18 @@ let fb = null;
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const icon = (name, cls = '', style = '') => { const p = ICONS[name] || ICONS.info; return `<svg class="ic ${cls}" viewBox="0 -960 960 960" aria-hidden="true"${style ? ` style="${style}"` : ''}>${p.length > 1 ? `<path class="o" d="${p[0]}"/><path class="f" d="${p[1]}"/>` : `<path class="o f" d="${p[0]}"/>`}</svg>`; };
+const GMAPS_SVG = (cls, style) => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true"${style ? ` style="${style}"` : ''}><path d="M12 1.5a8 8 0 0 0-8 8c0 5.6 7 12.6 7.3 12.9a1 1 0 0 0 1.4 0C13 22.1 20 15.1 20 9.5a8 8 0 0 0-8-8z" fill="#EA4335"/><path d="M12 1.5a8 8 0 0 0-8 8c0 1.9.8 3.9 1.9 5.8L12 9.5V1.5z" fill="#4285F4"/><path d="M12 1.5v8l6.1 5.8A13 13 0 0 0 20 9.5a8 8 0 0 0-8-8z" fill="#FBBC04"/><path d="M5.9 15.3 12 9.5l6.1 5.8c-1.6 2.8-4 5.6-5.4 7.1a1 1 0 0 1-1.4 0c-1.4-1.5-3.8-4.3-5.4-7.1z" fill="#34A853"/><circle cx="12" cy="9.5" r="3" fill="#fff"/></svg>`;
+const icon = (name, cls = '', style = '') => { if (name === 'gmaps') return GMAPS_SVG(cls, style); const p = ICONS[name] || ICONS.info; return `<svg class="ic ${cls}" viewBox="0 -960 960 960" aria-hidden="true"${style ? ` style="${style}"` : ''}>${p.length > 1 ? `<path class="o" d="${p[0]}"/><path class="f" d="${p[1]}"/>` : `<path class="o f" d="${p[0]}"/>`}</svg>`; };
 function hydrateIcons(root = document) { root.querySelectorAll('span.material-symbols-rounded').forEach((el) => { const t = document.createElement('template'); t.innerHTML = icon(el.textContent.trim(), el.className.replace('material-symbols-rounded', '').trim(), el.getAttribute('style') || ''); el.replaceWith(t.content.firstChild); }); }
 const mapsSearch = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q + (/(barcelona|salou|vila-seca|portaventura)/i.test(q) ? '' : ' Barcelona'))}`;
 const placeQuery = (loc) => loc.placeQuery || (loc.address ? `${loc.title}, ${loc.address}` : loc.title);
 const allLocs = () => [...ITINERARY, ...state.custom];
 function altAsLoc(i) { const a = ALTERNATIVES[i]; return a ? { ...a, id: 'alt-' + i, isAlt: true, altIndex: i, radius: 150 } : null; }
 const findLoc = (id) => allLocs().find((l) => l.id === id) || (String(id).startsWith('alt-') ? altAsLoc(Number(id.slice(4))) : null);
-function enriched(loc) { const c = loc.isCustom ? CURATED[(loc.title || '').trim().toLowerCase()] : null; return c ? { ...c, ...loc, rating: loc.rating ?? c.rating, review: loc.review ?? c.review, popular: loc.popular ?? c.popular, tips: loc.tips ?? c.tips, hours: loc.hours || c.hours, price: loc.price || c.price, address: loc.address || c.address, placeQuery: loc.placeQuery || c.placeQuery, site: loc.site || c.site, img: loc.img || c.img } : loc; }
+function enriched(loc) { const c = loc.isCustom ? CURATED[(loc.title || '').trim().toLowerCase()] : null; return c ? { ...c, ...loc, rating: loc.rating ?? c.rating, review: loc.review ?? c.review, popular: loc.popular ?? c.popular, tips: loc.tips ?? c.tips, hours: loc.hours || c.hours, price: loc.price || c.price, address: loc.address || c.address, placeQuery: loc.placeQuery || c.placeQuery, site: loc.site || c.site, img: loc.img || c.img, variants: c.variants, cat: loc.cat === 'mara' ? (c.cat || 'fun') : loc.cat } : loc; }
 function coordsOf(loc) { const pin = state.shared.pins[loc.id]; if (pin && typeof pin.lat === 'number') return { lat: pin.lat, lng: pin.lng, exact: true }; if (typeof loc.lat === 'number' && typeof loc.lng === 'number') return { lat: loc.lat, lng: loc.lng, exact: !loc.approx }; return null; }
 const destOf = (loc) => { const p = coordsOf(loc); if (p && p.exact) return `${p.lat},${p.lng}`; const a = loc.placeQuery || loc.address || loc.title; return /(barcelona|salou|vila-seca|portaventura)/i.test(a) ? a : `${a}, Barcelona`; };
-const mapsNav = (loc, mode = 'walking') => `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destOf(loc))}&travelmode=${mode}`;
+const mapsNav = (loc, mode = 'walking') => `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destOf(loc))}&travelmode=${mode}&dir_action=navigate`;
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 function distanceM(a, b) { const R = 6371000, r = (d) => (d * Math.PI) / 180; const dLat = r(b.lat - a.lat), dLng = r(b.lng - a.lng); const s = Math.sin(dLat / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dLng / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(s)); }
@@ -124,8 +125,9 @@ function isNow(loc) { if (todayKey() !== loc.day) return false; const r = parseR
 function countdownText() { const start = new Date(TRIP.start + 'T00:00:00'), end = new Date(TRIP.days.mon + 'T23:59:59'), now = new Date(); const days = Math.ceil((start - now) / 86400000); if (now > end) return 'A fost o excursie!'; if (days > 1) return `${days} zile până la plecare`; if (days === 1) return 'Mâine plecăm!'; return 'Suntem în Barcelona!'; }
 
 // ---------- Categorii ----------
-const CAT = { mara: { cls: 'cat-mara', icon: 'auto_awesome', label: 'Mara', badge: 'badge-secondary' }, coffee: { cls: 'cat-coffee', icon: 'local_cafe', label: 'Cafea & bere', badge: 'badge-tertiary' }, food: { cls: 'cat-food', icon: 'restaurant', label: 'Mâncare', badge: 'badge-success' }, art: { cls: 'cat-art', icon: 'palette', label: 'Artă & vederi', badge: 'badge-primary' } };
-const cat = (c) => CAT[c] || { cls: 'cat-none', icon: 'place', label: 'Loc', badge: 'badge-neutral' };
+const CAT = { coffee: { cls: 'cat-coffee', icon: 'local_cafe', label: 'Cafea & bere', badge: 'badge-tertiary' }, food: { cls: 'cat-food', icon: 'restaurant', label: 'Mâncare', badge: 'badge-success' }, sweet: { cls: 'cat-sweet', icon: 'icecream', label: 'Dulciuri', badge: 'badge-sweet' }, shop: { cls: 'cat-shop', icon: 'local_mall', label: 'Shopping', badge: 'badge-shop' }, fun: { cls: 'cat-fun', icon: 'attractions', label: 'Distracție', badge: 'badge-secondary' }, art: { cls: 'cat-art', icon: 'palette', label: 'Artă & vederi', badge: 'badge-primary' } };
+const cat = (c) => CAT[c === 'mara' ? 'fun' : c] || { cls: 'cat-none', icon: 'place', label: 'Loc', badge: 'badge-neutral' };
+const isPool = (loc) => loc.day === 'pool';
 const SOURCE = { instagram: 'Reel Instagram', tiktok: 'TikTok', youtube: 'YouTube', gmaps: 'Google Maps', web: 'Link' };
 function dayItems(day, includeSkipped = false) { return allLocs().filter((l) => l.day === day && (includeSkipped || !state.shared.skipped[l.id])).map((l, i) => ({ l, i })).sort((a, b) => startMin(a.l) - startMin(b.l) || a.i - b.i).map((x) => x.l); }
 const photoOf = (id) => state.photos[id]?.data || state.photos[id]?.url || null;
@@ -152,7 +154,7 @@ function timelineHTML(list) {
         <div class="min-w-0 flex-1">
           ${now || loc.isCustom || loc.verify || skipped ? `<div class="flex flex-wrap gap-1 mb-1">${now ? '<span class="badge badge-inverse">ACUM</span>' : ''}${loc.isCustom ? `<span class="badge badge-secondary">${esc(loc.addedBy || 'noi')}</span>` : ''}${loc.verify ? '<span class="badge badge-tertiary">verifică orele</span>' : ''}${skipped ? '<span class="badge badge-neutral">sărit</span>' : ''}</div>` : ''}
           <div class="t-title text-[15.5px] ${visited ? 'line-through' : ''}">${esc(loc.title)} ${whoHTML(loc.id)}</div>
-          <div class="text-[12.5px] variant mt-0.5 truncate">${esc(loc.short || loc.catLabel || '')}</div>
+          <div class="text-[12.5px] variant mt-0.5 truncate">${esc(loc.short || loc.catLabel || (enriched(loc).variants?.length ? `${enriched(loc).variants.length} locații: ${enriched(loc).variants.map((v) => v.title.replace(/^MUJI /, '')).join(' · ')}` : cat(loc.cat).label))}</div>
           ${meta ? `<div class="text-[12px] muted mt-0.5 truncate">${meta}</div>` : ''}
         </div>
         ${visited ? icon('check_circle', 'ms-fill') : `${icon('expand_more', 'muted')}`}
@@ -183,8 +185,31 @@ function renderDay() {
   const list = dayItems(state.day, true).filter((l) => state.filter === 'all' || l.cat === state.filter);
   const tip = DAY_TIPS[state.day] ? `<div class="card-mid p-3.5 flex gap-2.5 text-[13px] variant leading-relaxed">${icon('lightbulb', 'i-20 shrink-0')}<span>${esc(DAY_TIPS[state.day])}</span></div>` : '';
   const timeline = list.length ? timelineHTML(list) : `<div class="card-mid p-6 text-center text-sm muted">Nimic pentru filtrul ales. <button data-action="open-add" class="btn btn-text press">Adaugă un loc</button></div>`;
-  c.innerHTML = `<div class="space-y-4">${state.filter === 'all' ? oppsHTML(state.day) : ''}${tip}<div><div class="eyebrow muted mb-2 px-1">Cronologia zilei</div>${timeline}</div></div>`;
+  c.innerHTML = `<div class="space-y-4">${state.filter === 'all' ? oppsHTML(state.day) : ''}${tip}<div><div class="eyebrow muted mb-2 px-1">Cronologia zilei</div>${timeline}</div>${poolHTML()}</div>`;
   renderZones();
+}
+function poolHTML() {
+  const pool = state.custom.filter((l) => isPool(l) && (state.filter === 'all' || l.cat === state.filter)); if (!pool.length) return '';
+  return `<div id="poolSection"><div class="flex items-center justify-between mb-2 px-1"><div class="eyebrow muted flex items-center gap-1.5">${icon('bookmark', 'i-18')} Locuri dorite, încă fără zi</div><span class="badge badge-tertiary">${pool.length}</span></div>
+    <div class="group">${pool.map((l) => `<div class="row press" data-action="open-detail" data-id="${esc(l.id)}" role="button" id="loc-${esc(l.id)}">${thumbHTML(l, 'w-14 h-14')}<div class="min-w-0 flex-1"><div class="t-title text-[15px]">${esc(l.title)} ${whoHTML(l.id)}</div><div class="text-[12px] muted truncate">${esc(cat(l.cat).label)} · de ${esc(l.addedBy || 'noi')}${l.hours ? ' · ' + esc(l.hours) : ''}</div></div><button data-action="schedule" data-id="${esc(l.id)}" class="btn btn-sm btn-tonal press shrink-0" onclick="event.stopPropagation()">${icon('edit_calendar', 'i-18')} Pune în zi</button></div>`).join('')}</div>
+    <p class="text-[12px] muted mt-2 px-1">Le vedeți și pe „Lângă mine”, ca să le prindeți când sunteți în zonă.</p></div>`;
+}
+// Foaie: pune un loc dorit într-o zi (sau înapoi în dorite)
+let scheduleId = null;
+function scheduleSheetHTML(loc) {
+  return `<div class="sheet-handle"></div>
+    <div class="flex items-start justify-between gap-2"><div><div class="eyebrow muted">${esc(loc.title)}</div><h3 class="t-headline text-[24px]">${isPool(loc) ? 'În ce zi îl punem?' : 'Mută în altă zi'}</h3></div><button data-action="close-modal" class="icon-btn icon-btn-sm press" aria-label="Închide">${icon('close')}</button></div>
+    <div class="flex flex-wrap gap-2 mt-4" id="schedDays">${DAYS.map((d) => `<button type="button" data-action="sched-day" data-day="${d}" class="chip press ${loc.day === d ? 'selected' : ''}">${DAY_LABEL[d]}<span class="text-[11px] opacity-70 ml-1">${dayItems(d).length} opriri</span></button>`).join('')}</div>
+    <div class="field mt-3"><label for="schedTime">Interval orar (opțional)</label><input type="text" id="schedTime" maxlength="60" value="${esc(loc.time && loc.time !== 'Flexibil' ? loc.time : '')}" placeholder="Ex: 17:30 – 18:30 · gol = flexibil, apare la finalul zilei"></div>
+    <div class="toolbar mt-4"><button type="button" data-action="sched-save" class="btn btn-filled press flex-1">${icon('check')} Pune în program</button>${!isPool(loc) ? `<button type="button" data-action="sched-pool" class="btn btn-tonal press">${icon('bookmark', 'i-20')} În dorite</button>` : ''}</div>`;
+}
+function openSchedule(id) { const loc = findLoc(id); if (!loc || !loc.isCustom) return; scheduleId = id; $('#coffeeBody').innerHTML = scheduleSheetHTML(loc); $('#coffeeSheet').classList.remove('hidden'); }
+async function scheduleSave(day) {
+  const loc = findLoc(scheduleId); if (!loc) return; const sel = day || $('#schedDays .chip.selected')?.dataset.day; if (!sel) return toast('Alege o zi.', 'edit_calendar');
+  const time = sel === 'pool' ? 'Flexibil' : (($('#schedTime')?.value || '').trim() || 'Flexibil');
+  const { id, isCustom, createdAt, ...data } = loc; await saveLocation({ ...data, day: sel, time }, id);
+  $('#coffeeSheet').classList.add('hidden'); refreshDetail();
+  if (sel === 'pool') { toast(`„${loc.title}” e înapoi în dorite.`, 'bookmark'); } else { setView('plan'); setFilter('all'); switchDay(sel); toast(`„${loc.title}” e ${DAY_LABEL[sel]}${time !== 'Flexibil' ? ', ' + time : ''}.`, 'event'); setTimeout(() => { const el = $('#loc-' + CSS.escape(id)); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); } }, 350); }
 }
 function altCardHTML(a, i) {
   const c = cat(a.cat), ph = null, d = state.pos && typeof a.lat === 'number' ? distanceM(state.pos, { lat: a.lat, lng: a.lng }) : null;
@@ -224,30 +249,31 @@ function detailHTML(raw) {
   const st = ph ? null : stockOf(loc);
   const hero = ph ? `<div class="hero xam relative h-60 overflow-hidden"><img src="${ph}" class="w-full h-full object-cover" alt=""><div class="absolute bottom-4 left-5 badge badge-inverse">${icon('photo_camera', 'i-16')} ${esc(state.photos[id].by || 'noi')}</div><button data-action="add-photo" data-id="${esc(id)}" class="btn btn-sm btn-surface press absolute bottom-4 right-5">${icon('add_a_photo', 'i-18')} Altă poză</button></div>`
     : `<div class="hero xam relative h-56 ${c.cls} grid place-items-center text-white/85">${icon(c.icon, 'ms-fill i-48')}${st ? `<img src="${esc(st.url)}" class="absolute inset-0 w-full h-full object-cover" alt="" onerror="__imgFail(this,'${esc(id)}')"><a href="${esc(st.page)}" target="_blank" rel="noopener" class="absolute bottom-4 left-5 badge badge-inverse" style="opacity:.85" onclick="event.stopPropagation()">${icon('image', 'i-16')} ${esc(st.credit)}</a>` : ''}<button data-action="add-photo" data-id="${esc(id)}" class="btn btn-sm btn-surface press absolute bottom-4 right-5">${icon('add_a_photo', 'i-18')} ${st ? 'Poza noastră' : 'Adaugă poză'}</button></div>`;
-  const chips = [`<span class="badge ${c.badge}">${icon(c.icon, 'i-16')} ${esc(loc.catLabel || c.label)}</span>`, loc.time ? `<span class="badge badge-neutral">${icon('schedule', 'i-16')} ${esc(loc.time)}</span>` : '', loc.free ? `<span class="badge badge-success">gratis</span>` : '', loc.verify ? '<span class="badge badge-tertiary">verifică orele</span>' : '', d != null ? `<span class="badge badge-primary">${icon('directions_walk', 'i-16')} ${fmtDist(d)} · ${walkMin(d)} min</span>` : '', loc.isCustom ? `<span class="badge badge-secondary">${esc(loc.addedBy || 'noi')}</span>` : '', loc.isAlt ? '<span class="badge badge-neutral">recomandare</span>' : '', whoHas(id).length ? `<span class="badge badge-neutral">${whoHTML(id)} bucketlist</span>` : ''].filter(Boolean).join('');
+  const chips = [`<span class="badge ${c.badge}">${icon(c.icon, 'i-16')} ${esc(loc.catLabel || c.label)}</span>`, loc.time ? `<span class="badge badge-neutral">${icon('schedule', 'i-16')} ${esc(loc.time)}</span>` : '', loc.free ? `<span class="badge badge-success">gratis</span>` : '', loc.verify ? '<span class="badge badge-tertiary">verifică orele</span>' : '', d != null ? `<span class="badge badge-primary">${icon('directions_walk', 'i-16')} ${fmtDist(d)} · ${walkMin(d)} min</span>` : '', loc.isCustom ? `<span class="badge badge-secondary">${esc(loc.addedBy || 'noi')}</span>` : '', isPool(loc) ? `<span class="badge badge-tertiary">${icon('bookmark', 'i-16')} dorit, fără zi</span>` : '', loc.isAlt ? '<span class="badge badge-neutral">recomandare</span>' : '', whoHas(id).length ? `<span class="badge badge-neutral">${whoHTML(id)} bucketlist</span>` : ''].filter(Boolean).join('');
   const rating = loc.rating ? `<div class="card p-4 flex items-center gap-4"><div class="t-display text-[40px]" style="color: var(--tertiary)">${Number(loc.rating).toFixed(1)}</div><div><div class="text-[18px] leading-none" style="color: var(--tertiary)">${'★'.repeat(Math.round(loc.rating))}<span class="muted">${'★'.repeat(5 - Math.round(loc.rating))}</span></div><div class="text-[12px] muted mt-1">${loc.ratingCount ? fmtCount(loc.ratingCount) + ' recenzii pe Google · ' : ''}sept. 2026</div></div></div>` : '';
   const section = (ic, title, body, cls = 'card') => `<div class="${cls} p-4"><div class="eyebrow muted mb-2 flex items-center gap-1.5">${icon(ic, 'i-18')} ${title}</div>${body}</div>`;
   const review = loc.review ? section('format_quote', 'Un review', `<p class="text-[14px] leading-relaxed italic variant">„${esc(loc.review)}”</p>`) : '';
   const popular = loc.popular?.length ? section('thumb_up', 'Cel mai popular', `<ul class="space-y-2">${loc.popular.map((x) => `<li class="flex gap-2 text-[14px]">${icon('check', 'i-18', 'color: var(--secondary)')}<span>${esc(x)}</span></li>`).join('')}</ul>`) : '';
   const tips = loc.tips?.length ? section('tips_and_updates', 'Tips & tricks', `<ul class="space-y-2">${loc.tips.map((x) => `<li class="flex gap-2 text-[14px]">${icon('bolt', 'i-18', 'color: var(--tertiary)')}<span>${esc(x)}</span></li>`).join('')}</ul>`, 'card-tertiary') : '';
-  const info = [loc.hours ? `<div class="row compact">${icon('schedule', 'muted')}<div class="text-[14px]">${esc(loc.hours)}</div></div>` : '', loc.price ? `<div class="row compact">${icon('euro', 'muted')}<div class="text-[14px]">${esc(loc.price)}</div></div>` : '', loc.budget ? `<div class="row compact">${icon('payments', 'muted')}<div class="text-[14px]"><span class="muted text-[12px]">Buget estimat · </span>${esc(loc.budget)}</div></div>` : '', loc.address ? `<a href="${esc(mapsSearch(placeQuery(loc)))}" target="_blank" rel="noopener" class="row compact press">${icon('place', 'muted')}<div class="text-[14px] flex-1">${esc(loc.address)}${p && !p.exact ? ' <span class="muted">(aprox.)</span>' : ''}</div>${icon('open_in_new', 'muted i-20')}</a>` : '', loc.link ? `<a href="${esc(loc.link)}" target="_blank" rel="noopener" class="row compact press">${icon('link', 'muted')}<div class="text-[14px] flex-1" style="color: var(--primary)">Deschide ${esc(SOURCE[loc.source] || 'linkul')}</div>${icon('open_in_new', 'muted i-20')}</a>` : ''].filter(Boolean).join('');
-  const links = [`<a href="${esc(mapsSearch(placeQuery(loc)))}" target="_blank" rel="noopener" class="row compact press">${icon('photo_library', '', 'color: var(--primary)')}<div class="flex-1"><div class="text-[14px] font-semibold">Poze, meniu & recenzii pe Google Maps</div><div class="text-[11.5px] muted">Fotografiile clienților, meniul fotografiat, orele de azi</div></div>${icon('open_in_new', 'muted i-20')}</a>`,
+  const info = [loc.hours ? `<div class="row compact">${icon('schedule', 'muted')}<div class="text-[14px]">${esc(loc.hours)}</div></div>` : '', loc.price ? `<div class="row compact">${icon('euro', 'muted')}<div class="text-[14px]">${esc(loc.price)}</div></div>` : '', loc.budget ? `<div class="row compact">${icon('payments', 'muted')}<div class="text-[14px]"><span class="muted text-[12px]">Buget estimat · </span>${esc(loc.budget)}</div></div>` : '', loc.address ? `<a href="${esc(mapsSearch(placeQuery(loc)))}" target="_blank" rel="noopener" class="row compact press">${icon('place', 'muted')}<div class="text-[14px] flex-1">${esc(loc.address)}${p && !p.exact ? ' <span class="muted">(aprox.)</span>' : ''}</div>${icon('gmaps', 'i-20')}</a>` : '', loc.link ? `<a href="${esc(loc.link)}" target="_blank" rel="noopener" class="row compact press">${icon('link', 'muted')}<div class="text-[14px] flex-1" style="color: var(--primary)">Deschide ${esc(SOURCE[loc.source] || 'linkul')}</div>${icon('open_in_new', 'muted i-20')}</a>` : ''].filter(Boolean).join('');
+  const variants = loc.variants?.length ? `<div class="card p-3"><div class="eyebrow muted mb-2 flex items-center gap-1.5">${icon('storefront', 'i-18')} ${loc.variants.length} locații, alegeți-o pe cea mai la îndemână</div><div class="group">${loc.variants.map((v, i) => { const vp = { lat: v.lat, lng: v.lng }; const vd = state.pos && typeof v.lat === 'number' ? distanceM(state.pos, vp) : null; return `<div class="row compact" style="background: var(--surface-low)"><span class="badge badge-neutral">${i + 1}</span><div class="min-w-0 flex-1"><div class="text-[13.5px] font-semibold">${esc(v.title)}</div><div class="text-[11.5px] muted">${esc(v.address)}${vd != null ? ` · ${fmtDist(vd)}` : ''}</div><div class="text-[11.5px] muted">${esc(v.hours || '')}${v.note ? ' · ' + esc(v.note) : ''}</div></div><a href="${esc(mapsNav({ placeQuery: v.placeQuery, title: v.title, lat: v.lat, lng: v.lng, approx: true }))}" target="_blank" rel="noopener" class="icon-btn icon-btn-sm press shrink-0" aria-label="Navighează la ${esc(v.title)}">${icon('gmaps', 'i-22')}</a></div>`; }).join('')}</div></div>` : '';
+  const links = [`<a href="${esc(mapsSearch(placeQuery(loc)))}" target="_blank" rel="noopener" class="row compact press">${icon('gmaps')}<div class="flex-1"><div class="text-[14px] font-semibold">Deschide în Google Maps</div><div class="text-[11.5px] muted">Poze, meniu fotografiat, recenzii, orele de azi</div></div>${icon('chevron_right', 'muted i-20')}</a>`,
     loc.site ? `<a href="${esc(loc.site)}" target="_blank" rel="noopener" class="row compact press">${icon('language', '', 'color: var(--secondary)')}<div class="flex-1"><div class="text-[14px] font-semibold">Site oficial</div><div class="text-[11.5px] muted truncate">${esc(loc.site.replace(/^https?:\/\/(www\.)?/, '').split('/')[0])}</div></div>${icon('open_in_new', 'muted i-20')}</a>` : '',
     loc.menu ? `<a href="${esc(loc.menu)}" target="_blank" rel="noopener" class="row compact press">${icon('menu_book', '', 'color: var(--tertiary)')}<div class="flex-1"><div class="text-[14px] font-semibold">${/ticket|entrad|bilet/i.test(loc.menu) ? 'Bilete online' : 'Meniul oficial'}</div><div class="text-[11.5px] muted truncate">${esc(loc.menu.replace(/^https?:\/\/(www\.)?/, ''))}</div></div>${icon('open_in_new', 'muted i-20')}</a>` : ''].filter(Boolean).join('');
   const toolbar = loc.isAlt
     ? `<div class="toolbar"><button data-action="add-alt" data-index="${loc.altIndex}" class="btn btn-filled press flex-1">${icon('add')} Pune în program</button><a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="icon-btn press" aria-label="Navighează">${icon('directions_walk')}</a></div>`
     : `<div class="toolbar">
-        <a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="btn btn-filled press flex-1">${icon('directions_walk')} Navighează</a>
+        <a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="btn btn-filled press flex-1 min-w-0">${icon('gmaps', 'i-20')} <span class="lbl-l">Navighează</span><span class="lbl-s">Maps</span></a>
         <button data-action="toggle-visited" data-id="${esc(id)}" class="icon-btn press ${visited ? 'tonal' : ''}" aria-label="${visited ? 'Anulează bifarea' : 'Bifează: am fost'}" title="${visited ? 'Anulează bifarea' : 'Bifează: am fost'}">${icon(visited ? 'undo' : 'check')}</button>
         <button data-action="add-photo" data-id="${esc(id)}" class="icon-btn press" aria-label="Adaugă poză" title="Adaugă poză">${icon('add_a_photo')}</button>
-        ${loc.isCustom ? `<button data-action="edit-loc" data-id="${esc(id)}" class="icon-btn press" aria-label="Editează" title="Editează">${icon('edit')}</button>` : `<button data-action="toggle-skip" data-id="${esc(id)}" class="icon-btn press" aria-label="${skipped ? 'Pune înapoi' : 'Sari peste'}" title="${skipped ? 'Pune înapoi în program' : 'Sari peste (rămâne estompat)'}">${icon(skipped ? 'undo' : 'skip_next')}</button>`}
+        ${loc.isCustom ? `<button data-action="schedule" data-id="${esc(id)}" class="icon-btn press ${isPool(loc) ? 'tonal' : ''}" aria-label="${isPool(loc) ? 'Pune într-o zi' : 'Mută în altă zi'}" title="${isPool(loc) ? 'Pune într-o zi' : 'Mută în altă zi'}">${icon('edit_calendar')}</button><button data-action="edit-loc" data-id="${esc(id)}" class="icon-btn press" aria-label="Editează" title="Editează">${icon('edit')}</button>` : `<button data-action="toggle-skip" data-id="${esc(id)}" class="icon-btn press" aria-label="${skipped ? 'Pune înapoi' : 'Sari peste'}" title="${skipped ? 'Pune înapoi în program' : 'Sari peste (rămâne estompat)'}">${icon(skipped ? 'undo' : 'skip_next')}</button>`}
         <button data-action="pin-here" data-id="${esc(id)}" class="icon-btn press" aria-label="Fixează poziția aici" title="Fixează poziția exactă aici" ${state.pos ? '' : 'disabled'}>${icon('push_pin')}</button>
         ${loc.isCustom ? `<button data-action="delete-loc" data-id="${esc(id)}" class="icon-btn press" style="color: var(--secondary)" aria-label="Șterge" title="Șterge">${icon('delete')}</button>` : ''}
       </div>`;
   return `<div class="sheet-handle"></div>
     <div class="flex items-start justify-between gap-2 mb-3"><div class="min-w-0"><div class="flex flex-wrap gap-1 mb-2">${chips}</div><h3 class="t-headline text-[26px]">${esc(loc.title)}</h3>${loc.short ? `<div class="text-[14px] variant mt-1">${esc(loc.short)}</div>` : ''}</div><button data-action="close-modal" class="icon-btn icon-btn-sm press shrink-0" aria-label="Închide">${icon('close')}</button></div>
-    <div class="space-y-3">${hero}${personTogglesHTML(loc)}${rating}<p class="t-body px-1">${esc(loc.desc || loc.note || '')}</p>${info ? `<div class="group">${info}</div>` : ''}${review}${popular}${tips}<div class="group">${links}</div>
-    <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11.5px] muted px-1 pb-1">${[['directions_walk','Navigare pe jos (Google Maps)'],['check','Am fost'],['add_a_photo','Adaugă poză'],[loc.isCustom ? 'edit' : 'skip_next', loc.isCustom ? 'Editează' : 'Sari peste'],['push_pin','Fixează poziția exactă']].map(([i, t]) => `<div class="flex items-center gap-1.5">${icon(i, 'i-16')}<span>${t}</span></div>`).join('')}</div></div>${toolbar}`;
+    <div class="space-y-3">${hero}${personTogglesHTML(loc)}${rating}<p class="t-body px-1">${esc(loc.desc || loc.note || '')}</p>${variants}${info ? `<div class="group">${info}</div>` : ''}${review}${popular}${tips}<div class="group">${links}</div>
+    <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11.5px] muted px-1 pb-1">${[['gmaps','Navigare în Google Maps'],['check','Am fost'],['add_a_photo','Adaugă poză'],[loc.isCustom ? 'edit_calendar' : 'skip_next', loc.isCustom ? 'Pune / mută în zi' : 'Sari peste'],['push_pin','Fixează poziția exactă']].map(([i, t]) => `<div class="flex items-center gap-1.5">${icon(i, 'i-16')}<span>${t}</span></div>`).join('')}</div></div>${toolbar}`;
 }
 function openDetail(id) { const loc = findLoc(id); if (!loc) return; state.detailId = id; $('#detailBody').innerHTML = detailHTML(loc); $('#detailSheet').classList.remove('hidden'); $('#detailBody').scrollTop = 0; }
 function refreshDetail() { if (state.detailId && !$('#detailSheet').classList.contains('hidden')) { const loc = findLoc(state.detailId); if (loc) $('#detailBody').innerHTML = detailHTML(loc); else closeModals(); } }
@@ -297,7 +323,35 @@ function homeHTML(compact = false) {
     <a href="${esc(mapsNav(b, 'transit'))}" target="_blank" rel="noopener" class="icon-btn filled press shrink-0" style="background: var(--tertiary); color: #fff" aria-label="Acasă cu metroul sau taxi (Google Maps)" title="Metrou / taxi">${icon('subway')}</a>
   </div>`;
 }
-function renderHome() { for (const id of ['homePlan', 'homeExplore', 'homeInfo']) { const el = $('#' + id); if (el) el.innerHTML = homeHTML(); } }
+function renderHome() { const el = $('#homeInfo'); if (el) el.innerHTML = homeHTML(); const b = baseLoc(), p = coordsOf(b), d = state.pos && p ? distanceM(state.pos, p) : null; const lbl = $('#homeNavLabel'); if (lbl) lbl.textContent = d == null ? 'Acasă' : d < 120 ? 'Acasă ✓' : fmtDist(d); $('.nav-home')?.classList.toggle('near', d != null && d < 120); if (homeOpen) $('#coffeeBody').innerHTML = homeSheetHTML(); }
+let homeOpen = false;
+function homeSheetHTML() {
+  const b = baseLoc(), p = coordsOf(b), d = state.pos && p ? distanceM(state.pos, p) : null, home = d != null && d < 120;
+  const notes = (state.shared.notes || '').trim();
+  const METRO = new Date().getDay(); const last = METRO === 5 ? 'vineri: până la 02:00' : METRO === 6 ? 'sâmbătă: non-stop' : 'duminică–joi: până la 24:00';
+  return `<div class="sheet-handle"></div>
+    <div class="flex items-start justify-between gap-2"><div><div class="eyebrow muted">Poblenou · 08019</div><h3 class="t-headline text-[26px]">${home ? 'Sunteți acasă' : 'Acasă, Pellaires 35'}</h3></div><button data-action="close-modal" class="icon-btn icon-btn-sm press" aria-label="Închide">${icon('close')}</button></div>
+    <div class="home-hero xam mt-3 p-4 flex items-center gap-4">
+      <div class="thumb w-16 h-16" style="background: rgba(255,255,255,.18); color: #fff">${icon('home', 'ms-fill i-32')}</div>
+      <div class="min-w-0 flex-1">
+        <div class="t-display text-[36px] tabular leading-none">${d != null ? (d < 1000 ? `${Math.round(d / 10) * 10}<span class="text-[18px]"> m</span>` : `${(d / 1000).toFixed(1)}<span class="text-[18px]"> km</span>`) : '—'}</div>
+        <div class="text-[13px] opacity-90 mt-1">${d != null ? `${walkMin(d)} min pe jos · ${Math.round(d / 400) + 8} min metrou · taxi ≈ ${Math.max(6, Math.round(d / 1000 * 2.2 + 4))} €` : 'Apasă „Unde sunt” pe Hartă ca să vezi distanța'}</div>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-2 mt-3">
+      <a href="${esc(mapsNav(b, 'walking'))}" target="_blank" rel="noopener" class="btn btn-m btn-tonal press flex-col gap-0.5 h-[64px]">${icon('directions_walk', 'i-22')}<span class="text-[12px]">Pe jos</span></a>
+      <a href="${esc(mapsNav(b, 'transit'))}" target="_blank" rel="noopener" class="btn btn-m btn-filled press flex-col gap-0.5 h-[64px]">${icon('subway', 'i-22')}<span class="text-[12px]">Metrou</span></a>
+      <a href="${esc(mapsNav(b, 'driving'))}" target="_blank" rel="noopener" class="btn btn-m btn-tonal-3 press flex-col gap-0.5 h-[64px]">${icon('local_taxi', 'i-22')}<span class="text-[12px]">Taxi</span></a>
+    </div>
+    <div class="group mt-3">
+      <div class="row compact">${icon('subway', '', 'color: var(--tertiary)')}<div class="flex-1 text-[13.5px]"><b>L4 galbenă → Poblenou</b>, apoi 6 min pe jos (Rambla del Poblenou → Pellaires)</div></div>
+      <div class="row compact">${icon('schedule', 'muted')}<div class="flex-1 text-[13.5px]">Metroul azi, ${last}. Noaptea: NitBus N7 / N8 sau taxi</div></div>
+      <button data-action="copy-address" class="row compact press">${icon('content_paste', '', 'color: var(--primary)')}<div class="flex-1 text-left text-[13.5px]"><b>Copiază adresa</b> pentru taxi sau Cabify<div class="text-[11.5px] muted">Carrer de Pellaires 35, 08019 Barcelona</div></div>${icon('chevron_right', 'muted i-20')}</button>
+      ${notes ? `<div class="row compact" style="align-items: flex-start">${icon('lightbulb', '', 'color: var(--tertiary)')}<div class="flex-1 text-[13px] whitespace-pre-line">${esc(notes.slice(0, 400))}</div></div>` : `<button data-action="view" data-view="info" class="row compact press">${icon('edit', 'muted')}<div class="flex-1 text-left text-[13.5px]">Scrie codul de la ușă, etajul și wifi-ul în Notițe</div>${icon('chevron_right', 'muted i-20')}</button>`}
+    </div>
+    ${home ? `<p class="text-[13px] mt-3 px-1" style="color: var(--success)">${icon('celebration', 'i-18 ms-fill')} Bine ați ajuns. Puneți telefoanele la încărcat și pozele în aplicație.</p>` : ''}`;
+}
+function openHome() { homeOpen = true; $('#coffeeBody').innerHTML = homeSheetHTML(); $('#coffeeSheet').classList.remove('hidden'); if (!state.pos) startRadar(); }
 
 // ---------- Cine are locul pe bucketlist ----------
 const PERSONS = ['mara', 'anne', 'daniel'];
@@ -450,7 +504,7 @@ function renderNotes() { const ta = $('#sharedNotes'); if (ta && document.active
 function renderAll() { renderDay(); renderMap(); renderNextStop(); renderNearby(); renderUs(); renderHome(); }
 function setView(v) {
   if (!['plan', 'explore', 'us', 'info'].includes(v)) v = 'plan';
-  state.view = v; lsSet(LS.view, v);
+  state.view = v; lsSet(LS.view, v); if (homeOpen) closeModals();
   $('#pinSheet').classList.add('hidden'); $('#radarBanner').classList.add('hidden');
   $$('section[data-view]').forEach((s) => s.classList.toggle('hidden', s.dataset.view !== v));
   $$('.nav-btn').forEach((b) => b.classList.toggle('selected', b.dataset.view === v));
@@ -516,7 +570,7 @@ async function saveLocation(data, editingId) {
   const id = 'local-' + Date.now(); state.custom.push({ ...data, id, isCustom: true, createdAt: new Date().toISOString() }); persistLocal(); renderAll(); return id;
 }
 async function deleteLocation(id) { if (!confirm('Ștergi acest loc din programul comun?')) return; if (fb && state.online && !String(id).startsWith('local-')) { const { db, fs } = fb; await fs.deleteDoc(fs.doc(db, 'trips', TRIP_ID, 'locations', id)); } else { state.custom = state.custom.filter((l) => l.id !== id); persistLocal(); renderAll(); } closeModals(); toast('Locul a fost șters.', 'delete'); }
-async function toggleVisited(k) { const v = { ...state.shared.visited, [k]: !state.shared.visited[k] }; state.shared.visited = v; renderAll(); refreshDetail(); await saveShared({ visited: v }); }
+async function toggleVisited(k) { const v = { ...state.shared.visited, [k]: !state.shared.visited[k] }; state.shared.visited = v; if (v[k]) { buzz(); confetti(window.innerWidth / 2, window.innerHeight * .6); } renderAll(); refreshDetail(); await saveShared({ visited: v }); }
 async function toggleSkip(k) { const s = { ...state.shared.skipped, [k]: !state.shared.skipped[k] }; state.shared.skipped = s; renderAll(); refreshDetail(); await saveShared({ skipped: s }); toast(s[k] ? 'Scos din program. Îl poți pune înapoi oricând.' : 'Pus înapoi în program.'); }
 async function pinHere(k) { if (!state.pos) return toast('Nu am încă poziția ta. Deschide Harta.', 'my_location'); const p = { ...state.shared.pins, [k]: { lat: state.pos.lat, lng: state.pos.lng } }; state.shared.pins = p; renderAll(); refreshDetail(); await saveShared({ pins: p }); toast('Poziția exactă a fost salvată pentru toți.', 'push_pin'); }
 let notesTimer;
@@ -545,33 +599,39 @@ function applyParsed(p) {
   if (!$('#locTitle').value) $('#locTitle').focus(); else $('#locDesc').focus();
 }
 async function pasteLink() { try { const t = await navigator.clipboard.readText(); if (t) { $('#linkInput').value = t; applyParsed(parseShared(t)); } else toast('Clipboard-ul e gol.', 'content_paste'); } catch { toast('Nu am acces la clipboard. Lipește manual în câmp.', 'content_paste'); $('#linkInput').focus(); } }
+function pickDay(day) { $('#locDay').value = day; $$('#dayPick .chip').forEach((c) => c.classList.toggle('selected', c.dataset.day === day)); $('#timeFields').classList.toggle('hidden', day === 'pool'); }
+function pickPerson(person, on) { const b = $(`#personPick [data-person="${person}"]`); if (!b) return; const val = on === undefined ? !b.classList.contains('on') : on; b.classList.toggle('on', val); b.setAttribute('aria-pressed', String(val)); b.querySelector('.ic')?.remove(); b.insertAdjacentHTML('beforeend', icon(val ? 'check' : 'add', 'i-18')); }
+const pickedPersons = () => $$('#personPick .ptoggle.on').map((b) => b.dataset.person);
+async function syncPersons(locId, title, wanted) { for (const p of PERSONS) { const has = !!bucketEntryFor(p, locId); if (wanted.includes(p) && !has) await bucketSet(p, 'l-' + locId, { text: title, loc: locId, done: false, by: me() }); else if (!wanted.includes(p) && has) { const it = bucketEntryFor(p, locId); if (isDefaultId(it.id)) await bucketSet(p, it.id, { hidden: true }); else await bucketDel(p, it.id); } } }
 function setAddTab(tab) { $$('.add-tab').forEach((b) => b.classList.toggle('selected', b.dataset.tab === tab)); $('#addTabLink').classList.toggle('hidden', tab !== 'link'); }
 let formPos = null;
-function resetForm() { $('#addLocationForm').reset(); $('#editingId').value = ''; $('#locLink').value = ''; $('#locSource').value = ''; $('#linkInput').value = ''; $('#linkResult').classList.add('hidden'); $('#posInfo').textContent = ''; formPos = null; $('#useMyPosBtn span:last-child').textContent = 'Sunt aici acum'; $('#addTitle').textContent = 'Adaugă un loc'; $('#saveLocBtn').textContent = 'Salvează în programul comun'; $('#locDay').value = state.day; $('#locAddedBy').value = me(); }
+function resetForm() { $('#addLocationForm').reset(); $('#editingId').value = ''; $('#locLink').value = ''; $('#locSource').value = ''; $('#linkInput').value = ''; $('#linkResult').classList.add('hidden'); $('#posInfo').textContent = ''; formPos = null; $('#useMyPosBtn span:last-child').textContent = 'Sunt aici acum'; $('#addTitle').textContent = 'Adaugă un loc'; $('#saveLocBtn').textContent = 'Salvează'; pickDay('pool'); PERSONS.forEach((p) => pickPerson(p, false)); $('#locAddedBy').value = me(); }
 function openAdd({ tab = 'manual', prefill = {}, shared = null, editing = null } = {}) {
   closeModals(); resetForm(); setAddTab(tab);
-  if (editing) { $('#addTitle').textContent = 'Editează locul'; $('#saveLocBtn').textContent = 'Salvează modificările'; $('#editingId').value = editing.id; $('#locTitle').value = editing.title || ''; $('#locAddedBy').value = editing.addedBy || 'Daniel'; $('#locDay').value = editing.day; $('#locCat').value = editing.cat; $('#locTime').value = editing.time || ''; $('#locHours').value = editing.hours || ''; $('#locDesc').value = editing.desc || ''; $('#locPhoto').value = state.photos[editing.id]?.url || ''; $('#locNear').checked = !!editing.nearPoblenou; $('#locLink').value = editing.link || ''; $('#locSource').value = editing.source || ''; if (typeof editing.lat === 'number') { formPos = { lat: editing.lat, lng: editing.lng }; $('#posInfo').textContent = 'poziție salvată ✓'; } }
+  if (editing) { $('#addTitle').textContent = 'Editează locul'; $('#saveLocBtn').textContent = 'Salvează modificările'; $('#editingId').value = editing.id; $('#locTitle').value = editing.title || ''; $('#locAddedBy').value = editing.addedBy || 'Daniel'; pickDay(DAYS.includes(editing.day) ? editing.day : 'pool'); PERSONS.forEach((p) => pickPerson(p, !!bucketEntryFor(p, editing.id))); $('#locCat').value = editing.cat === 'mara' ? 'fun' : editing.cat; $('#locTime').value = editing.time || ''; $('#locHours').value = editing.hours || ''; $('#locDesc').value = editing.desc || ''; $('#locPhoto').value = state.photos[editing.id]?.url || ''; $('#locNear').checked = !!editing.nearPoblenou; $('#locLink').value = editing.link || ''; $('#locSource').value = editing.source || ''; if (typeof editing.lat === 'number') { formPos = { lat: editing.lat, lng: editing.lng }; $('#posInfo').textContent = 'poziție salvată ✓'; } }
   for (const [k, v] of Object.entries(prefill)) { const el = $('#' + k); if (el) el.value = v; }
+  if (prefill.locDay) pickDay(prefill.locDay);
   if (prefill.pos) { formPos = prefill.pos; $('#posInfo').textContent = 'poziție preluată ✓'; }
   $('#addModal').classList.remove('hidden');
   if (shared) { $('#linkInput').value = shared; applyParsed(parseShared(shared)); } else if (tab === 'link') $('#linkInput').focus(); else if (!editing) $('#locTitle').focus();
 }
-function closeModals() { $$('[data-modal]').forEach((m) => m.classList.add('hidden')); }
+function closeModals() { homeOpen = false; $$('[data-modal]').forEach((m) => m.classList.add('hidden')); }
 async function handleAddSubmit(e) {
   e.preventDefault(); const btn = $('#saveLocBtn'), title = $('#locTitle').value.trim(), desc = $('#locDesc').value.trim(); if (!title || !desc) return;
-  const data = { title, day: $('#locDay').value, cat: $('#locCat').value, time: $('#locTime').value.trim() || 'Flexibil', desc, hours: $('#locHours').value.trim(), mapLink: mapsSearch(title), addedBy: PEOPLE.includes($('#locAddedBy').value) ? $('#locAddedBy').value : 'Daniel', nearPoblenou: $('#locNear').checked, link: $('#locLink').value.trim(), source: $('#locSource').value.trim() };
+  const day = $('#locDay').value || 'pool'; const data = { title, day, cat: $('#locCat').value, time: day === 'pool' ? 'Flexibil' : ($('#locTime').value.trim() || 'Flexibil'), desc, hours: $('#locHours').value.trim(), mapLink: mapsSearch(title), addedBy: PEOPLE.includes($('#locAddedBy').value) ? $('#locAddedBy').value : 'Daniel', nearPoblenou: $('#locNear').checked, link: $('#locLink').value.trim(), source: $('#locSource').value.trim() };
   lsSet(LS.me, data.addedBy); if (!data.hours) delete data.hours; if (!data.link) { delete data.link; delete data.source; } if (formPos) { data.lat = formPos.lat; data.lng = formPos.lng; }
   const editingId = $('#editingId').value || null; btn.disabled = true; btn.textContent = 'Se salvează…';
   try {
-    const newId = await saveLocation(data, editingId); const photoUrl = ($('#locPhoto')?.value || '').trim(); closeModals(); resetForm();
+    const newId = await saveLocation(data, editingId); const photoUrl = ($('#locPhoto')?.value || '').trim(); const persons = pickedPersons(); closeModals(); resetForm();
+    try { await syncPersons(newId, title, persons); } catch (err) { console.warn(err); }
     if (photoUrl && /^https:\/\/\S+$/i.test(photoUrl)) { try { await savePhotoUrl(newId, photoUrl); } catch (err) { console.warn(err); } }
     if (pendingBucketLink && !editingId) { const pb = pendingBucketLink; pendingBucketLink = null; await bucketSet(pb.person, pb.id || 'c' + Date.now(), { text: pb.text || data.title, loc: newId, done: pb.done, by: me() }); state.person = pb.person; setView('us'); toast(`„${data.title}” e în program și legat de task.`, 'add_task'); }
-    else { setView('plan'); setFilter('all'); switchDay(data.day); toast(editingId ? 'Modificările au fost salvate.' : `${state.online ? 'Salvat și sincronizat' : 'Salvat pe acest telefon'}: ${DAY_LABEL[data.day]}, ${data.time}.`); setTimeout(() => { const el = $('#loc-' + CSS.escape(newId)); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); } }, 350); }
+    else { setView('plan'); setFilter('all'); if (data.day !== 'pool') switchDay(data.day); else renderDay(); toast(editingId ? 'Modificările au fost salvate.' : data.day === 'pool' ? `„${title}” e în locurile dorite${persons.length ? ' și pe bucketlist' : ''}. Îl pui într-o zi când vreți.` : `„${title}”: ${DAY_LABEL[data.day]}, ${data.time}${persons.length ? ' · pe bucketlist' : ''}.`, data.day === 'pool' ? 'bookmark' : 'event', 4500); setTimeout(() => { const el = $('#loc-' + CSS.escape(newId)); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); } }, 350); }
   }
   catch (err) { console.error(err); toast('Eroare la salvare: ' + (err.message || err), 'info'); } finally { btn.disabled = false; btn.textContent = editingId ? 'Salvează modificările' : 'Salvează în programul comun'; }
 }
 function useMyPosition() { const b = $('#useMyPosBtn'), lbl = b.querySelector('span:last-child'), done = (pos) => { formPos = pos; lbl.textContent = 'Poziție salvată ✓'; $('#posInfo').textContent = ''; }; if (state.pos) return done(state.pos); if (!navigator.geolocation) return toast('Telefonul nu oferă localizare.', 'my_location'); lbl.textContent = 'Caut poziția…'; navigator.geolocation.getCurrentPosition((p) => done({ lat: p.coords.latitude, lng: p.coords.longitude }), () => { toast('Nu am putut lua poziția.', 'my_location'); lbl.textContent = 'Sunt aici acum'; }, { enableHighAccuracy: true, timeout: 10000 }); }
-function addAlternative(i) { const a = ALTERNATIVES[i]; if (!a) return; openAdd({ prefill: { locTitle: a.title, locCat: a.cat, locDay: state.day, locHours: a.hours || '', locDesc: [a.note, a.price ? `Preț: ${a.price}` : '', a.address ? `Adresă: ${a.address}` : ''].filter(Boolean).join('\n'), pos: typeof a.lat === 'number' ? { lat: a.lat, lng: a.lng } : null } }); $('#locTime').focus(); }
+function addAlternative(i) { const a = ALTERNATIVES[i]; if (!a) return; openAdd({ prefill: { locTitle: a.title, locCat: a.cat === 'mara' ? 'fun' : a.cat, locDay: state.day, locHours: a.hours || '', locDesc: [a.note, a.price ? `Preț: ${a.price}` : '', a.address ? `Adresă: ${a.address}` : ''].filter(Boolean).join('\n'), pos: typeof a.lat === 'number' ? { lat: a.lat, lng: a.lng } : null } }); $('#locTime').focus(); }
 function handleShareTarget() { const u = new URL(location.href); if (u.searchParams.has('r')) { u.searchParams.delete('r'); history.replaceState(null, '', u.pathname + (u.search || '')); } const shared = [u.searchParams.get('title'), u.searchParams.get('text'), u.searchParams.get('url')].filter(Boolean).join('\n'); if (!shared) return; history.replaceState(null, '', u.pathname); openAdd({ tab: 'link', shared }); }
 
 // ---------- Radar ----------
@@ -581,7 +641,7 @@ function renderNearby() {
   const list = $('#nearbyList'); if (!list) return;
   if (!state.pos) { list.innerHTML = `<div class="row compact text-[13px] muted">${state.radarOn ? 'Caut poziția…' : 'Apasă „Unde sunt” ca să vezi distanțele.'}</div>`; return; }
   const today = todayKey(); const items = radarTargets().map((it) => ({ ...it, d: distanceM(state.pos, it.p) })).sort((a, b) => (a.kind === 'alt') - (b.kind === 'alt') || a.d - b.d).slice(0, 8);
-  list.innerHTML = items.map(({ loc, d, kind, p }) => `<div class="row compact press" data-action="open-detail" data-id="${esc(loc.id)}" role="button">${thumbHTML(loc, 'w-11 h-11 rounded-xl')}<div class="min-w-0 flex-1"><div class="t-title text-[14px] truncate">${esc(loc.title)} ${whoHTML(loc.id)}</div><div class="text-[11.5px] muted truncate">${fmtDist(d)} · ${walkMin(d)} min pe jos · ${kind === 'alt' ? 'recomandare' : DAY_LABEL[loc.day]}${loc.time ? ' ' + esc(loc.time) : ''}${!p.exact ? ' · aprox.' : ''}${loc.day === today ? ' · <b style="color: var(--primary)">azi</b>' : ''}</div></div><a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="icon-btn icon-btn-sm press shrink-0" style="background: var(--success); color: #fff" aria-label="Navighează" onclick="event.stopPropagation()">${icon('directions_walk', 'i-20')}</a></div>`).join('');
+  list.innerHTML = items.map(({ loc, d, kind, p }) => `<div class="row compact press" data-action="open-detail" data-id="${esc(loc.id)}" role="button">${thumbHTML(loc, 'w-11 h-11 rounded-xl')}<div class="min-w-0 flex-1"><div class="t-title text-[14px] truncate">${esc(loc.title)} ${whoHTML(loc.id)}</div><div class="text-[11.5px] muted truncate">${fmtDist(d)} · ${walkMin(d)} min pe jos · ${kind === 'alt' ? 'recomandare' : isPool(loc) ? 'dorit, fără zi' : DAY_LABEL[loc.day]}${loc.time ? ' ' + esc(loc.time) : ''}${!p.exact ? ' · aprox.' : ''}${loc.day === today ? ' · <b style="color: var(--primary)">azi</b>' : ''}</div></div><a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="icon-btn icon-btn-sm press shrink-0" style="background: var(--success); color: #fff" aria-label="Navighează" onclick="event.stopPropagation()">${icon('directions_walk', 'i-20')}</a></div>`).join('');
 }
 function checkProximity() {
   if (!state.pos || !state.radarOn) return; const now = Date.now();
@@ -604,6 +664,7 @@ function updateMeMarker() { if (!state.map || !state.pos) return; const ll = [st
 function renderMap() {
   if (!state.map) return; state.markers.forEach((m) => m.remove()); state.markers = []; const bounds = []; let n = 0;
   for (const loc of dayItems(state.day)) { const p = coordsOf(loc); n++; if (!p) continue; const cls = state.shared.visited[loc.id] ? 'pin done' : loc.isCustom ? 'pin custom' : 'pin'; const m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: `<div class="${cls}">${n}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] }) }).addTo(state.map); m.on('click', () => showPinSheet(loc)); state.markers.push(m); bounds.push([p.lat, p.lng]); }
+  for (const loc of dayItems(state.day)) { const vs = enriched(loc).variants || []; vs.forEach((v, i) => { if (typeof v.lat !== 'number') return; const m = L.marker([v.lat, v.lng], { icon: L.divIcon({ className: '', html: `<div class="pin custom" style="width:24px;height:24px;font-size:10px">${i + 1}</div>`, iconSize: [24, 24], iconAnchor: [12, 12] }) }).addTo(state.map); m.on('click', () => showPinSheet({ ...loc, title: v.title, address: v.address, placeQuery: v.placeQuery, lat: v.lat, lng: v.lng, approx: true, hours: v.hours })); state.markers.push(m); }); }
   for (const z of DAY_ZONES[state.day] || []) ALTERNATIVES.forEach((a, i) => { if (a.zone !== z || typeof a.lat !== 'number') return; const m = L.marker([a.lat, a.lng], { icon: L.divIcon({ className: '', html: '<div class="pin alt">+</div>', iconSize: [22, 22], iconAnchor: [11, 11] }) }).addTo(state.map); m.on('click', () => showPinSheet(altAsLoc(i))); state.markers.push(m); });
   homeMarker(); updateMeMarker(); if (bounds.length) state.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 }); setTimeout(() => state.map.invalidateSize(), 50);
 }
@@ -614,8 +675,8 @@ function setupPWA() {
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); state.installPrompt = e; $('#installBtn').classList.remove('hidden'); });
   window.addEventListener('appinstalled', () => { $('#installBtn').classList.add('hidden'); closeModals(); toast('Instalată! O găsești pe ecranul principal și în meniul Share.'); });
   const host = location.hostname; if (!('serviceWorker' in navigator) || !(host.endsWith('.web.app') || host.endsWith('.firebaseapp.com') || host === 'localhost' || host === '127.0.0.1')) return;
-  let refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (refreshing) return; refreshing = true; toast('Versiune nouă. Se reîncarcă…', 'sync'); setTimeout(() => location.reload(), 700); });
+  let refreshing = false, hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadController) { hadController = true; return; } if (refreshing) return; refreshing = true; toast('Versiune nouă. Se reîncarcă…', 'sync'); setTimeout(() => location.reload(), 700); });
   navigator.serviceWorker.register('/sw.js').then((reg) => { reg.update().catch(() => {}); setInterval(() => reg.update().catch(() => {}), 30 * 60000); }).catch((e) => console.warn('SW:', e));
 }
 async function hardRefresh() {
@@ -627,8 +688,13 @@ async function hardRefresh() {
 }
 async function installApp() { const p = state.installPrompt; if (!p) return openInstallSheet(); p.prompt(); await p.userChoice; state.installPrompt = null; $('#installBtn').classList.add('hidden'); }
 
+// ---------- Micro-interacții ----------
+const buzz = (ms = 12) => { try { navigator.vibrate?.(ms); } catch {} };
+function confetti(x, y, colors = ['#D7301F', '#1B49B8', '#D9A21B', '#1F7A5C', '#F0569A']) { for (let i = 0; i < 14; i++) { const el = document.createElement('i'); el.className = 'confetti'; const a = (Math.PI * 2 * i) / 14 + Math.random() * .5, r = 40 + Math.random() * 50; el.style.cssText = `left:${x}px;top:${y}px;background:${colors[i % colors.length]};--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r - 30}px;--rot:${Math.round(Math.random() * 360)}deg`; document.body.appendChild(el); setTimeout(() => el.remove(), 950); } }
+let lastY = 0; window.addEventListener('scroll', () => { const y = window.scrollY; const fab = $('#fab'); if (fab) fab.classList.toggle('mini', y > 120 && y > lastY); lastY = y; }, { passive: true });
+
 // ---------- Evenimente ----------
-document.addEventListener('pointerdown', ripple);
+document.addEventListener('pointerdown', (e) => { ripple(e); if (e.target.closest('.chip, .seg, .nav-btn, .avatar, .ptoggle')) buzz(6); });
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]'); if (!el) { if (e.target.matches('[data-modal]')) closeModals(); return; }
   if (el.tagName === 'FORM' || el.tagName === 'LABEL') return;
@@ -642,10 +708,10 @@ document.addEventListener('click', (e) => {
     'open-detail': () => openDetail(id), 'delete-loc': () => deleteLocation(id), 'edit-loc': () => { const l = state.custom.find((x) => x.id === id); if (l) openAdd({ tab: 'manual', editing: l }); },
     'toggle-visited': () => toggleVisited(id), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => openPhotoSheet(id), 'photo-file': () => { $('#coffeeSheet').classList.add('hidden'); state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); }, 'photo-remove': () => removePhoto(id),
     'day-route': dayRoute, 'locate': locate, 'open-link': () => window.open(el.dataset.href, '_blank', 'noopener'), 'close-banner': () => $('#radarBanner').classList.add('hidden'), 'close-sheet': () => $('#pinSheet').classList.add('hidden'), 'install': installApp, 'open-install': openInstallSheet, 'refresh': hardRefresh,
-    'open-coffee': openCoffee, 'coffee-add': coffeeAdd, 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
+    'open-coffee': openCoffee, 'open-home': openHome, 'copy-address': () => copyText('Carrer de Pellaires 35, 08019 Barcelona', 'Adresa a fost copiată.'), 'coffee-add': coffeeAdd, 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
     'coffee-type': () => { coffeeSel.type = el.dataset.type; $$('#coffeeTypes .chip').forEach((c) => c.classList.toggle('selected', c === el)); },
     'coffee-place': () => { coffeeSel.place = el.dataset.place; $$('#coffeePlaces .chip').forEach((c) => c.classList.toggle('selected', c === el)); },
-    'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta)), 'bucket-del': () => bucketDel(el.dataset.person, id), 'bucket-noop': () => {}, 'bucket-new': () => openBucketEditor(el.dataset.person), 'bucket-edit': () => { const it = bucketOf(el.dataset.person).find((x) => x.id === id); if (it) openBucketEditor(el.dataset.person, it); }, 'bucket-pick': () => bucketPick(el.dataset.loc), 'bucket-toggle': () => { const l = findLoc(id); if (l) bucketToggle(el.dataset.person, l); }, 'bucket-save': bucketSave, 'bucket-delete': bucketDelete, 'bucket-newloc': bucketNewLoc,
+    'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta)), 'bucket-del': () => bucketDel(el.dataset.person, id), 'bucket-noop': () => {}, 'bucket-new': () => openBucketEditor(el.dataset.person), 'bucket-edit': () => { const it = bucketOf(el.dataset.person).find((x) => x.id === id); if (it) openBucketEditor(el.dataset.person, it); }, 'bucket-pick': () => bucketPick(el.dataset.loc), 'pick-day': () => pickDay(el.dataset.day), 'pick-person': () => pickPerson(el.dataset.person), 'schedule': () => openSchedule(id), 'sched-day': () => $$('#schedDays .chip').forEach((c) => c.classList.toggle('selected', c === el)), 'sched-save': () => scheduleSave(), 'sched-pool': () => scheduleSave('pool'), 'bucket-toggle': () => { const l = findLoc(id); if (l) bucketToggle(el.dataset.person, l); }, 'bucket-save': bucketSave, 'bucket-delete': bucketDelete, 'bucket-newloc': bucketNewLoc,
   };
   actions[a]?.();
 });
@@ -655,7 +721,7 @@ document.addEventListener('submit', (e) => {
   if (e.target.closest('#coffeeBody') && bucketEdit) { e.preventDefault(); bucketSave(); }
 });
 document.addEventListener('change', async (e) => {
-  if (e.target.matches('.bucket-check')) bucketSet(e.target.dataset.person, e.target.dataset.id, { done: e.target.checked }).then(() => { if (e.target.checked) toast('Bifat!', 'celebration'); });
+  if (e.target.matches('.bucket-check')) { if (e.target.checked) { buzz(); const r = e.target.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + r.height / 2); } bucketSet(e.target.dataset.person, e.target.dataset.id, { done: e.target.checked }).then(() => { if (e.target.checked) toast('Bifat!', 'celebration'); }); }
   if (e.target.id === 'photoInput' && e.target.files?.[0] && state.photoTarget) { try { await savePhoto(state.photoTarget, e.target.files[0]); } catch (err) { console.error(err); toast('Nu am putut salva poza: ' + (err.message || err), 'image'); } }
 });
 document.addEventListener('input', (e) => { if (e.target.id === 'sharedNotes') onNotesInput(); if (e.target.id === 'bucketSearch') $('#bucketPickList').innerHTML = pickListHTML(e.target.value); });

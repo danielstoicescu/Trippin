@@ -66,14 +66,15 @@
       </div>
 
       <div id="nextStop"></div>
-      <div id="homePlan"></div>
 
       <div class="hscroll" style="scroll-snap-type: none">
         <button data-action="filter" data-cat="all" class="chip press">Toate</button>
-        <button data-action="filter" data-cat="mara" class="chip press"><span class="material-symbols-rounded i-18">auto_awesome</span> Mara</button>
         <button data-action="filter" data-cat="coffee" class="chip press"><span class="material-symbols-rounded i-18">local_cafe</span> Cafea</button>
         <button data-action="filter" data-cat="food" class="chip press"><span class="material-symbols-rounded i-18">restaurant</span> Mâncare</button>
-        <button data-action="filter" data-cat="art" class="chip press"><span class="material-symbols-rounded i-18">palette</span> Artă</button>
+        <button data-action="filter" data-cat="sweet" class="chip press"><span class="material-symbols-rounded i-18">icecream</span> Dulciuri</button>
+        <button data-action="filter" data-cat="shop" class="chip press"><span class="material-symbols-rounded i-18">local_mall</span> Shopping</button>
+        <button data-action="filter" data-cat="fun" class="chip press"><span class="material-symbols-rounded i-18">attractions</span> Distracție</button>
+        <button data-action="filter" data-cat="art" class="chip press"><span class="material-symbols-rounded i-18">palette</span> Artă & vederi</button>
       </div>
 
       <div id="itinerary-container"></div>
@@ -93,7 +94,6 @@
         <div id="map" role="application" aria-label="Harta zilei"></div>
         <button data-action="day-route" class="btn btn-m btn-filled press absolute left-3 bottom-3 z-[400]" style="box-shadow: var(--shadow-3)"><span class="material-symbols-rounded i-20">route</span> Traseul zilei</button>
       </div>
-      <div id="homeExplore"></div>
       <p id="radarStatus" class="text-[12px] muted px-1 flex items-start gap-1.5"><span class="material-symbols-rounded i-16 mt-0.5">info</span><span>Radarul pornește automat aici și dă alertă la ~150 m de un loc din program, cât timp aplicația e deschisă pe ecran.</span></p>
       <div id="nextStopExplore"></div>
       <div><div class="eyebrow muted mb-2 px-1">Lângă mine</div><div id="nearbyList" class="group"></div></div>
@@ -147,11 +147,12 @@
   </div>
 
   <nav class="nav" aria-label="Navigare">
-    <div class="max-w-md mx-auto grid grid-cols-4">
+    <div class="max-w-md mx-auto grid grid-cols-5">
       <button data-action="view" data-view="plan" class="nav-btn press"><span class="pill"><span class="material-symbols-rounded">calendar_month</span></span>Plan</button>
       <button data-action="view" data-view="explore" class="nav-btn press"><span class="pill"><span class="material-symbols-rounded">explore</span></span>Hartă</button>
       <button data-action="view" data-view="us" class="nav-btn press"><span class="pill"><span class="material-symbols-rounded">group</span></span>Noi</button>
       <button data-action="view" data-view="info" class="nav-btn press"><span class="pill"><span class="material-symbols-rounded">info</span></span>Info</button>
+      <button data-action="open-home" class="nav-btn nav-home press" aria-label="Acasă, Poblenou"><span class="pill home-pill"><span class="material-symbols-rounded">home</span></span><span id="homeNavLabel">Acasă</span></button>
     </div>
   </nav>
   <button data-action="open-add" id="fab" class="fab press" aria-label="Adaugă loc"><span class="material-symbols-rounded">add</span> Adaugă</button>
@@ -178,14 +179,28 @@
       <form id="addLocationForm" class="mt-4 space-y-3">
         <input type="hidden" id="editingId" value=""><input type="hidden" id="locLink" value=""><input type="hidden" id="locSource" value="">
         <div class="field"><label for="locTitle">Numele locului *</label><div class="flex gap-2"><input type="text" id="locTitle" required maxlength="120" placeholder="Ex: Satan's Coffee Corner"><button type="button" data-action="modal-search" class="btn btn-success press shrink-0"><span class="material-symbols-rounded i-20">map</span> Maps</button></div></div>
-        <div class="grid grid-cols-3 gap-2">
-          <div class="field"><label for="locAddedBy">Cine</label><select id="locAddedBy"><option value="Daniel">Daniel</option><option value="Mara">Mara</option><option value="Anne">Anne</option></select></div>
-          <div class="field"><label for="locDay">Ziua</label><select id="locDay"><option value="thu">Joi 5</option><option value="fri">Vin 6</option><option value="sat">Sâm 7</option><option value="sun">Dum 8</option><option value="mon">Lun 9</option></select></div>
-          <div class="field"><label for="locCat">Tip</label><select id="locCat"><option value="mara">Mara</option><option value="coffee">Cafea</option><option value="food">Mâncare</option><option value="art">Artă</option></select></div>
-        </div>
         <div class="grid grid-cols-2 gap-2">
+          <div class="field"><label for="locAddedBy">Cine adaugă</label><select id="locAddedBy"><option value="Daniel">Daniel</option><option value="Mara">Mara</option><option value="Anne">Anne</option></select></div>
+          <div class="field"><label for="locCat">Tip</label><select id="locCat"><option value="food">Mâncare</option><option value="coffee">Cafea</option><option value="sweet">Dulciuri</option><option value="shop">Shopping</option><option value="fun">Distracție</option><option value="art">Artă & vederi</option></select></div>
+        </div>
+        <div class="field"><label>Unde o punem?</label>
+          <input type="hidden" id="locDay" value="pool">
+          <div class="flex flex-wrap gap-2" id="dayPick">
+            <button type="button" data-action="pick-day" data-day="pool" class="chip press selected"><span class="material-symbols-rounded i-18">bookmark</span> Dorite, fără zi</button>
+            <button type="button" data-action="pick-day" data-day="thu" class="chip press">Joi 5</button><button type="button" data-action="pick-day" data-day="fri" class="chip press">Vin 6</button><button type="button" data-action="pick-day" data-day="sat" class="chip press">Sâm 7</button><button type="button" data-action="pick-day" data-day="sun" class="chip press">Dum 8</button><button type="button" data-action="pick-day" data-day="mon" class="chip press">Lun 9</button>
+          </div>
+          <p class="text-[11.5px] muted mt-1.5">„Dorite” = un loc pe care îl vrem, dar încă nu știm când. Îl pui într-o zi oricând, dintr-o atingere.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2" id="timeFields">
           <div class="field"><label for="locTime">Interval orar</label><input type="text" id="locTime" maxlength="60" placeholder="19:30 – 21:00"></div>
           <div class="field"><label for="locHours">Program (opțional)</label><input type="text" id="locHours" maxlength="120" placeholder="Lu–Vi 9–18"></div>
+        </div>
+        <div class="field"><label>Pe bucketlist-ul lui (opțional)</label>
+          <div class="flex flex-wrap gap-2" id="personPick">
+            <button type="button" data-action="pick-person" data-person="mara" class="ptoggle press m" aria-pressed="false"><span class="avatar p-mara">M</span>Mara</button>
+            <button type="button" data-action="pick-person" data-person="anne" class="ptoggle press a" aria-pressed="false"><span class="avatar p-anne">A</span>Anne</button>
+            <button type="button" data-action="pick-person" data-person="daniel" class="ptoggle press d" aria-pressed="false"><span class="avatar p-daniel">D</span>Daniel</button>
+          </div>
         </div>
         <div class="field"><label for="locPhoto">Link poză de pe net (opțional)</label><input type="url" id="locPhoto" inputmode="url" maxlength="600" placeholder="https://… (adresa unei imagini de pe Instagram, site sau Google)"></div>
         <div class="field"><label for="locDesc">Note *</label><textarea id="locDesc" rows="3" required maxlength="1500" placeholder="De ce vrem să mergem, ce comandăm, adresa…"></textarea></div>
@@ -194,7 +209,7 @@
           <button type="button" data-action="use-my-position" id="useMyPosBtn" class="chip press"><span class="material-symbols-rounded i-18" style="color: var(--primary)">my_location</span> <span>Sunt aici acum</span></button>
           <span id="posInfo" class="muted"></span>
         </div>
-        <button type="submit" id="saveLocBtn" class="btn btn-l btn-secondary press w-full">Salvează în programul comun</button>
+        <button type="submit" id="saveLocBtn" class="btn btn-l btn-secondary press w-full">Salvează</button>
       </form>
     </div>
   </div>

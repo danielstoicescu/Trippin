@@ -50,7 +50,8 @@ body { background: var(--surface); color: var(--on-surface); padding-bottom: cal
 .i-16 { font-size: 16px; } .i-18 { font-size: 18px; } .i-20 { font-size: 20px; } .i-22 { font-size: 22px; } .i-28 { font-size: 28px; } .i-32 { font-size: 32px; } .i-40 { font-size: 40px; } .i-48 { font-size: 48px; }
 
 /* Motive Barcelona: xamfrà (colțul tăiat al Eixample-ului) ca familie de forme. corner-shape (Chrome 139+, Android 2026); fallback: colțuri rotunjite. */
-.xam, .card, .card-low, .card-mid, .card-high, .card-primary, .card-secondary, .card-tertiary, .card-inverse, .thumb, .hero, .carousel-card, .tl .card-item, .fab, .sheet, .group > .row, .btn-group > .seg, .avatar.selected, .pin { corner-shape: bevel; }
+.xam, .thumb, .hero, .carousel-card, .fab, .btn-group > .seg, .avatar.selected, .pin, .home-hero, .ptoggle.on .avatar { corner-shape: bevel; }
+.card, .card-low, .card-mid, .card-high, .card-primary, .card-secondary, .card-tertiary, .card-inverse, .tl .card-item, .sheet, .group > .row, .home-card, .snackbar, .chip, .btn { corner-shape: squircle; }
 .xam { border-radius: 18px; }
 .xam-sm { corner-shape: bevel; border-radius: 9px; }
 .sync-dot { width: 9px; height: 9px; border-radius: 999px; background: var(--outline-variant); flex-shrink: 0; }
@@ -82,10 +83,27 @@ body { background: var(--surface); color: var(--on-surface); padding-bottom: cal
 .row.selected { background: var(--primary-container); color: var(--on-primary-container); }
 .row.done { opacity: .6; } .row.skipped { opacity: .5; background: var(--surface-low); }
 
+/* Micro-interacțiuni: apariție în cascadă, pop la selecție, bifă săltăreață */
+@keyframes rise { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes pop { 0% { transform: scale(.85); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
+@keyframes wiggle { 0%, 100% { transform: rotate(0) scale(1.08); } 30% { transform: rotate(-6deg) scale(1.12); } 70% { transform: rotate(5deg) scale(1.1); } }
+.tl .item, .group > .row, .carousel-card, #usContent > *, #itinerary-container > * > * { animation: rise .45s var(--ease) both; }
+.tl .item:nth-child(n+1) { animation-delay: .03s; } .tl .item:nth-child(n+4) { animation-delay: .08s; } .tl .item:nth-child(n+7) { animation-delay: .13s; } .tl .item:nth-child(n+10) { animation-delay: .18s; } .tl .item:nth-child(n+13) { animation-delay: .23s; } .tl .item:nth-child(n+16) { animation-delay: .28s; }
+.group > .row:nth-child(2) { animation-delay: .04s; } .group > .row:nth-child(3) { animation-delay: .08s; } .group > .row:nth-child(4) { animation-delay: .12s; } .group > .row:nth-child(5) { animation-delay: .16s; } .group > .row:nth-child(n+6) { animation-delay: .2s; }
+.chip.selected, .btn-group > .seg.selected, .ptoggle.on, .who > i { animation: pop .4s var(--spring); }
+.avatar.selected { animation: wiggle .6s var(--spring); }
+input[type="checkbox"] { transition: transform .3s var(--spring); } input[type="checkbox"]:checked { animation: pop .4s var(--spring); }
+.tl .card-item:active .thumb, .row:active .thumb { transform: rotate(-4deg) scale(1.06); } .thumb { transition: transform .35s var(--spring); }
+.carousel-card:active { transform: scale(.96); }
+.fab.mini { padding: 0 16px; } .fab.mini span:not(.ic) { display: none; } .fab { transition: padding .3s var(--ease), transform .35s var(--spring), box-shadow .25s; }
+.confetti { position: fixed; z-index: 1200; pointer-events: none; width: 8px; height: 12px; border-radius: 2px; animation: confetti .9s var(--ease) forwards; }
+@keyframes confetti { 0% { transform: translate(0, 0) rotate(0); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; } }
+
 /* State layers + ripple + press */
 .press { position: relative; overflow: hidden; -webkit-user-select: none; user-select: none; transition: background-color .25s var(--ease), color .25s var(--ease), border-radius .45s var(--spring), transform .35s var(--spring), box-shadow .25s; }
 .press::after { content: ''; position: absolute; inset: 0; background: currentColor; opacity: 0; transition: opacity .15s; pointer-events: none; }
-.press:active::after { opacity: .10; } .press:active { transform: scale(.97); }
+.press:active::after { opacity: .10; } .press:active { transform: scale(.965); }
+.card-item.press, .row.press { transition: transform .25s var(--spring), background-color .25s var(--ease), box-shadow .25s; } .card-item.press:active, .row.press:active { transform: scale(.985); }
 @media (hover:hover) { .press:hover::after { opacity: .06; } }
 .ripple { position: absolute; border-radius: 50%; transform: scale(0); background: currentColor; opacity: .18; pointer-events: none; animation: ripple .6s var(--ease) forwards; }
 @keyframes ripple { to { transform: scale(2.8); opacity: 0; } }
@@ -138,15 +156,22 @@ body { background: var(--surface); color: var(--on-surface); padding-bottom: cal
 
 /* Navigare (M3E short navigation bar) */
 .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 900; background: var(--surface-mid); padding-bottom: env(safe-area-inset-bottom); }
-.nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; font-size: 12px; font-weight: 600; color: var(--on-surface-variant); }
-.nav-btn .pill { width: 64px; height: 32px; border-radius: 999px; display: grid; place-items: center; transition: background-color .25s var(--ease), transform .35s var(--spring); }
+.nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; font-size: 11.5px; font-weight: 600; color: var(--on-surface-variant); min-width: 0; padding: 0 2px; white-space: nowrap; }
+.nav-btn .pill { width: 56px; height: 32px; border-radius: 999px; display: grid; place-items: center; transition: background-color .25s var(--ease), transform .35s var(--spring); }
+.nav-btn:active .pill { transform: scale(.9); }
+.nav-home .pill { background: var(--tertiary-container); color: var(--on-tertiary-container); corner-shape: bevel; border-radius: 12px; }
+.nav-home .pill .ic { --ic-o: none; --ic-f: block; }
+.nav-home.near .pill { background: var(--success); color: var(--on-success); animation: pop .5s var(--spring); }
+.nav-home:active .pill { transform: scale(.9) rotate(-6deg); }
+.home-hero { background: var(--primary); color: var(--on-primary); border-radius: 22px; }
 .nav-btn.selected { color: var(--on-surface); } .nav-btn.selected .pill { background: var(--secondary-container); color: var(--on-secondary-container); }
 
 .fab { position: fixed; right: 16px; bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 900; height: 56px; padding: 0 20px 0 16px; border-radius: var(--l); background: var(--secondary); color: var(--on-secondary); display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; box-shadow: var(--shadow-3); }
 
 /* Toolbar plutitor (M3E) */
 .toolbar { position: sticky; bottom: 0; z-index: 5; margin: 16px -4px 0; padding: 8px; border-radius: 999px; background: var(--surface-high); box-shadow: var(--shadow-3); display: flex; align-items: center; gap: 6px; }
-.toolbar .btn-filled { height: 48px; }
+.toolbar .btn-filled { height: 48px; padding: 0 14px; }
+.lbl-s { display: none; } @media (max-width: 385px) { .lbl-l { display: none; } .lbl-s { display: inline; } .toolbar { gap: 2px; } .toolbar .icon-btn { width: 44px; } }
 
 /* Foi (bottom sheets) */
 .sheet-scrim { position: fixed; inset: 0; z-index: 1000; background: rgba(27,27,25,.42); backdrop-filter: blur(2px); }
@@ -165,7 +190,8 @@ body { background: var(--surface); color: var(--on-surface); padding-bottom: cal
 @media (min-width: 720px) { .snackbar.hidden-toast { transform: translate(-50%, 16px); } }
 
 /* Cronologie (rail de timp) */
-.tl { display: grid; grid-template-columns: 52px 22px 1fr; column-gap: 8px; }
+.tl { display: grid; grid-template-columns: 48px 22px minmax(0, 1fr); column-gap: 8px; }
+.tl .item, .tl .gap, .tl .card-item { min-width: 0; max-width: 100%; }
 .tl .t { font-size: 12px; font-weight: 700; color: var(--on-surface-variant); text-align: right; padding-top: 22px; font-variant-numeric: tabular-nums; }
 .tl .rail { position: relative; }
 .tl .rail::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: var(--outline-variant); }
@@ -173,12 +199,14 @@ body { background: var(--surface); color: var(--on-surface); padding-bottom: cal
 .tl .dot.done { background: var(--success); } .tl .dot.skip { background: var(--outline-variant); } .tl .dot.now { background: var(--secondary); box-shadow: 0 0 0 4px var(--surface), 0 0 0 8px color-mix(in srgb, var(--secondary) 25%, transparent); }
 .tl .gap { grid-column: 3; display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--on-surface-muted); padding: 6px 8px; }
 .tl .item { grid-column: 3; padding: 6px 0 10px; }
-.tl .card-item { background: var(--surface-lowest); border-radius: 22px; padding: 12px; display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; }
+.tl .card-item { background: var(--surface-lowest); border-radius: 22px; padding: 12px; display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; overflow: hidden; }
 .tl .card-item.now { background: var(--primary-container); color: var(--on-primary-container); }
 .tl .card-item.done { opacity: .62; } .tl .card-item.skipped { opacity: .5; background: var(--surface-low); }
 .thumb { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; color: #fff; flex-shrink: 0; overflow: hidden; position: relative; }
 .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.cat-mara { background: #D7301F; } .cat-coffee { background: #D9A21B; } .cat-food { background: #1F7A5C; } .cat-art { background: #1B49B8; } .cat-none { background: #5B5B55; }
+.cat-mara, .cat-fun { background: #D7301F; } .cat-coffee { background: #D9A21B; } .cat-food { background: #1F7A5C; } .cat-sweet { background: #E0507E; } .cat-shop { background: #5B3FC9; } .cat-art { background: #1B49B8; } .cat-none { background: #5B5B55; }
+.badge-sweet { background: #FFD9E6; color: #6E1237; } .badge-shop { background: #E6DEFF; color: #2A1370; }
+.dark .badge-sweet { background: #6E1237; color: #FFD9E6; } .dark .badge-shop { background: #2A1370; color: #E6DEFF; }
 .thumb .ic { position: relative; z-index: 0; } .thumb img { z-index: 1; }
 
 /* Carusel */
