@@ -7,6 +7,9 @@ contorul de espresso al lui Daniel și „quest log”-ul Marei apar instant pe 
 Fără Firebase, aplicația merge oricum: totul se salvează local, pe telefonul respectiv.
 
 ## Ce face (gândită pentru telefon, în excursie)
+- **Material 3 pe paleta Barcelona**: bară de navigare Plan · Explorare · Info, buton „Adaugă”, chip-uri, foi de detaliu, light mode implicit.
+- **Detaliu pentru fiecare loc**: notă Google (sept. 2026), un review, „cel mai popular”, tips & tricks, program, preț. Pentru locurile adăugate de familie, Daniel completează cu Claude tabelul `CURATED` din `public/data.js`.
+- **Poze originale**: doar ale voastre. „Adaugă poză” pe orice loc (cameră/galerie), comprimată în telefon și salvată în Firestore, vizibilă la toți. Fără poze stock și fără Google Places (ar cere facturare).
 - **Program pe zile** cu ore de deschidere, prețuri și zile gratuite (verificate online în sept. 2026; ce e marcat „Verifică” se confirmă în Maps).
 - **Recomandări similare pe zone** sub fiecare zi, cu „Adaugă în program”.
 - **Radar „lângă mine”**: pornit din aplicație, arată distanța pe jos până la locurile din program și dă alertă (banner + vibrație + notificare) când sunteți la ~150 m. Merge cât timp aplicația e deschisă pe ecran: un site nu poate urmări locația în fundal.

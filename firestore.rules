@@ -41,6 +41,15 @@ service cloud.firestore {
       allow delete: if true;
     }
 
+    match /trips/bcn-aventura/photos/{locId} {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly(['data', 'by', 'at'])
+        && request.resource.data.data is string && request.resource.data.data.size() <= 960000
+        && request.resource.data.data.matches('data:image/jpeg;base64,.*')
+        && request.resource.data.by in ['Daniel', 'Mara', 'Anne'];
+      allow delete: if true;
+    }
+
     match /trips/bcn-aventura/state/shared {
       allow read: if true;
       allow write: if validState(request.resource.data);
