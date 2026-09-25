@@ -72,6 +72,18 @@ npm run deploy                # build + hosting + firestore rules
 - **Pe hartă**: ține apăsat pe orice punct sau „Pe hartă” → muți pinul → „Aici”; apar locurile din jurul pinului.
 - **Din link**: Google Maps (nume + coordonate), TikTok/YouTube (descrierea, când se poate), Instagram (linkul rămâne pe card; numele îl scrieți voi, Instagram nu dă descrierea fără cont).
 
+## Programul zilelor (planificatorul)
+
+- Fiecare loc are un timp minim (`minStay` sau după categorie); drumul dintre locuri e socotit din distanță (pe jos, metrou/taxi, tren). Semaforul zilei: verde = lejer, galben = plin, roșu = ceva nu merge.
+- În `public/data.js`:
+  - `closed: ['sun']` = zilele în care locul e închis (avertisment dacă e pus atunci, iar sugestiile ocolesc ziua).
+  - `fixed: true` = nu se poate sări sau muta (trenul, bagajele, zborul).
+  - `endsDay: true` = după el nu se mai pune nimic (zborul de luni, 20:20).
+  - `legIn` = drumul spre loc, dacă e altfel decât cel calculat (taxiul spre aeroport).
+  - `arrive` = unde se termină locul, dacă e altundeva (trenul ajunge la Sants, plimbarea pe plajă în Barceloneta).
+  - `day: 'pool'` + `poolNote` = rezerve, la „Locuri dorite”.
+- Din aplicație orice loc se poate muta în altă zi sau oră („Mută”); mutările la locurile din program se salvează în `state/shared` (`days`, `times`).
+
 ## Traseul zilei în Google Maps
 Google Maps acceptă cel mult 3 opriri intermediare într-un link deschis din browserul telefonului și niciuna în modul „transport public”. De aceea ziua se împarte în bucăți pe jos de maximum 5 opriri, iar drumurile lungi apar separat, cu metroul.
 

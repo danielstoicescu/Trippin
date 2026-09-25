@@ -27,13 +27,14 @@ service cloud.firestore {
     }
 
     function validState(d) {
-      return d.keys().hasOnly(['coffeeCount', 'coffeeLog', 'counters', 'bucket', 'quests', 'visited', 'pins', 'skipped', 'notes', 'times', 'updatedAt'])
+      return d.keys().hasOnly(['coffeeCount', 'coffeeLog', 'counters', 'bucket', 'quests', 'visited', 'pins', 'skipped', 'notes', 'times', 'days', 'updatedAt'])
         && (!('coffeeCount' in d) || (d.coffeeCount is int && d.coffeeCount >= 0 && d.coffeeCount <= 999))
         && (!('quests' in d) || d.quests is map)
         && (!('visited' in d) || d.visited is map)
         && (!('pins' in d) || d.pins is map)
         && (!('skipped' in d) || d.skipped is map)
         && (!('times' in d) || d.times is map)
+        && (!('days' in d) || d.days is map)
         && (!('bucket' in d) || d.bucket is map)
         && (!('counters' in d) || d.counters is map)
         && (!('coffeeLog' in d) || (d.coffeeLog is list && d.coffeeLog.size() <= 200))
