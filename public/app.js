@@ -22,7 +22,7 @@ const SUMMARY_TEXT = `Trippin · Barcelona (Mara 13, Anne & Daniel), 5–9 nov:
 const state = {
   view: 'plan', day: 'thu', filter: 'all', person: 'mara',
   custom: [], photos: {},
-  shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, notes: '' },
+  shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, times: {}, notes: '' },
   online: false, radarOn: false, pos: null, watchId: null, alerted: {},
   installPrompt: null, map: null, markers: [], meMarker: null, homeMarker: null, newMarker: null, detailId: null, photoTarget: null, picking: false,
 };
@@ -38,14 +38,16 @@ function hydrateIcons(root = document) { root.querySelectorAll('span.material-sy
 const inCity = (q) => /(barcelona|salou|vila-seca|portaventura)/i.test(q);
 const mapsSearch = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q + (inCity(q) ? '' : ' Barcelona'))}`;
 const placeQuery = (loc) => loc.placeQuery || (loc.address ? `${loc.title}, ${loc.address}` : loc.title);
-const allLocs = () => [...ITINERARY, ...state.custom];
+const withTime = (l) => (state.shared.times?.[l.id] ? { ...l, time: state.shared.times[l.id], movedTime: true } : l);
+const allLocs = () => [...ITINERARY.map(withTime), ...state.custom];
 function altAsLoc(i) { const a = ALTERNATIVES[i]; return a ? { ...a, id: 'alt-' + i, isAlt: true, altIndex: i, radius: 150 } : null; }
 const findLoc = (id) => allLocs().find((l) => l.id === id) || (String(id).startsWith('alt-') ? altAsLoc(Number(String(id).slice(4))) : null);
-function enriched(loc) { const c = loc.isCustom ? CURATED[(loc.title || '').trim().toLowerCase()] : null; return c ? { ...c, ...loc, rating: loc.rating ?? c.rating, review: loc.review ?? c.review, popular: loc.popular ?? c.popular, tips: loc.tips ?? c.tips, hours: loc.hours || c.hours, price: loc.price || c.price, address: loc.address || c.address, placeQuery: loc.placeQuery || c.placeQuery, site: loc.site || c.site, img: loc.img || c.img, variants: c.variants, cat: loc.cat === 'mara' ? (c.cat || 'fun') : loc.cat } : loc; }
-function coordsOf(loc) { const pin = state.shared.pins[loc.id]; if (pin && typeof pin.lat === 'number') return { lat: pin.lat, lng: pin.lng, exact: true }; if (typeof loc.lat === 'number' && typeof loc.lng === 'number') return { lat: loc.lat, lng: loc.lng, exact: !loc.approx }; return null; }
+function enriched(loc) { const c = loc.isCustom ? CURATED[(loc.title || '').trim().toLowerCase()] : null; return c ? { ...c, ...loc, rating: loc.rating ?? c.rating, review: loc.review ?? c.review, popular: loc.popular ?? c.popular, tips: loc.tips ?? c.tips, hours: loc.hours && !/^(sunday closed|shop)$/i.test(loc.hours) ? loc.hours : c.hours || loc.hours, price: loc.price || c.price, address: loc.address || c.address, minStay: loc.minStay || c.minStay, placeQuery: loc.placeQuery || c.placeQuery, site: loc.site || c.site, img: loc.img || c.img, variants: c.variants, cat: loc.cat === 'mara' ? (c.cat || 'fun') : loc.cat } : loc; }
+function coordsOf(loc) { const pin = state.shared.pins[loc.id]; if (pin && typeof pin.lat === 'number') return { lat: pin.lat, lng: pin.lng, exact: true }; if (typeof loc.lat === 'number' && typeof loc.lng === 'number') return { lat: loc.lat, lng: loc.lng, exact: !loc.approx }; const c = loc.isCustom ? CURATED[(loc.title || '').trim().toLowerCase()] : null; if (c && typeof c.lat === 'number') return { lat: c.lat, lng: c.lng, exact: false }; return null; }
 const destOf = (loc) => { const p = coordsOf(loc); if (p && p.exact) return `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`; const a = loc.placeQuery || (loc.address ? `${loc.title}, ${loc.address}` : loc.title); return inCity(a) ? a : `${a}, Barcelona`; };
 const mapsNav = (loc, mode = 'walking') => `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destOf(loc))}&travelmode=${mode}&dir_action=navigate`;
-const mapsLeg = (a, b, mode = 'walking') => `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(destOf(a))}&destination=${encodeURIComponent(destOf(b))}&travelmode=${mode}`;
+const originOf = (a) => (a.arrive ? { id: a.id + '-arr', title: a.arrive.title, placeQuery: a.arrive.placeQuery, lat: a.arrive.lat, lng: a.arrive.lng } : a);
+const mapsLeg = (a, b, mode = 'walking') => `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(destOf(originOf(a)))}&destination=${encodeURIComponent(destOf(b))}&travelmode=${mode}`;
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 function distanceM(a, b) { const R = 6371000, r = (d) => (d * Math.PI) / 180; const dLat = r(b.lat - a.lat), dLng = r(b.lng - a.lng); const s = Math.sin(dLat / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dLng / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(s)); }
@@ -158,32 +160,78 @@ function dayItems(day, includeSkipped = false) { return allLocs().filter((l) => 
 
 // ---------- Drumul dintre două opriri ----------
 function legOf(a, b, day) {
-  const pa = coordsOf(a), pb = coordsOf(b); if (!pa || !pb) return null;
+  const pa = a.arrive ? { lat: a.arrive.lat, lng: a.arrive.lng } : coordsOf(a), pb = coordsOf(b); if (!pa || !pb) return null;
   const d = distanceM(pa, pb); if (d < 60) return null;
+  if (d > 20000) return { d, min: Math.round((d / 1000) * 0.8 + 15), mode: 'transit', icon: 'train', label: 'cu trenul sau mașina' };
   if (day === 'thu' && d > 4000) return { d, min: Math.round((d / 1000) * 1.5 + 6), mode: 'driving', icon: 'directions_car', label: 'cu mașina' };
   if (d > 2200) return { d, min: transitMin(d), mode: 'transit', icon: 'subway', label: 'metrou sau taxi' };
   return { d, min: walkMin(d), mode: 'walking', icon: 'directions_walk', label: 'pe jos' };
 }
-function daySummary(day) {
-  const list = dayItems(day); let walkM = 0, walkT = 0, other = 0;
-  for (let i = 1; i < list.length; i++) { const g = legOf(list[i - 1], list[i], day); if (!g) continue; if (g.mode === 'walking') { walkM += g.d * 1.3; walkT += g.min; } else other += g.min; }
-  const times = list.map(startMin).filter((m) => m < 10000); const ends = list.map((l) => parseRange(l.time)?.to).filter(Boolean);
-  return { n: list.length, walkM, walkT, other, from: times.length ? Math.min(...times) : null, to: ends.length ? Math.max(...ends) : null };
+
+// ---------- Planificator: drumuri + timp minim la fiecare loc ----------
+// Locurile cu interval fix rămân pe loc; cele „flexibile” se așază unde încap, cu drumul socotit.
+// Unde nu încape ceva, apare un avertisment cu opțiunea de a alege.
+const MIN_STAY = { coffee: 30, sweet: 20, food: 60, shop: 40, fun: 60, art: 45, none: 30 };
+const stayOf = (loc) => { const e = enriched(loc); return e.minStay || MIN_STAY[catKey(e.cat)] || 30; };
+const DAY_START = 9 * 60, DAY_END = 22 * 60 + 30;
+const up5 = (n) => Math.ceil(n / 5) * 5;
+// Când e deschis de obicei fiecare tip de loc (minute de la miezul nopții)
+const OPEN = { coffee: [480, 1170], sweet: [540, 1260], shop: [600, 1230], art: [570, 1200], food: [720, 1380], fun: [600, 1320], none: [540, 1320] };
+function fitInto(slots, loc, day, stay = stayOf(loc)) {
+  const p = coordsOf(loc); let best = null; const [open, close] = OPEN[catKey(enriched(loc).cat)] || OPEN.none;
+  for (let i = 0; i <= slots.length; i++) {
+    const prev = slots[i - 1], next = slots[i];
+    const tIn = prev ? (legOf(prev.loc, loc, day)?.min ?? 0) : 0, tOut = next ? (legOf(loc, next.loc, day)?.min ?? 0) : 0;
+    const start = up5(Math.max(open, prev ? prev.end + tIn : Math.max(DAY_START, next ? next.start - tOut - stay : DAY_START)));
+    const limit = Math.min(close, next ? next.start - tOut : DAY_END);
+    if (start + stay > limit) continue;
+    const direct = prev && next ? (legOf(prev.loc, next.loc, day)?.min ?? 0) : 0;
+    const detour = tIn + tOut - direct; if (p && detour > 40) continue; // prea departe de opririle vecine
+    const cost = p ? detour : slots.length - i;
+    if (!best || cost < best.cost) best = { cost, start };
+  }
+  if (best) return { loc, start: best.start, end: best.start + stay, auto: true };
+  // Nu încape nicăieri: îl punem după oprirea cea mai apropiată și semnalăm suprapunerea
+  let near = slots[slots.length - 1];
+  if (p) { let bd = Infinity; for (const s of slots) { const q = coordsOf(s.loc); if (!q) continue; const dd = distanceM(p, q); if (dd < bd) { bd = dd; near = s; } } }
+  const start = up5(near ? near.end + (legOf(near.loc, loc, day)?.min ?? 0) : DAY_START);
+  return { loc, start, end: start + stay, auto: true, noFit: true };
 }
+function planDay(day, excludeId = null) {
+  const all = dayItems(day).filter((l) => l.id !== excludeId); const slots = [], flex = [];
+  for (const loc of all) { const r = parseRange(loc.time); if (r) slots.push({ loc, start: r.from, end: r.to, auto: false }); else flex.push(loc); }
+  slots.sort((a, b) => a.start - b.start);
+  for (const loc of flex) { slots.push(fitInto(slots, loc, day)); slots.sort((a, b) => a.start - b.start); }
+  const issues = []; let travel = 0, walkM = 0, walkT = 0, other = 0;
+  for (let i = 1; i < slots.length; i++) {
+    const a = slots[i - 1], b = slots[i], g = legOf(a.loc, b.loc, day), t = g ? g.min : 0; b.travel = t; b.leg = g; travel += t;
+    if (g) { if (g.mode === 'walking') { walkM += g.d * 1.3; walkT += g.min; } else other += g.min; }
+    if (b.start < a.end - 5) issues.push({ type: 'overlap', a, b, over: a.end - b.start });
+    else if (a.end + t > b.start + 5) issues.push({ type: 'tight', a, b, late: a.end + t - b.start, travel: t });
+  }
+  const first = slots.length ? slots[0].start : null, last = slots.length ? Math.max(...slots.map((x) => x.end)) : null;
+  const busy = slots.reduce((sum, x) => sum + (x.end - x.start), 0) + travel; const free = first != null ? last - first - busy : 0;
+  const level = !slots.length ? 'none' : issues.some((i) => i.type === 'overlap' || i.late > 10) ? 'red' : issues.length || free < 30 ? 'amber' : 'green';
+  return { slots, issues, level, free, walkM, walkT, other, first, last };
+}
+const LOAD = { green: ['Zi lejeră', 'var(--green)'], amber: ['Zi plină', '#F29900'], red: ['Prea plină', 'var(--red)'], none: ['Liberă', 'var(--text-3)'] };
+function daySummary(day) { const p = planDay(day); return { n: p.slots.length, walkM: p.walkM, walkT: p.walkT, other: p.other, from: p.first, to: p.last, plan: p }; }
 
 // ---------- Plan ----------
 function renderDates() {
   const el = $('#dates'); const today = todayKey();
-  if (el) el.innerHTML = DAYS.map((d) => { const n = dayItems(d).length; return `<button data-action="day" data-day="${d}" class="date press ${d === state.day ? 'on' : ''} ${d === today ? 'today' : ''}" role="tab" aria-selected="${d === state.day}"><div class="dn">${DAY_SHORT[d][0]}</div><div class="dd">${DAY_SHORT[d][1]}</div><div class="dm">${n} opriri</div></button>`; }).join('');
+  if (el) el.innerHTML = DAYS.map((d) => { const pl = planDay(d), lv = pl.level; return `<button data-action="day" data-day="${d}" class="date press ${d === state.day ? 'on' : ''} ${d === today ? 'today' : ''}" role="tab" aria-selected="${d === state.day}" aria-label="${DAY_LABEL[d]}, ${pl.slots.length} opriri, ${LOAD[lv][0]}"><div class="dn">${DAY_SHORT[d][0]}</div><div class="dd">${DAY_SHORT[d][1]}</div><div class="lights lv-${lv}" title="${LOAD[lv][0]}"><i></i><i></i><i></i></div><div class="dm">${pl.slots.length} opriri</div></button>`; }).join('');
   const md = $('#mapDays'); if (md) md.innerHTML = DAYS.map((d) => `<button data-action="day" data-day="${d}" class="chip press ${d === state.day ? 'on' : ''}" style="box-shadow: var(--shadow-1); border-color: transparent">${d === state.day ? icon('check', 'i-18') : ''}${DAY_SHORT[d][0]} ${DAY_SHORT[d][1]}</button>`).join('');
 }
 function renderSummary() {
-  const s = daySummary(state.day), el = $('#daySummary'); if (!el) return;
+  const s = daySummary(state.day), el = $('#daySummary'); if (!el) return; const lv = s.plan.level, iss = s.plan.issues;
   el.innerHTML = `<div class="summary">
-    <div><div class="v tabular">${s.n}</div><div class="k">opriri</div></div>
+    <div><div class="v tabular">${s.n} <span class="lvl" style="--lv: ${LOAD[lv][1]}"></span></div><div class="k">${LOAD[lv][0]}</div></div>
     <div><div class="v tabular">${s.walkT ? fmtMin(s.walkT) : '—'}</div><div class="k">pe jos${s.walkM ? ' · ' + fmtDist(s.walkM) : ''}</div></div>
-    <div><div class="v tabular">${s.from != null ? hhmm(s.from) : '—'}${s.to ? '–' + hhmm(s.to) : ''}</div><div class="k">${s.other ? `+${fmtMin(s.other)} metrou` : 'interval'}</div></div>
-  </div>`;
+    <div><div class="v tabular">${s.from != null ? hhmm(s.from) : '—'}${s.to ? '–' + hhmm(s.to) : ''}</div><div class="k">${s.other ? `+${fmtMin(s.other)} ${s.plan.slots.some((x) => x.leg?.icon === 'train') ? 'tren' : 'metrou'}` : 'interval'}</div></div>
+  </div>
+  ${iss.length ? `<button data-action="goto-warn" class="watch-banner press mt-3">${icon('warning', 'i-20 ms-fill')}<span class="flex-1 text-left">${iss.length === 1 ? 'Un loc nu încape cum e acum' : `${iss.length} locuri nu încap cum e acum`}: alegeți ce faceți</span>${icon('chevron_right', 'i-20')}</button>` : ''}
+  <button data-action="day-route" class="route-cta press mt-3"><span class="gm">${icon('gmaps', 'i-22')}</span><span class="flex-1 text-left"><b>Traseul zilei în Google Maps</b><span class="block">${s.n} opriri${s.walkT ? ` · ${fmtMin(s.walkT)} pe jos` : ''}</span></span>${icon('chevron_right', 'i-22')}</button>`;
 }
 function renderFilters() {
   const el = $('#filters'); if (!el) return; const present = new Set(dayItems(state.day, true).map((l) => catKey(enriched(l).cat)));
@@ -191,22 +239,26 @@ function renderFilters() {
   el.innerHTML = opts.map(([k, label, ic]) => `<button data-action="filter" data-cat="${k}" class="chip press ${state.filter === k ? 'on' : ''}">${state.filter === k && k !== 'all' ? icon('check', 'i-18') : ic ? icon(ic, 'i-18') : ''}${label}</button>`).join('');
 }
 function whoHTML(locId) { const w = whoHas(locId); return w.length ? `<span class="who" title="Pe bucketlist: ${w.map((p) => PEOPLE_META[p].name).join(', ')}">${w.map((p) => `<i class="p-${p}">${PEOPLE_META[p].name[0]}</i>`).join('')}</span>` : ''; }
-function stopHTML(loc) {
-  const visited = !!state.shared.visited[loc.id], skipped = !!state.shared.skipped[loc.id], now = isNow(loc), e = enriched(loc), c = cat(e.cat);
-  const r = parseRange(loc.time); const p = coordsOf(loc), dist = state.pos && p ? distanceM(state.pos, p) : null;
-  const pills = [`<span class="pill ink">${icon(c.icon, 'i-16')} ${esc(loc.catLabel || c.label)}</span>`, now ? '<span class="pill blue">ACUM</span>' : '', e.free ? '<span class="pill green">Gratis</span>' : '', loc.verify ? '<span class="pill amber">verifică orele</span>' : '', loc.isCustom ? `<span class="pill ink">de ${esc(loc.addedBy || 'noi')}</span>` : ''].filter(Boolean).join('');
-  const overlay = `<div class="ph-tl">${pills}</div><a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="ph-tr icon-btn solid press" aria-label="Navighează spre ${esc(loc.title)} cu Google Maps" onclick="event.stopPropagation()">${icon('gmaps', 'i-22')}</a>${whoHas(loc.id).length ? `<div class="ph-bl">${whoHTML(loc.id)}</div>` : ''}`;
-  const meta = [e.rating ? `<span><span class="star">★</span> ${Number(e.rating).toFixed(1).replace('.', ',')}${e.ratingCount ? ` <span class="t-3">(${fmtCount(e.ratingCount)})</span>` : ''}</span>` : '', e.price && !e.free ? `<span class="dotsep">${esc(e.price.split('·')[0].split('(')[0].trim())}</span>` : '', dist != null ? `<span class="dotsep t-blue">${fmtDist(dist)} de tine</span>` : '', e.variants?.length ? `<span class="dotsep">${e.variants.length} locații</span>` : '', skipped ? '<span class="dotsep">sărit</span>' : ''].filter(Boolean).join('');
-  return `<li class="stop reveal ${visited ? 'done' : ''} ${skipped ? 'skipped' : ''}" id="loc-${esc(loc.id)}">
-    <div class="tm">${r ? hhmm(r.from) : (loc.time && loc.time !== 'Flexibil' ? esc(loc.time.slice(0, 5)) : '')}${r ? `<span class="end">${hhmm(r.to)}</span>` : ''}</div>
+function stopHTML(loc, slot = null) {
+  const visited = !!state.shared.visited[loc.id], skipped = !!state.shared.skipped[loc.id], now = isNow(loc), e = enriched(loc), ck = catKey(e.cat), c = cat(e.cat);
+  const r = slot ? { from: slot.start, to: slot.end } : parseRange(loc.time); const p = coordsOf(loc), dist = state.pos && p ? distanceM(state.pos, p) : null;
+  const pills = [`<span class="pill ink">${esc(loc.catLabel || c.label)}</span>`, now ? '<span class="pill blue">ACUM</span>' : '', e.free ? '<span class="pill green">Gratis</span>' : '', loc.verify ? '<span class="pill amber">verifică orele</span>' : '', slot?.auto ? '<span class="pill ink">oră propusă</span>' : ''].filter(Boolean).join('');
+  const overlay = `<span class="corner">${icon(c.icon, 'i-18')}</span><div class="ph-tl">${pills}</div>${whoHas(loc.id).length ? `<div class="ph-bl">${whoHTML(loc.id)}</div>` : ''}`;
+  const meta = [e.rating ? `<span><span class="star">★</span> ${Number(e.rating).toFixed(1).replace('.', ',')}${e.ratingCount ? ` <span class="t-3">(${fmtCount(e.ratingCount)})</span>` : ''}</span>` : '', e.price && !e.free ? `<span class="dotsep">${esc(e.price.split('·')[0].split('(')[0].trim())}</span>` : '', slot ? `<span class="dotsep">${fmtMin(slot.end - slot.start)} acolo</span>` : '', dist != null ? `<span class="dotsep t-blue">${fmtDist(dist)} de tine</span>` : '', e.variants?.length ? `<span class="dotsep">${e.variants.length} locații</span>` : '', loc.isCustom ? `<span class="dotsep">de ${esc(loc.addedBy || 'noi')}</span>` : ''].filter(Boolean).join('');
+  return `<li class="stop reveal k-${ck} ${visited ? 'done' : ''} ${skipped ? 'skipped' : ''}" id="loc-${esc(loc.id)}">
+    <div class="tm">${r ? `${slot?.auto ? '~' : ''}${hhmm(r.from)}<span class="end">${hhmm(r.to)}</span>` : ''}</div>
     <div class="rail"><button class="dot ${visited ? 'done' : skipped ? 'skip' : now ? 'now' : ''}" data-action="toggle-visited" data-id="${esc(loc.id)}" aria-label="${visited ? 'Anulează: am fost' : 'Bifează: am fost'} la ${esc(loc.title)}"></button></div>
     <div class="body">
-      <button class="stop-card" data-action="open-detail" data-id="${esc(loc.id)}">
-        ${photoHTML(e, { overlay })}
+      <div class="pwrap">
+        <button class="stop-card" data-action="open-detail" data-id="${esc(loc.id)}">${photoHTML(e, { overlay })}</button>
+        <a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="ph-fab icon-btn solid press" aria-label="Navighează spre ${esc(loc.title)} cu Google Maps">${icon('gmaps', 'i-22')}</a>
+      </div>
+      <button class="stop-info" data-action="open-detail" data-id="${esc(loc.id)}">
         <div class="stop-title">${esc(loc.title)}</div>
-        <div class="stop-sub">${esc(loc.short || (loc.time === 'Flexibil' ? 'Oră flexibilă' : cat(e.cat).label))}</div>
+        <div class="stop-sub">${esc(loc.short || cat(e.cat).label)}</div>
         ${meta ? `<div class="stop-meta">${meta}</div>` : ''}
       </button>
+      ${skipped ? `<button data-action="toggle-skip" data-id="${esc(loc.id)}" class="btn btn-sm btn-outline press mt-2">${icon('undo', 'i-18')} Pune înapoi în program</button>` : ''}
     </div>
   </li>`;
 }
@@ -214,9 +266,32 @@ function legHTML(a, b, day) {
   const g = legOf(a, b, day); if (!g) return '';
   return `<li class="leg"><div class="tm"></div><div class="rail"><span class="walker">${icon(g.icon, 'i-18')}</span></div><div class="body"><span><b style="color: var(--text); font-weight: 500">${fmtMin(g.min)}</b> ${g.label} · ${fmtDist(g.d * (g.mode === 'walking' ? 1.3 : 1))}</span><a href="${esc(mapsLeg(a, b, g.mode))}" target="_blank" rel="noopener">Traseu</a></div></li>`;
 }
+function shortName(l) { const t = shortTitle(l.title); return esc(t.length > 20 ? t.split(' ').slice(0, 2).join(' ') : t); }
+function warnHTML(is) {
+  const A = is.a.loc, B = is.b.loc;
+  const title = is.type === 'overlap' ? 'Nu încap amândouă' : `Timp strâns: ~${is.late} min întârziere`;
+  const text = is.type === 'overlap'
+    ? `<b>${shortName(A)}</b> ține până la ${hhmm(is.a.end)}, iar <b>${shortName(B)}</b> ar începe la ${hhmm(is.b.start)}. Alegeți unde mergeți sau mutați-l mai târziu.`
+    : `De la <b>${shortName(A)}</b> la <b>${shortName(B)}</b> sunt ${fmtMin(is.travel)} de drum, dar între ele rămân doar ${fmtMin(Math.max(0, is.b.start - is.a.end))}.`;
+  const shiftTo = up5(is.a.end + (is.b.travel || 0)), dur = is.b.end - is.b.start;
+  return `<li class="warn" data-warn><div class="tm"></div><div class="rail"><span class="warn-ic">${icon('warning', 'i-18 ms-fill')}</span></div><div class="body"><div class="watch">
+    <div class="font-medium">${title}</div><div class="t-2 mt-1">${text}</div>
+    <div class="flex flex-wrap gap-2 mt-3">
+      <button data-action="choose" data-skip="${esc(B.id)}" class="btn btn-sm btn-tonal press">Mergem la ${shortName(A)}</button>
+      <button data-action="choose" data-skip="${esc(A.id)}" class="btn btn-sm btn-tonal press">Mergem la ${shortName(B)}</button>
+      ${shiftTo + dur <= DAY_END ? `<button data-action="shift" data-id="${esc(B.id)}" data-time="${hhmm(shiftTo)} – ${hhmm(shiftTo + dur)}" class="btn btn-sm btn-outline press">${icon('schedule', 'i-18')} ${shortName(B)} la ${hhmm(shiftTo)}</button>` : ''}
+    </div></div></div></li>`;
+}
 function timelineHTML(list) {
+  if (state.filter !== 'all') return `<ol class="tl">${list.map((l) => stopHTML(l)).join('')}</ol>`;
+  const plan = planDay(state.day); const skippedList = list.filter((l) => state.shared.skipped[l.id]);
+  const entries = [...plan.slots.map((sl) => ({ t: sl.start, sl })), ...skippedList.map((l) => ({ t: startMin(l), l }))].sort((a, b) => a.t - b.t);
   let html = '', prev = null;
-  for (const loc of list) { if (prev && !state.shared.skipped[loc.id]) html += legHTML(prev, loc, state.day); html += stopHTML(loc); if (!state.shared.skipped[loc.id]) prev = loc; }
+  for (const en of entries) {
+    if (en.l) { html += stopHTML(en.l); continue; }
+    const sl = en.sl; if (prev) { html += legHTML(prev.loc, sl.loc, state.day); const is = plan.issues.find((x) => x.b === sl); if (is) html += warnHTML(is); }
+    html += stopHTML(sl.loc, sl); prev = sl;
+  }
   return `<ol class="tl">${html}</ol>`;
 }
 function oppsHTML(day) {
@@ -266,7 +341,7 @@ function renderNextStop() { const h = nextStopHTML(); const a = $('#nextStop'); 
 // Google Maps acceptă cel mult 3 opriri intermediare când linkul se deschide din browserul telefonului
 // și nu acceptă opriri intermediare la „transport public”. Rupem ziua la drumurile lungi și la 5 opriri.
 function routeParts(day) {
-  const stops = dayItems(day).filter((l) => !state.shared.visited[l.id]); const parts = []; if (stops.length < 2) return { stops, parts };
+  const stops = planDay(day).slots.map((x) => x.loc).filter((l) => !state.shared.visited[l.id]); const parts = []; if (stops.length < 2) return { stops, parts };
   const mode = day === 'thu' ? 'driving' : 'walking';
   let cur = [stops[0]];
   for (let i = 1; i < stops.length; i++) {
@@ -571,7 +646,7 @@ async function connectFirebase() {
       state.custom = snap.docs.map((d) => ({ id: d.id, isCustom: true, ...d.data() })); lsSet(LS.locations, state.custom); renderAll(); refreshDetail();
       if (first) { first = false; state.online = true; setSyncStatus('online'); syncLocalLocations(local); }
     }, (err) => { console.error(err); state.online = false; setSyncStatus('local', err.message); toast('Nu m-am putut conecta la baza de date. Salvez local.', 'info'); });
-    fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
+    fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters', 'times']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
     fs.onSnapshot(fs.collection(db, 'trips', TRIP_ID, 'photos'), (snap) => { state.photos = {}; snap.forEach((d) => { state.photos[d.id] = d.data(); }); renderAll(); refreshDetail(); }, (err) => console.error(err));
   } catch (err) { console.error(err); setSyncStatus('local', err.message); }
 }
@@ -591,6 +666,13 @@ async function toggleVisited(k, el) {
   const v = { ...state.shared.visited, [k]: !state.shared.visited[k] }; state.shared.visited = v;
   if (v[k]) { buzz(14); const r = (el || document.body).getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + Math.min(r.height / 2, 40)); toast(`Bifat: ${shortTitle(findLoc(k)?.title || '')}`, 'check_circle', 3500, { label: 'Anulează', run: () => toggleVisited(k) }); }
   renderAll(); refreshDetail(); await saveShared({ visited: v });
+}
+async function chooseSkip(k) { const s = { ...state.shared.skipped, [k]: true }; state.shared.skipped = s; buzz(); renderAll(); await saveShared({ skipped: s }); toast(`Sărim peste ${shortTitle(findLoc(k)?.title || '')}.`, 'skip_next', 4000, { label: 'Anulează', run: () => toggleSkip(k) }); }
+async function shiftTime(id, time) {
+  const loc = findLoc(id); if (!loc) return; buzz();
+  if (loc.isCustom) { const { id: _i, isCustom, createdAt, ...data } = loc; await saveLocation({ ...data, time }, id); }
+  else { const t = { ...(state.shared.times || {}), [id]: time }; state.shared.times = t; renderAll(); await saveShared({ times: t }); }
+  toast(`${shortTitle(loc.title)} mutat la ${time}.`, 'schedule', 4000);
 }
 async function toggleSkip(k) { const s = { ...state.shared.skipped, [k]: !state.shared.skipped[k] }; state.shared.skipped = s; renderAll(); refreshDetail(); await saveShared({ skipped: s }); toast(s[k] ? 'Scos din traseu. Îl poți pune înapoi oricând.' : 'Pus înapoi în program.'); }
 async function pinHere(k) { if (!state.pos) return toast('Nu am încă poziția ta. Deschide Harta.', 'my_location'); const p = { ...state.shared.pins, [k]: { lat: state.pos.lat, lng: state.pos.lng } }; state.shared.pins = p; renderAll(); refreshDetail(); await saveShared({ pins: p }); toast('Poziția exactă a fost salvată pentru toți.', 'push_pin'); }
@@ -643,15 +725,23 @@ async function geoReverse(lat, lng) {
   out.sort((a, b) => (b.isPoi - a.isPoi) || distanceM({ lat, lng }, a) - distanceM({ lat, lng }, b));
   return out.slice(0, 6);
 }
-// Sugestia: ziua în care sunteți deja prin zonă, imediat după cea mai apropiată oprire
-function suggestFor(pt, excludeId = null) {
+// Sugestia: ziua în care sunteți deja prin zonă, în golul potrivit al programului (drumuri + timp minim)
+function nearestByDay(pt, excludeId) { const out = {}; for (const d of DAYS) for (const loc of dayItems(d)) { if (loc.id === excludeId) continue; const p = coordsOf(loc); if (!p) continue; const dist = distanceM(pt, p); if (!out[d] || dist < out[d].dist) out[d] = { loc, dist, day: d }; } return Object.values(out).sort((a, b) => a.dist - b.dist); }
+function trySlot(day, pt, cat, excludeId) {
+  const plan = planDay(day, excludeId); const probe = { id: '__new', title: 'nou', cat: cat || 'food', lat: pt.lat, lng: pt.lng, time: 'Flexibil' };
+  const sl = fitInto(plan.slots, probe, day); const idx = plan.slots.findIndex((x) => x.start > sl.start); const before = plan.slots[(idx === -1 ? plan.slots.length : idx) - 1];
+  const clash = sl.noFit ? plan.slots.find((x) => x.start < sl.end && x.end > sl.start) : null;
+  const w = before ? (legOf(before.loc, probe, day)?.min ?? 0) : 0;
+  const next = plan.slots.find((x) => x.start >= sl.start && x !== clash);
+  return { day, start: sl.start, end: sl.end, time: `${hhmm(sl.start)} – ${hhmm(sl.end)}`, noFit: !!sl.noFit, after: before?.loc, clash: clash?.loc, next: next?.loc, walk: w };
+}
+function suggestFor(pt, excludeId = null, cat = null) {
   if (!pt) return { day: 'pool', time: 'Flexibil' };
-  let best = null;
-  for (const d of DAYS) for (const loc of dayItems(d)) { if (loc.id === excludeId) continue; const p = coordsOf(loc); if (!p) continue; const dist = distanceM(pt, p); if (!best || dist < best.dist) best = { loc, dist, day: d }; }
-  if (!best || best.dist > 3000) return { day: 'pool', time: 'Flexibil', dist: best?.dist };
-  const r = parseRange(best.loc.time), w = best.dist < 2200 ? walkMin(best.dist) : transitMin(best.dist);
-  let time = 'Flexibil'; if (r) { const s = Math.ceil((r.to + w) / 5) * 5; time = `${hhmm(s)} – ${hhmm(s + 45)}`; }
-  return { day: best.day, afterId: best.loc.id, afterTitle: best.loc.title, dist: best.dist, walk: w, time };
+  const near = nearestByDay(pt, excludeId); if (!near.length || near[0].dist > 3000) return { day: 'pool', time: 'Flexibil', dist: near[0]?.dist };
+  const best = near[0]; const t = trySlot(best.day, pt, cat, excludeId);
+  const res = { day: best.day, afterId: (t.after || best.loc).id, afterTitle: (t.after || best.loc).title, dist: best.dist, walk: t.walk || (best.dist < 2200 ? walkMin(best.dist) : transitMin(best.dist)), time: t.time, noFit: t.noFit, clash: t.clash, next: t.next };
+  if (t.noFit) { for (const n of near.slice(1)) { if (n.dist > 3000) break; const u = trySlot(n.day, pt, cat, excludeId); if (!u.noFit) { res.alt = { day: n.day, time: u.time, afterTitle: (u.after || n.loc).title, dist: n.dist }; break; } } }
+  return res;
 }
 // Linkuri: Google Maps (nume + coordonate), Instagram / TikTok / YouTube (descrierea, când se poate), orice text lipit
 function parseShared(text) {
@@ -692,8 +782,8 @@ function openAdd({ shared = null, editing = null, place = null, nearby = null } 
   if (shared) handleLinkText(shared); else if (addState.step === 'search' && !nearby) setTimeout(() => $('#addQ')?.focus(), 250);
 }
 function placeRowHTML(pl, i, from) {
-  const s = suggestFor(pl.lat != null ? pl : null); const c = cat(pl.cat);
-  const hint = s.day !== 'pool' ? `<span class="t-blue">${DAY_SHORT[s.day][0]} ${DAY_SHORT[s.day][1]}</span> · lângă ${esc(shortTitle(s.afterTitle))}, ${fmtDist(s.dist)}` : pl.lat != null ? 'departe de program · la dorite' : '';
+  const s = suggestFor(pl.lat != null ? pl : null, null, pl.cat); const c = cat(pl.cat);
+  const hint = s.day !== 'pool' ? `<span class="t-blue">${DAY_SHORT[s.day][0]} ${DAY_SHORT[s.day][1]}, ${s.time.split(' ')[0]}</span> · lângă ${esc(shortTitle(s.afterTitle))}${s.noFit ? ' · <span style="color: #B06000">nu încape</span>' : ''}` : pl.lat != null ? 'departe de program · la dorite' : '';
   return `<button class="li press" data-action="add-choose" data-from="${from}" data-i="${i}"><span class="cat-ic ${c.cls}">${icon(c.icon, 'i-20')}</span><div class="min-w-0 flex-1 text-left"><div class="font-medium truncate">${esc(pl.title)}</div><div class="cap truncate">${esc(pl.address || c.label)}</div>${hint ? `<div class="cap truncate mt-0.5">${hint}</div>` : ''}</div>${icon('add', 't-3 i-20')}</button>`;
 }
 function localMatches(q) {
@@ -710,18 +800,18 @@ function renderAdd() {
     const { existing, alts } = localMatches(a.q);
     a.local = a.q ? alts : a.nearby ? [] : (DAY_ZONES[state.day] || []).flatMap((z) => ALTERNATIVES.filter((x) => x.zone === z)).slice(0, 5).map(altPlace);
     body.innerHTML = `${sheetHead(pendingBucketLink ? 'Pentru bucketlist' : a.nearby ? 'Pe hartă' : 'Program comun', a.nearby ? 'Ce e aici?' : 'Adaugă un loc')}
-      <div class="search">${icon('search', 'i-20')}<input id="addQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="Nume, adresă sau link din Reel / Maps" value="${esc(a.q)}" aria-label="Caută un loc">${a.q ? `<button data-action="add-clear" class="icon-btn sm press" aria-label="Șterge">${icon('close', 'i-20')}</button>` : ''}</div>
-      <div class="actions mt-3">
-        <button data-action="add-paste" class="act press">${icon('content_paste', 'i-20')} Lipește link</button>
-        <button data-action="add-pickmap" class="act press">${icon('pin_drop', 'i-20')} Pe hartă</button>
-        <button data-action="add-here" class="act press">${icon('my_location', 'i-20')} Sunt aici</button>
-      </div>
+      <div class="search">${icon('search', 'i-20')}<input id="addQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="Scrie numele locului" value="${esc(a.q)}" aria-label="Caută un loc">${a.q ? `<button data-action="add-clear" class="icon-btn sm press" aria-label="Șterge">${icon('close', 'i-20')}</button>` : ''}</div>
+      ${!a.q.trim() && !a.nearby && !a.link ? `<h3 class="cap mt-5 mb-2">Nu știi numele? Adaugă altfel</h3><div class="card list">
+        <button data-action="add-pickmap" class="li press"><span class="cat-ic" style="background: var(--red-soft); color: var(--red)">${icon('pin_drop', 'i-20')}</span><div class="flex-1 text-left"><div class="font-medium">Arăt locul pe hartă</div><div class="cap">Se deschide harta: muți pinul roșu pe loc și apeși „Aici”</div></div>${icon('chevron_right', 't-3 i-20')}</button>
+        <button data-action="add-here" class="li press"><span class="cat-ic" style="background: var(--blue-soft); color: var(--blue-strong)">${icon('my_location', 'i-20')}</span><div class="flex-1 text-left"><div class="font-medium">Suntem acolo acum</div><div class="cap">Arăt ce e în jurul vostru și alegeți</div></div>${icon('chevron_right', 't-3 i-20')}</button>
+        <button data-action="add-paste" class="li press"><span class="cat-ic" style="background: var(--pink-soft); color: var(--pink)">${icon('link', 'i-20')}</span><div class="flex-1 text-left"><div class="font-medium">Am un link: Reel, TikTok, Google Maps</div><div class="cap">Îl lipesc din clipboard. Din Instagram trebuie scris și numele</div></div>${icon('chevron_right', 't-3 i-20')}</button>
+      </div>` : ''}
       ${a.link ? `<div class="card-flat p-3 mt-3 flex gap-3">${icon(a.link.source === 'gmaps' ? 'gmaps' : 'link', 'i-20', 'color: var(--blue)')}<div class="min-w-0 flex-1"><div class="font-medium">${esc(SOURCE[a.link.source] || 'Link')} atașat</div><div class="cap">${esc(a.linkHint)}</div></div><button data-action="add-unlink" class="icon-btn sm press" aria-label="Scoate linkul">${icon('close', 'i-18')}</button></div>` : ''}
       ${existing.length ? `<h3 class="cap mt-5 mb-2">Deja în program</h3><div class="card list">${existing.map((l) => `<button class="li press" data-action="open-detail" data-id="${esc(l.id)}">${thumbHTML(l, 40)}<div class="min-w-0 flex-1 text-left"><div class="font-medium truncate">${esc(l.title)}</div><div class="cap">${esc(pickSub(l))}</div></div>${icon('chevron_right', 't-3 i-20')}</button>`).join('')}</div>` : ''}
       ${a.local.length ? `<h3 class="cap mt-5 mb-2">${a.q ? 'Din recomandările noastre' : `Recomandări pentru ${DAY_LABEL[state.day]}`}</h3><div class="card list">${a.local.map((pl, i) => placeRowHTML(pl, i, 'local')).join('')}</div>` : ''}
       ${a.loading ? `<div class="cap mt-5 flex items-center gap-2">${icon('hourglass_top', 'i-18')} Caut pe hartă…</div>` : ''}
       ${a.results === null ? `<div class="card-flat p-3 mt-5 t-2">Căutarea pe hartă nu merge acum (fără semnal?). Poți adăuga doar cu numele.</div>` : a.results.length ? `<h3 class="cap mt-5 mb-2">${a.nearby ? 'Locuri în jurul pinului' : 'Pe hartă'}</h3><div class="card list">${a.results.map((pl, i) => placeRowHTML(pl, i, 'geo')).join('')}</div>` : (a.q.trim().length > 2 && !a.loading ? `<div class="cap mt-5">Nimic pe hartă pentru „${esc(a.q)}”. Încearcă alt cuvânt sau adaugă doar cu numele.</div>` : '')}
-      ${a.q.trim() || a.nearby ? `<button data-action="add-nameonly" class="btn btn-text press mt-3" style="padding: 0">${icon('edit', 'i-20')} ${a.nearby ? 'Folosește doar punctul de pe hartă' : `Adaugă „${esc(a.q.trim().slice(0, 28))}” fără căutare`}</button>` : `<p class="cap mt-5">Scrie 2–3 litere: caut pe OpenStreetMap, în jurul Barcelonei. Din Instagram, lipește linkul și scrie numele locului din Reel.</p>`}
+      ${a.q.trim() || a.nearby ? `<button data-action="add-nameonly" class="btn btn-text press mt-3" style="padding: 0">${icon('edit', 'i-20')} ${a.nearby ? 'Folosește doar punctul de pe hartă' : `Adaugă „${esc(a.q.trim().slice(0, 28))}” fără căutare`}</button>` : `<p class="cap mt-4">Scrie 2–3 litere din nume: caut pe hartă, în jurul Barcelonei, și îl pun în ziua în care sunteți prin zonă.</p>`}
       <div style="height:16px"></div>`;
     return;
   }
@@ -730,7 +820,8 @@ function renderAdd() {
   const day = a.day || s.day; const dayBtn = (d, label) => `<button data-action="add-day" data-day="${d}" class="chip press ${day === d ? 'on' : ''}">${day === d ? icon('check', 'i-18') : ''}${label}</button>`;
   body.innerHTML = `<div class="sheet-top"><div class="handle"></div><div class="flex items-center gap-1 pb-3">${a.editingId ? '' : `<button data-action="add-back" class="icon-btn press" aria-label="Înapoi la căutare">${icon('arrow_back')}</button>`}<h2 class="ttl-1 flex-1 ${a.editingId ? '' : 'ml-1'}">${a.editingId ? 'Editează locul' : 'Adaugă în program'}</h2><button data-action="close-modal" class="icon-btn press" aria-label="Închide">${icon('close')}</button></div></div>
     <div class="flex items-center gap-3"><span class="cat-ic ${c.cls}" style="width: 48px; height: 48px">${icon(c.icon)}</span><div class="min-w-0 flex-1"><input id="addTitle" class="w-full bg-transparent ttl-2 outline-none" maxlength="120" value="${esc(pl.title || '')}" aria-label="Numele locului" placeholder="Numele locului"><div class="cap truncate">${esc(pl.address || (pl.lat != null ? 'poziție de pe hartă' : 'fără poziție: „Fixează aici” când ajungeți'))}</div></div></div>
-    ${s.day !== 'pool' && s.afterTitle ? `<button data-action="add-day" data-day="${s.day}" data-time="${esc(s.time)}" class="card li press mt-4" style="${day === s.day ? 'border-color: var(--blue); background: var(--blue-soft)' : ''}">${icon('auto_awesome', '', 'color: var(--blue)')}<div class="flex-1 min-w-0 text-left"><div class="font-medium">${DAY_LABEL[s.day]}${s.time !== 'Flexibil' ? ', ' + s.time.split(' ')[0] : ''}</div><div class="cap">după ${esc(s.afterTitle)} · ${fmtDist(s.dist)}, ${fmtMin(s.walk)} ${s.dist < 2200 ? 'pe jos' : 'cu metroul'}</div></div>${day === s.day ? icon('check_circle', 'ms-fill', 'color: var(--blue)') : ''}</button>` : pl.lat != null ? `<div class="card-flat p-3 mt-4 t-2">E departe de tot ce aveți în program, așa că l-am pus la „Dorite”. Alegeți o zi când vreți.</div>` : ''}
+    ${s.day !== 'pool' && s.afterTitle ? `<button data-action="add-day" data-day="${s.day}" data-time="${esc(s.time)}" class="card li press mt-4" style="${day === s.day ? 'border-color: var(--blue); background: var(--blue-soft)' : ''}">${icon('auto_awesome', '', 'color: var(--blue)')}<div class="flex-1 min-w-0 text-left"><div class="font-medium">${DAY_LABEL[s.day]}, ${s.time.split(' ')[0]}</div><div class="cap">după ${esc(shortTitle(s.afterTitle))} · ${fmtMin(s.walk)} de drum · ${fmtMin(stayOf({ cat: a.cat }))} acolo</div></div>${day === s.day ? icon('check_circle', 'ms-fill', 'color: var(--blue)') : ''}</button>
+      ${s.noFit ? `<div class="watch mt-3"><div class="font-medium">${icon('warning', 'i-18 ms-fill', 'color: #F29900')} ${DAY_LABEL[s.day]} e plină în zona asta</div><div class="t-2 mt-1">${s.clash ? `Se suprapune cu <b>${esc(shortTitle(s.clash.title))}</b>` : `Nu rămâne timp de drum până la <b>${esc(shortTitle(s.next?.title || s.afterTitle))}</b>`}. Dacă îl adăugați, alegeți apoi în program pe care mergeți.</div>${s.alt ? `<button data-action="add-day" data-day="${s.alt.day}" data-time="${esc(s.alt.time)}" class="btn btn-sm btn-tonal press mt-3">${icon('event', 'i-18')} Încape ${DAY_LABEL[s.alt.day]}, ${s.alt.time.split(' ')[0]}</button>` : ''}</div>` : ''}` : pl.lat != null ? `<div class="card-flat p-3 mt-4 t-2">E departe de tot ce aveți în program, așa că l-am pus la „Dorite”. Alegeți o zi când vreți.</div>` : ''}
     <h3 class="ttl-3 mt-5 mb-2">Când</h3>
     <div class="flex flex-wrap gap-2">${DAYS.map((d) => dayBtn(d, `${DAY_SHORT[d][0]} ${DAY_SHORT[d][1]}`)).join('')}${dayBtn('pool', 'Dorite')}</div>
     ${day !== 'pool' ? `<label class="field mt-3"><span>Ora</span><input id="addTime" type="text" maxlength="60" value="${esc(a.time && a.time !== 'Flexibil' ? a.time : '')}" placeholder="Flexibil (apare la finalul zilei)"></label>` : ''}
@@ -752,7 +843,7 @@ function syncAddInputs() { const a = addState; if (!a || a.step !== 'confirm') r
 function choosePlace(pl, render = true) {
   const a = addState; a.place = { title: pl.title, address: pl.address || '', lat: pl.lat ?? null, lng: pl.lng ?? null, cat: pl.cat };
   a.cat = CAT[pl.cat] ? pl.cat : osmCat('', '', pl.title); a.hours = pl.hours || a.hours; if (pl.note && !a.note) a.note = pl.note;
-  a.suggestion = suggestFor(pl.lat != null ? { lat: pl.lat, lng: pl.lng } : null); a.day = a.suggestion.day; a.time = a.suggestion.time; a.step = 'confirm';
+  a.suggestion = suggestFor(pl.lat != null ? { lat: pl.lat, lng: pl.lng } : null, null, a.cat); a.day = a.suggestion.day; a.time = a.suggestion.time; a.step = 'confirm';
   if (pl.lat != null) showNewMarker(pl);
   if (render) { renderAdd(); $('#addBody').scrollTop = 0; buzz(); }
 }
@@ -921,9 +1012,11 @@ document.addEventListener('click', (e) => {
     'add-nameonly': () => { const pos = addState.anchor; choosePlace({ title: addState.q.trim() || (pos ? 'Punct pe hartă' : ''), address: '', lat: pos?.lat ?? null, lng: pos?.lng ?? null, cat: osmCat('', '', addState.q) }); setTimeout(() => { const t = $('#addTitle'); if (t && (!addState?.q || pos)) { t.focus(); t.select(); } }, 120); },
     'add-back': () => { syncAddInputs(); addState.step = 'search'; clearNewMarker(); renderAdd(); },
     'add-day': () => { syncAddInputs(); const d = el.dataset.day; addState.day = d; if (el.dataset.time != null) addState.time = el.dataset.time; else if (d === addState.suggestion?.day) addState.time = addState.suggestion.time; else if (addState.time === addState.suggestion?.time) addState.time = ''; renderAdd(); },
-    'add-cat': () => { syncAddInputs(); addState.cat = el.dataset.cat; renderAdd(); }, 'add-person': () => { syncAddInputs(); const p = el.dataset.person; addState.persons = addState.persons.includes(p) ? addState.persons.filter((x) => x !== p) : [...addState.persons, p]; renderAdd(); },
+    'add-cat': () => { syncAddInputs(); addState.cat = el.dataset.cat; const pl = addState.place; if (pl?.lat != null && !addState.editingId) { const keep = addState.day === addState.suggestion?.day; addState.suggestion = suggestFor(pl, null, addState.cat); if (keep) { addState.day = addState.suggestion.day; addState.time = addState.suggestion.time; } } renderAdd(); }, 'add-person': () => { syncAddInputs(); const p = el.dataset.person; addState.persons = addState.persons.includes(p) ? addState.persons.filter((x) => x !== p) : [...addState.persons, p]; renderAdd(); },
     'add-more': () => { syncAddInputs(); addState.more = !addState.more; renderAdd(); }, 'add-by': () => { syncAddInputs(); addState.by = el.dataset.by; renderAdd(); }, 'add-save': saveAdd,
     'pick-cancel': () => stopPick(), 'pick-confirm': confirmPick,
+    'goto-warn': () => { const w = $('[data-warn]'); if (w) { w.scrollIntoView({ behavior: 'smooth', block: 'center' }); w.querySelector('.watch')?.classList.add('flash'); } },
+    'choose': () => chooseSkip(el.dataset.skip), 'shift': () => shiftTime(id, el.dataset.time),
   };
   actions[a]?.();
 });
@@ -938,6 +1031,8 @@ document.addEventListener('change', async (e) => {
 document.addEventListener('input', (e) => { if (e.target.id === 'sharedNotes') onNotesInput(); if (e.target.id === 'bucketSearch') $('#bucketPickList').innerHTML = pickListHTML(e.target.value); if (e.target.id === 'addQ') onAddQuery(e.target.value); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (state.picking) stopPick(); addState = null; closeModals(); } if (e.key === 'Enter' && e.target.id === 'addQ') { e.preventDefault(); const first = $('#addBody [data-action="add-choose"]'); if (first) first.click(); } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderDay(); renderNextStop(); loadWeather(); if (state.radarOn) startRadar(); } });
+
+window.__plan = (d) => { const p = planDay(d); return { level: p.level, free: p.free, slots: p.slots.map((x) => `${hhmm(x.start)}-${hhmm(x.end)}${x.auto ? '*' : ''} ${x.loc.title}${x.travel ? ' (+' + x.travel + ')' : ''}`), issues: p.issues.map((i) => `${i.type} ${i.a.loc.title} → ${i.b.loc.title} ${i.late || i.over || ''}`) }; };
 
 // ---------- Start ----------
 hydrateIcons(); applyThemeIcon(); { const b = $('#buildStamp'); if (b && window.BUILD) b.textContent = `${window.BUILD.slice(6, 8)}.${window.BUILD.slice(4, 6)} ${window.BUILD.slice(8, 10)}:${window.BUILD.slice(10, 12)}`; }

@@ -15,6 +15,7 @@
   --shadow-1: 0 1px 2px rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
   --shadow-2: 0 1px 3px rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15);
   --ease: cubic-bezier(.2, 0, 0, 1); --spring: cubic-bezier(.34, 1.4, .64, 1);
+  --brand: #E8467C; --brand-soft: #FDE7EF;
   --p-mara: #E0457B; --p-mara-on: #FFFFFF; --p-anne: #0B4F3C; --p-anne-on: #A9DDFF; --p-daniel: #1A73E8; --p-daniel-on: #FFFFFF;
 }
 .dark {
@@ -24,7 +25,7 @@
   --blue: #8AB4F8; --blue-strong: #AECBFA; --blue-soft: #2D3A50; --on-blue: #202124;
   --green: #81C995; --green-soft: #1E3A29; --red: #F28B82; --red-soft: #4A2522;
   --amber: #FDD663; --amber-soft: #3F3620; --star: #FDD663;
-  --purple: #D7AEFB; --purple-soft: #3A2C4A; --pink: #FF8BCB; --pink-soft: #4A2438;
+  --purple: #D7AEFB; --purple-soft: #3A2C4A; --pink: #FF8BCB; --pink-soft: #4A2438; --brand-soft: #4A2438;
   --shadow-1: 0 1px 2px rgba(0,0,0,.5), 0 1px 3px 1px rgba(0,0,0,.3);
   --shadow-2: 0 1px 3px rgba(0,0,0,.5), 0 4px 8px 3px rgba(0,0,0,.3);
 }
@@ -48,7 +49,8 @@ body { background: var(--bg); color: var(--text); font-family: 'Google Sans', Ro
 .appbar.scrolled { box-shadow: 0 1px 0 var(--line), 0 2px 6px rgba(60,64,67,.08); }
 .appbar-in { height: 56px; display: flex; align-items: center; gap: 8px; }
 .logo { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 500; color: var(--text); letter-spacing: -.2px; }
-.logo-mark { width: 28px; height: 28px; border-radius: 8px; background: var(--blue); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+.logo-mark { position: relative; width: 30px; height: 30px; border-radius: 9px 9px 9px 2px; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 19px; font-weight: 700; line-height: 1; box-shadow: 0 2px 6px color-mix(in srgb, var(--brand) 45%, transparent); }
+.logo-mark::after { content: ''; position: absolute; right: -3px; top: -3px; width: 9px; height: 9px; border-radius: 99px; background: #FBBC04; box-shadow: 0 0 0 2px var(--bg); }
 .wx { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 8px; border-radius: 16px; border: 1px solid var(--line); color: var(--text-2); font-size: 13px; white-space: nowrap; max-width: 46vw; overflow: hidden; }
 .sync-dot { width: 8px; height: 8px; border-radius: 99px; background: var(--line); flex-shrink: 0; }
 .sync-dot[data-mode="online"] { background: var(--green); } .sync-dot[data-mode="connecting"] { animation: pulse 1.4s ease-in-out infinite; }
@@ -185,7 +187,7 @@ input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; dis
 .nav-btn.on { color: var(--text); } .nav-btn.on .ind { background: var(--blue-soft); color: var(--blue-strong); }
 .nav-btn:active .ind { transform: scale(.9); }
 .nav-btn.near .ind { background: var(--green-soft); color: var(--green); }
-.fab { position: fixed; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 890; height: 56px; padding: 0 20px 0 16px; border-radius: 16px; background: var(--surface); color: var(--blue); box-shadow: var(--shadow-2); display: inline-flex; align-items: center; gap: 10px; font-weight: 500; font-size: 15px; transition: padding .3s var(--ease), transform .3s var(--spring), opacity .2s; }
+.fab { position: fixed; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 890; height: 56px; padding: 0 20px 0 16px; border-radius: 16px 16px 16px 4px; background: var(--brand); color: #fff; box-shadow: 0 4px 12px color-mix(in srgb, var(--brand) 40%, transparent), var(--shadow-1); display: inline-flex; align-items: center; gap: 10px; font-weight: 500; font-size: 15px; transition: padding .3s var(--ease), transform .3s var(--spring), opacity .2s; }
 .fab.mini { padding: 0 16px; } .fab.mini .lbl { display: none; }
 
 /* Foi de jos */
@@ -219,3 +221,44 @@ input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; dis
 
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } .reveal { opacity: 1; transform: none; } }
+
+/* ============ Accente de culoare (categorii, butoane importante) ============ */
+.k-coffee, .c-coffee { --cat: #E8A21A; } .k-food, .c-food { --cat: #1E8E3E; } .k-sweet, .c-sweet { --cat: #E8467C; } .k-shop, .c-shop { --cat: #8430CE; } .k-fun, .c-fun { --cat: #D93025; } .k-art, .c-art { --cat: #1A73E8; } .k-none, .c-none { --cat: #80868B; }
+.sec-h h2, h2.ttl-2.mb-3 { position: relative; padding-left: 12px; }
+.sec-h h2::before, h2.ttl-2.mb-3::before { content: ''; position: absolute; left: 0; top: 3px; bottom: 3px; width: 4px; border-radius: 4px; background: var(--brand); }
+/* Cardul de oprire: bandă verticală în culoarea categoriei + colț geometric + decupaj rotund pentru Maps */
+.pwrap { position: relative; }
+.pwrap .photo { -webkit-mask: radial-gradient(circle at calc(100% - 38px) 100%, transparent 29px, #000 30px); mask: radial-gradient(circle at calc(100% - 38px) 100%, transparent 29px, #000 30px); }
+.pwrap .ph-fab { position: absolute; right: 16px; bottom: -22px; width: 44px; height: 44px; z-index: 2; transition: transform .3s var(--spring); }
+.pwrap .ph-fab:active { transform: scale(.9) rotate(-8deg); }
+.photo .corner { position: absolute; top: 0; left: 0; z-index: 1; width: 46px; height: 46px; border-radius: 0 0 46px 0; background: var(--cat); color: #fff; display: grid; place-items: start; padding: 9px 0 0 9px; }
+.photo .ph-tl { left: 52px; }
+.stop-card { display: block; }
+.stop-info { display: block; width: 100%; text-align: left; color: inherit; margin-top: 12px; padding: 0 60px 0 12px; border-left: 3px solid var(--cat); }
+.stop-info .stop-title { margin-top: 0; }
+.tl .dot { border-color: var(--cat, var(--text-2)); }
+.tl .stop:not(.done) .dot:not(.now) { background: color-mix(in srgb, var(--cat) 14%, var(--bg)); }
+.rec .photo { border-bottom: 3px solid var(--cat); }
+.thumb { box-shadow: inset 0 -3px 0 var(--cat, transparent); }
+/* Zilele: semafor de încărcare */
+.lights { display: flex; justify-content: center; gap: 3px; margin: 3px 0 2px; }
+.lights i { width: 7px; height: 7px; border-radius: 99px; background: var(--surface-4); }
+.lights.lv-green i:nth-child(1) { background: #1E8E3E; box-shadow: 0 0 6px #1E8E3E; }
+.lights.lv-amber i:nth-child(2) { background: #F29900; box-shadow: 0 0 6px #F29900; }
+.lights.lv-red i:nth-child(3) { background: #D93025; animation: glow 1.6s ease-in-out infinite; }
+@keyframes glow { 0%, 100% { box-shadow: 0 0 2px #D93025; } 50% { box-shadow: 0 0 8px 1px #D93025; } }
+.date { position: relative; overflow: hidden; } .date.on::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--brand); }
+.lvl { display: inline-block; width: 8px; height: 8px; border-radius: 99px; background: var(--lv); vertical-align: 2px; margin-left: 4px; }
+/* Buton mare „Traseul zilei” */
+.route-cta { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 16px 16px 16px 4px; background: var(--blue); color: #fff; box-shadow: 0 4px 12px color-mix(in srgb, var(--blue) 30%, transparent); }
+.route-cta b { font-weight: 500; font-size: 16px; } .route-cta .block { font-size: 12px; opacity: .85; }
+.route-cta .gm { width: 40px; height: 40px; border-radius: 99px; background: #fff; display: grid; place-items: center; flex-shrink: 0; }
+.dark .route-cta { color: #202124; }
+/* Avertismente: nu încape */
+.watch { background: var(--amber-soft); border-radius: 12px; padding: 12px 14px; border-left: 4px solid #F29900; }
+.watch b { font-weight: 500; color: var(--text); }
+.watch-banner { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; border-radius: 12px; background: var(--amber-soft); color: var(--amber); font-weight: 500; border-left: 4px solid #F29900; }
+.tl .warn .rail::before { top: -4px; } .warn-ic { position: relative; z-index: 1; width: 26px; height: 26px; border-radius: 99px; background: var(--bg); color: #F29900; display: grid; place-items: center; margin-top: 8px; }
+.tl .warn .body { padding: 4px 0 18px; }
+.watch .btn { white-space: normal; height: auto; min-height: 32px; padding: 6px 14px; text-align: left; line-height: 18px; }
+.stop-meta > span:first-child.dotsep::before { content: none; }
