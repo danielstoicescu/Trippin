@@ -41,7 +41,7 @@ const placeQuery = (loc) => loc.placeQuery || (loc.address ? `${loc.title}, ${lo
 const withTime = (l) => (state.shared.times?.[l.id] ? { ...l, time: state.shared.times[l.id], movedTime: true } : l);
 const allLocs = () => [...ITINERARY.map(withTime), ...state.custom];
 function altAsLoc(i) { const a = ALTERNATIVES[i]; return a ? { ...a, id: 'alt-' + i, isAlt: true, altIndex: i, radius: 150 } : null; }
-const findLoc = (id) => allLocs().find((l) => l.id === id) || (String(id).startsWith('alt-') ? altAsLoc(Number(String(id).slice(4))) : null);
+const findLoc = (id) => (id === 'home' ? baseLoc() : null) || allLocs().find((l) => l.id === id) || (String(id).startsWith('alt-') ? altAsLoc(Number(String(id).slice(4))) : null);
 function enriched(loc) { const c = loc.isCustom ? CURATED[(loc.title || '').trim().toLowerCase()] : null; return c ? { ...c, ...loc, rating: loc.rating ?? c.rating, review: loc.review ?? c.review, popular: loc.popular ?? c.popular, tips: loc.tips ?? c.tips, hours: loc.hours && !/^(sunday closed|shop)$/i.test(loc.hours) ? loc.hours : c.hours || loc.hours, price: loc.price || c.price, address: loc.address || c.address, minStay: loc.minStay || c.minStay, placeQuery: loc.placeQuery || c.placeQuery, site: loc.site || c.site, img: loc.img || c.img, variants: c.variants, cat: loc.cat === 'mara' ? (c.cat || 'fun') : loc.cat } : loc; }
 function coordsOf(loc) { const pin = state.shared.pins[loc.id]; if (pin && typeof pin.lat === 'number') return { lat: pin.lat, lng: pin.lng, exact: true }; if (typeof loc.lat === 'number' && typeof loc.lng === 'number') return { lat: loc.lat, lng: loc.lng, exact: !loc.approx }; const c = loc.isCustom ? CURATED[(loc.title || '').trim().toLowerCase()] : null; if (c && typeof c.lat === 'number') return { lat: c.lat, lng: c.lng, exact: false }; return null; }
 const destOf = (loc) => { const p = coordsOf(loc); if (p && p.exact) return `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`; const a = loc.placeQuery || (loc.address ? `${loc.title}, ${loc.address}` : loc.title); return inCity(a) ? a : `${a}, Barcelona`; };
@@ -155,7 +155,7 @@ const CAT_KEYS = Object.keys(CAT);
 const catKey = (c) => (c === 'mara' ? 'fun' : CAT[c] ? c : 'none');
 const cat = (c) => CAT[catKey(c)] || { cls: 'c-none', icon: 'place', label: 'Loc' };
 const isPool = (loc) => loc.day === 'pool';
-const SOURCE = { instagram: 'Reel Instagram', tiktok: 'TikTok', youtube: 'YouTube', gmaps: 'Google Maps', web: 'Link' };
+const SOURCE = { instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube', gmaps: 'Google Maps', web: 'Link' };
 function dayItems(day, includeSkipped = false) { return allLocs().filter((l) => l.day === day && (includeSkipped || !state.shared.skipped[l.id])).map((l, i) => ({ l, i })).sort((a, b) => startMin(a.l) - startMin(b.l) || a.i - b.i).map((x) => x.l); }
 
 // ---------- Drumul dintre două opriri ----------
@@ -432,46 +432,64 @@ async function savePhotoDoc(id, doc) { state.photos[id] = doc; if (fb && state.o
 async function savePhotoUrl(id, url, quiet = false) {
   url = (url || '').trim(); if (!/^https:\/\/\S+$/i.test(url) || url.length > 600) return toast('Linkul trebuie să înceapă cu https://', 'link');
   await savePhotoDoc(id, { url, by: me(), at: new Date().toISOString() });
-  $('#coffeeSheet').classList.add('hidden'); renderAll(); refreshDetail(); if (!quiet) toast('Poza a fost pusă pentru toți.', 'image');
+  $('#coffeeSheet').classList.add('hidden'); renderAll(); refreshDetail(); if (!quiet) toast('Poza a fost pusă pentru toți.', 'image'); if (id === 'home') openHome();
 }
 async function removePhoto(id) { delete state.photos[id]; if (fb && state.online) { const { db, fs } = fb; await fs.deleteDoc(fs.doc(db, 'trips', TRIP_ID, 'photos', id)); } else lsSet(LS.photos, state.photos); $('#coffeeSheet').classList.add('hidden'); renderAll(); refreshDetail(); toast('Poza a fost scoasă.', 'delete'); }
 async function savePhoto(id, file) {
   toast('Comprim poza…', 'hourglass_top', 8000);
   const data = await compressImage(file); if (data.length > 950000) return toast('Poza e prea mare chiar și comprimată.', 'image');
   await savePhotoDoc(id, { data, by: me(), at: new Date().toISOString() });
-  bumpCounter('photos', 1); renderAll(); refreshDetail(); toast('Poza a fost salvată pentru toți.');
+  bumpCounter('photos', 1); renderAll(); refreshDetail(); toast('Poza a fost salvată pentru toți.'); if (id === 'home') openHome();
 }
 
-// ---------- Acasă ----------
-const baseLoc = () => ({ id: 'home', title: 'Acasă · Carrer de Pellaires 35', address: TRIP.base.address, placeQuery: TRIP.base.placeQuery, lat: TRIP.base.lat, lng: TRIP.base.lng, approx: true, cat: 'none', time: '', hours: 'Oricând' });
+// ---------- Cazare (Airbnb, Carrer de Pellaires 35) ----------
+const STAY = {
+  name: 'Bohemian Dreams · loft de design cu plante, lângă plajă',
+  url: 'https://www.airbnb.com/rooms/9140899',
+  facts: [
+    ['hotel', 'Loft într-una dintre cele mai vechi clădiri din Poblenou: dormitor, living cu canapea, bucătărie, colț de lucru'],
+    ['local_florist', 'Patio plin de plante, bun pentru o cafea dimineața sau seara'],
+    ['beach_access', 'Plaja Bogatell la ~12 min pe jos; gazda lasă lucruri de plajă'],
+    ['verified', 'Airbnb Plus, gazdă Superhost'],
+    ['subway', 'Metrou L4 (galben) Poblenou la ~6 min; Rambla del Poblenou la 3 min'],
+  ],
+};
+const baseLoc = () => ({ id: 'home', title: 'Cazare · Carrer de Pellaires 35', address: TRIP.base.address, placeQuery: TRIP.base.placeQuery, lat: TRIP.base.lat, lng: TRIP.base.lng, approx: true, cat: 'none', time: '', hours: 'Oricând' });
 let homeOpen = false;
 function homeCardHTML() {
   const b = baseLoc(), p = coordsOf(b), d = state.pos && p ? distanceM(state.pos, p) : null;
-  return `<div class="card flex items-center gap-3 p-3"><span class="cat-ic" style="background: #202124; color: #fff">${icon('home', 'ms-fill')}</span><div class="min-w-0 flex-1"><div class="font-medium">Acasă · Carrer de Pellaires 35</div><div class="cap">${d != null ? `${fmtDist(d)} · ${fmtMin(walkMin(d))} pe jos · ~${fmtMin(transitMin(d))} cu metroul` : '08019 Barcelona · Poblenou, L4'}</div></div><button data-action="open-home" class="btn btn-sm btn-primary press">Du-mă</button></div>`;
+  return `<button data-action="open-home" class="card flex items-center gap-3 p-3 w-full text-left press"><div class="thumb" style="width: 56px; height: 56px; background: var(--brand-soft); color: var(--brand)">${icon('hotel', 'i-28 ms-fill')}${photoOf('home') ? `<img src="${esc(photoOf('home'))}" alt="">` : ''}</div><div class="min-w-0 flex-1"><div class="font-medium">Cazarea noastră (Airbnb)</div><div class="cap truncate">Carrer de Pellaires 35 · ${d != null ? `${fmtDist(d)} · ${fmtMin(walkMin(d))} pe jos` : 'Poblenou, L4'}</div></div>${icon('chevron_right', 't-3 i-20')}</button>`;
 }
 function renderHome() {
   const el = $('#homeInfo'); if (el) el.innerHTML = homeCardHTML();
   const b = baseLoc(), p = coordsOf(b), d = state.pos && p ? distanceM(state.pos, p) : null;
-  const lbl = $('#homeNavLabel'); if (lbl) lbl.textContent = d == null ? 'Acasă' : d < 120 ? 'Acasă ✓' : fmtDist(d); $('.nav-home')?.classList.toggle('near', d != null && d < 120);
-  if (homeOpen) $('#coffeeBody').innerHTML = homeSheetHTML();
+  const lbl = $('#homeNavLabel'); if (lbl) lbl.textContent = d != null && d < 120 ? 'Cazare ✓' : 'Cazare'; $('.nav-home')?.classList.toggle('near', d != null && d < 120);
+  if (homeOpen && !$('#coffeeSheet').classList.contains('hidden')) $('#coffeeBody').innerHTML = homeSheetHTML();
 }
 function homeSheetHTML() {
   const b = baseLoc(), p = coordsOf(b), d = state.pos && p ? distanceM(state.pos, p) : null, home = d != null && d < 120;
-  const notes = (state.shared.notes || '').trim(); const dow = new Date().getDay();
+  const notes = (state.shared.notes || '').trim(); const dow = new Date().getDay(); const own = state.photos.home;
   const last = dow === 5 ? 'merge până la 02:00' : dow === 6 ? 'merge toată noaptea' : 'merge până la 24:00';
-  return `${sheetHead('Poblenou · 08019', home ? 'Sunteți acasă' : 'Înapoi acasă')}
-    <div class="summary"><div><div class="v tabular">${d != null ? fmtDist(d) : '—'}</div><div class="k">distanța</div></div><div><div class="v tabular">${d != null ? fmtMin(walkMin(d)) : '—'}</div><div class="k">pe jos</div></div><div><div class="v tabular">${d != null ? '~' + fmtMin(transitMin(d)) : '—'}</div><div class="k">metrou / taxi</div></div></div>
-    <div class="grid grid-cols-3 gap-2 mt-4">
+  const hero = `<div class="relative" style="margin: 0 -16px"><div class="photo hero-photo" style="background: linear-gradient(135deg, var(--brand-soft), var(--blue-soft)); color: var(--brand)">${icon('hotel', 'i-48 ms-fill')}${own ? `<img src="${esc(own.data || own.url)}" alt="">` : ''}<div class="ph-bl"><button data-action="add-photo" data-id="home" class="pill ink press" style="height: 32px; padding: 0 12px">${icon('add_a_photo', 'i-16')} ${own ? 'Altă poză' : 'Pune o poză din Airbnb'}</button></div></div><div class="handle absolute" style="top: 2px; left: 50%; margin-left: -16px; background: rgba(255,255,255,.85)"></div><button data-action="close-modal" class="icon-btn solid press absolute" style="top: 12px; right: 12px" aria-label="Închide">${icon('close')}</button></div>`;
+  return `${hero}
+    <div class="pt-4"><div class="cap">Cazare · Airbnb · Poblenou</div><h2 class="ttl-1">${home ? 'Sunteți la cazare' : 'Cazarea noastră'}</h2><div class="t-2 mt-0.5">${esc(STAY.name)}</div><div class="t-2 mt-1 flex items-center gap-1.5">${icon('location_on', 'i-18')} Carrer de Pellaires 35, 08019 Barcelona</div></div>
+    <div class="summary mt-4"><div><div class="v tabular">${d != null ? fmtDist(d) : '—'}</div><div class="k">până acolo</div></div><div><div class="v tabular">${d != null ? fmtMin(walkMin(d)) : '—'}</div><div class="k">pe jos</div></div><div><div class="v tabular">${d != null ? '~' + fmtMin(transitMin(d)) : '—'}</div><div class="k">metrou / taxi</div></div></div>
+    <div class="grid grid-cols-3 gap-2 mt-3">
       <a href="${esc(mapsNav(b, 'walking'))}" target="_blank" rel="noopener" class="btn btn-outline press" style="padding: 0 8px">${icon('directions_walk', 'i-20')} Pe jos</a>
       <a href="${esc(mapsNav(b, 'transit'))}" target="_blank" rel="noopener" class="btn btn-primary press" style="padding: 0 8px">${icon('subway', 'i-20')} Metrou</a>
       <a href="${esc(mapsNav(b, 'driving'))}" target="_blank" rel="noopener" class="btn btn-outline press" style="padding: 0 8px">${icon('local_taxi', 'i-20')} Taxi</a>
     </div>
-    <div class="card list mt-4">
+    <div class="hair pt-5 mt-5"><h3 class="ttl-3 mb-3">Important</h3><div class="card list">
+      <div class="li">${icon('event', '', 'color: var(--brand)')}<div class="flex-1"><div class="font-medium">Sosim vineri 6 nov, ~14:30</div><div class="cap">după trenul din PortAventura și metroul de la Sants. Ora exactă de check-in și check-out e în aplicația Airbnb.</div></div></div>
+      ${notes ? `<div class="li" style="align-items: flex-start">${icon('key', '', 'color: var(--amber)')}<div class="flex-1"><div class="font-medium">Din notițele noastre</div><div class="whitespace-pre-line t-2">${esc(notes.slice(0, 500))}</div></div></div>` : `<button data-action="view" data-view="info" class="li press">${icon('key', '', 'color: var(--amber)')}<div class="flex-1 text-left"><div class="font-medium">Cod ușă, etaj, wifi</div><div class="cap">Scrieți-le în Notițe ca să apară aici, la toți</div></div>${icon('chevron_right', 't-3 i-20')}</button>`}
+      <button data-action="copy-address" class="li press">${icon('content_paste', '', 'color: var(--blue)')}<div class="flex-1 text-left"><div class="font-medium">Copiază adresa pentru taxi</div><div class="cap">Carrer de Pellaires 35, 08019 Barcelona</div></div></button>
+      <a href="${esc(STAY.url)}" target="_blank" rel="noopener" class="li press">${icon('open_in_new', '', 'color: var(--brand)')}<div class="flex-1"><div class="font-medium">Anunțul și mesajele din Airbnb</div><div class="cap">poze, reguli, instrucțiuni de check-in</div></div>${icon('chevron_right', 't-3 i-20')}</a>
+    </div></div>
+    <div class="hair pt-5 mt-5"><h3 class="ttl-3 mb-3">Despre loc</h3><ul class="space-y-3">${STAY.facts.map(([ic, t]) => `<li class="flex gap-3">${icon(ic, 'i-20', 'color: var(--brand); margin-top: 1px')}<span>${esc(t)}</span></li>`).join('')}</ul></div>
+    <div class="hair pt-5 mt-5"><h3 class="ttl-3 mb-3">Cum ajungeți</h3><div class="card list">
       <div class="li">${icon('subway', '', 'color: var(--amber)')}<div class="flex-1"><b style="font-weight: 500">L4 galbenă → Poblenou</b>, apoi 6 min pe jos pe Rambla del Poblenou</div></div>
       <div class="li">${icon('schedule', '', 'color: var(--text-2)')}<div class="flex-1">Metroul azi ${last}. Noaptea: NitBus N7 / N8 sau taxi</div></div>
-      <button data-action="copy-address" class="li press">${icon('content_paste', '', 'color: var(--blue)')}<div class="flex-1 text-left"><div class="font-medium">Copiază adresa pentru taxi</div><div class="cap">Carrer de Pellaires 35, 08019 Barcelona</div></div></button>
-      ${notes ? `<div class="li" style="align-items: flex-start">${icon('lightbulb', '', 'color: var(--amber)')}<div class="flex-1 whitespace-pre-line t-2">${esc(notes.slice(0, 400))}</div></div>` : `<button data-action="view" data-view="info" class="li press">${icon('edit', '', 'color: var(--text-2)')}<div class="flex-1 text-left">Scrie codul ușii și wifi-ul în Notițe</div>${icon('chevron_right', 't-3 i-20')}</button>`}
-    </div><div style="height:12px"></div>`;
+    </div></div><div style="height:16px"></div>`;
 }
 function openHome() { homeOpen = true; openSheet(homeSheetHTML()); if (!state.pos) startRadar(); }
 
@@ -754,6 +772,7 @@ function parseShared(text) {
     else if ((u && /google\.[a-z.]+$/.test(host) && /\/maps/.test(u.pathname)) || /maps\.app\.goo\.gl|goo\.gl\/maps|maps\.google/.test(host + (u?.pathname || ''))) out.source = 'gmaps'; else out.source = 'web';
     if (out.source === 'gmaps' && u) { const place = /\/maps\/place\/([^/]+)/.exec(u.pathname); if (place) out.title = decodeURIComponent(place[1].replace(/\+/g, ' ')); const at = /@(-?\d+\.\d+),(-?\d+\.\d+)/.exec(u.pathname); if (at) { out.lat = +at[1]; out.lng = +at[2]; } const d3 = /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/.exec(u.href); if (d3) { out.lat = +d3[1]; out.lng = +d3[2]; } const q = u.searchParams.get('q') || u.searchParams.get('query'); if (q) { const c = /^(-?\d+\.\d+),\s*(-?\d+\.\d+)$/.exec(q); if (c) { out.lat = +c[1]; out.lng = +c[2]; } else if (!out.title) out.title = q; } }
   }
+  if (out.source === 'instagram' && out.url) { try { const u = new URL(out.url); const seg = u.pathname.split('/').filter(Boolean); if (seg[0] === 'explore' && seg[1] === 'locations' && seg[3]) { out.title = decodeURIComponent(seg[3]).replace(/[-_]+/g, ' ').trim(); out.igKind = 'location'; } else if (seg.length === 1 && !['reel', 'reels', 'p', 'stories', 'explore', 'tv'].includes(seg[0])) { out.title = seg[0].replace(/[._]+/g, ' ').replace(/\b(bcn|barcelona|official|oficial)\b/gi, '').trim(); out.igKind = 'profile'; } } catch {} }
   if (out.source === 'gmaps' && !out.title && lines.length) { out.title = lines[0]; if (lines[1] && /\d/.test(lines[1])) out.address = lines[1]; }
   out.candidates = candidatesFrom(lines.join('\n'));
   if (!out.title && out.candidates.length) out.title = out.candidates[0];
@@ -860,7 +879,7 @@ function renderAddKeepFocus() { const inp = $('#addQ'); const had = document.act
 async function handleLinkText(text) {
   const a = addState; if (!a) return; const p = parseShared(text);
   a.link = p.url ? { url: p.url, source: p.source } : null;
-  a.linkHint = p.source === 'gmaps' ? 'Am luat numele din Google Maps.' : p.source === 'instagram' ? 'Instagram nu arată descrierea fără cont. Scrie numele locului din Reel.' : p.source === 'tiktok' || p.source === 'youtube' ? 'Citesc descrierea…' : 'Linkul rămâne pe cardul locului.';
+  a.linkHint = p.source === 'gmaps' ? 'Am luat numele din Google Maps.' : p.source === 'instagram' ? (p.igKind === 'location' ? 'Am luat numele din locația de pe Instagram. Alege locul potrivit.' : p.igKind === 'profile' ? 'Am luat numele din profilul de Instagram. Alege locul potrivit.' : 'Din Reel nu pot citi descrierea. Scrie numele, sau în Instagram apasă pe locația de sub nume → Share → Trippin.') : p.source === 'tiktok' || p.source === 'youtube' ? 'Citesc descrierea…' : 'Linkul rămâne pe cardul locului.';
   if (p.source === 'gmaps' && p.lat != null) { choosePlace({ title: p.title || 'Loc din Google Maps', address: p.address, lat: p.lat, lng: p.lng, cat: osmCat('', '', p.title) }); return; }
   let q = p.title || '';
   if (!q && (p.source === 'tiktok' || p.source === 'youtube')) {
@@ -945,7 +964,7 @@ function ensureMap() {
   map.on('contextmenu', (e) => { if (state.picking) return; buzz(20); addAt({ lat: e.latlng.lat, lng: e.latlng.lng }); });
   state.map = map; setTimeout(() => map.invalidateSize(), 60);
 }
-function homeMarker() { if (!state.map || state.homeMarker) return; const b = TRIP.base; state.homeMarker = L.marker([b.lat, b.lng], { icon: L.divIcon({ className: '', html: `<div class="pin home">${icon('home', 'i-16 ms-fill')}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] }), zIndexOffset: 500 }).addTo(state.map); state.homeMarker.on('click', () => openHome()); }
+function homeMarker() { if (!state.map || state.homeMarker) return; const b = TRIP.base; state.homeMarker = L.marker([b.lat, b.lng], { icon: L.divIcon({ className: '', html: `<div class="pin home">${icon('hotel', 'i-16 ms-fill')}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] }), zIndexOffset: 500 }).addTo(state.map); state.homeMarker.on('click', () => openHome()); }
 function updateMeMarker() { if (!state.map || !state.pos) return; const ll = [state.pos.lat, state.pos.lng]; if (!state.meMarker) state.meMarker = L.marker(ll, { icon: L.divIcon({ className: '', html: '<div class="me"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }), zIndexOffset: 1000 }).addTo(state.map); else state.meMarker.setLatLng(ll); }
 function renderMap() {
   renderDates(); if (!state.map) return; state.markers.forEach((m) => m.remove()); state.markers = []; const bounds = []; let n = 0; const list = dayItems(state.day);
@@ -997,7 +1016,7 @@ document.addEventListener('click', (e) => {
     'toggle-theme': toggleTheme, 'close-modal': () => { addState = null; closeModals(); }, 'open-add': () => openAdd(),
     'copy-link': () => copyText($('#shareUrl').value, 'Linkul a fost copiat.'), 'copy-summary': () => copyText(`${SUMMARY_TEXT}\n\n${location.href.split('#')[0].split('?')[0]}`, 'Programul a fost copiat.'),
     'open-detail': () => { if (addState) { addState = null; $('#addSheet').classList.add('hidden'); clearNewMarker(); } $('#coffeeSheet').classList.add('hidden'); openDetail(id); }, 'delete-loc': () => deleteLocation(id), 'edit-loc': () => { const l = state.custom.find((x) => x.id === id); if (l) openAdd({ editing: l }); },
-    'toggle-visited': () => toggleVisited(id, el), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => openPhotoSheet(id), 'photo-file': () => { $('#coffeeSheet').classList.add('hidden'); state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); }, 'photo-remove': () => removePhoto(id),
+    'toggle-visited': () => toggleVisited(id, el), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => { homeOpen = false; openPhotoSheet(id); }, 'photo-file': () => { $('#coffeeSheet').classList.add('hidden'); state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); }, 'photo-remove': () => removePhoto(id),
     'day-route': dayRoute, 'locate': locate, 'open-link': () => window.open(el.dataset.href, '_blank', 'noopener'), 'close-banner': () => $('#radarBanner').classList.add('hidden'), 'install': installApp, 'open-install': openInstallSheet, 'refresh': hardRefresh,
     'open-coffee': openCoffee, 'open-home': openHome, 'copy-address': () => copyText('Carrer de Pellaires 35, 08019 Barcelona', 'Adresa a fost copiată.'), 'coffee-add': coffeeAdd, 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
     'coffee-type': () => { coffeeSel.type = el.dataset.type; $$('#coffeeTypes .chip').forEach((c) => c.classList.toggle('on', c === el)); },
