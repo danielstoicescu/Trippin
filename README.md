@@ -65,3 +65,15 @@ firebase login
 firebase use --add            # alege proiectul
 npm run deploy                # build + hosting + firestore rules
 ```
+
+## Adăugare locuri (din septembrie 2026)
+- **Caută direct**: „Adaugă” → scrii 2–3 litere; caut pe OpenStreetMap (Photon, fără cheie; Nominatim ca rezervă) în jurul Barcelonei și în recomandările noastre.
+- **Ziua se pune singură**: locul intră în ziua în care sunteți deja prin zonă, imediat după oprirea cea mai apropiată (ora = sfârșitul opririi + drumul pe jos). Peste 3 km de orice oprire → „Dorite”.
+- **Pe hartă**: ține apăsat pe orice punct sau „Pe hartă” → muți pinul → „Aici”; apar locurile din jurul pinului.
+- **Din link**: Google Maps (nume + coordonate), TikTok/YouTube (descrierea, când se poate), Instagram (linkul rămâne pe card; numele îl scrieți voi, Instagram nu dă descrierea fără cont).
+
+## Traseul zilei în Google Maps
+Google Maps acceptă cel mult 3 opriri intermediare într-un link deschis din browserul telefonului și niciuna în modul „transport public”. De aceea ziua se împarte în bucăți pe jos de maximum 5 opriri, iar drumurile lungi apar separat, cu metroul.
+
+## Design
+Stil Google Flights: Google Sans (OFL, găzduit local), alb, linii fine, albastru Google, fotografii mari 16:9 în cronologie, timpul de mers între opriri, animații la derulare.

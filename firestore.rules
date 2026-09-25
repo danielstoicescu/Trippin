@@ -7,7 +7,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function validLocation(d) {
-      return d.keys().hasOnly(['title', 'day', 'cat', 'time', 'desc', 'mapLink', 'addedBy', 'nearPoblenou', 'createdAt', 'lat', 'lng', 'link', 'source', 'hours'])
+      return d.keys().hasOnly(['title', 'day', 'cat', 'time', 'desc', 'mapLink', 'addedBy', 'nearPoblenou', 'createdAt', 'lat', 'lng', 'link', 'source', 'hours', 'address'])
         && d.keys().hasAll(['title', 'day', 'cat', 'desc', 'addedBy', 'createdAt'])
         && d.title is string && d.title.size() > 0 && d.title.size() <= 120
         && d.day in ['thu', 'fri', 'sat', 'sun', 'mon', 'pool']
@@ -22,6 +22,7 @@ service cloud.firestore {
         && (!('link' in d) || (d.link is string && d.link.size() <= 500))
         && (!('source' in d) || d.source in ['instagram', 'tiktok', 'youtube', 'gmaps', 'web'])
         && (!('hours' in d) || (d.hours is string && d.hours.size() <= 120))
+        && (!('address' in d) || (d.address is string && d.address.size() <= 200))
         && d.createdAt is timestamp;
     }
 

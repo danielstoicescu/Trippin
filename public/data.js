@@ -29,7 +29,7 @@ export const DAY_ZONES = {
 };
 
 export const DAY_TIPS = {
-  thu: 'Ferrari Land e închis în timpul săptămânii în noiembrie (doar sâmbătă–duminică 16–22). PortAventura Park: 10:30–18:00, bilete online mai ieftine. Halloween ține până pe 15 nov, e inclus.',
+  thu: 'Ferrari Land e deschis în perioada noastră (program de toamnă ≈ 10:00 – 17:00; confirmați ora exactă în calendarul oficial). Bilet separat sau combinat PortAventura + Ferrari Land. PortAventura Park: 10:30 – 18:00, bilete online mai ieftine. Halloween ține până pe 15 nov și e inclus.',
   fri: 'Tren R17 PortAventura → Sants ≈ 1h30, ~8 €/pers. Nomad Frutas Selectas închide la 18:00. Banh Mi Club e non-stop 12–23.',
   sat: 'Rezervați Bar del Pla. MNAC e gratis după 15:00, cu rezervare online, și închide la 18:00. Sephora e închis duminica, deci azi e ziua toboganului.',
   sun: 'Gratis după 15:00: Design Museum, MUHBA, Castell de Montjuïc, Museu Marítim, CCCB. Apusul e ~17:35, incinta Bunkers închide la 17:30 (cărarea din exterior rămâne deschisă).',
@@ -326,7 +326,7 @@ export const ITINERARY = [
 ];
 
 export const ALTERNATIVES = [
-  { zone: 'salou', cat: 'fun', title: 'Ferrari Land (Red Force, 180 km/h)', address: 'PortAventura World', placeQuery: 'Ferrari Land', hours: 'NOIEMBRIE: doar Sâ–Du 16:00 – 22:00', price: 'Bilet separat sau combinat', note: 'Cel mai înalt și rapid rollercoaster din Europa. În noiembrie e închis în timpul săptămânii; ar merge doar dacă schimbați o zi de Barcelona.', lat: 41.0894, lng: 1.1594, approx: true },
+  { zone: 'salou', cat: 'fun', title: 'Ferrari Land (Red Force, 180 km/h)', address: 'PortAventura World, Vila-seca', placeQuery: 'Ferrari Land PortAventura', hours: 'Toamnă ≈ 10:00 – 17:00 (calendarul oficial are ora exactă)', price: 'Bilet separat sau combinat cu PortAventura Park', note: 'Red Force: cel mai înalt și mai rapid rollercoaster din Europa (112 m, 0–180 km/h în 5 s). Parcul e lipit de PortAventura: se poate face după-amiaza, după Shambhala. Thrill Towers și simulatoarele Ferrari sunt pe gustul Marei.', site: 'https://www.portaventuraworld.com/en/ferrari-land', lat: 41.0894, lng: 1.1594, approx: true },
   { zone: 'salou', cat: 'food', title: 'Meniu „del día” în Salou', address: 'Carrer de Barcelona / Carrer Major, Salou', placeQuery: 'Carrer Major Salou', hours: 'Prânz 13:00 – 16:00', price: '€ (14–18 € cu 3 feluri)', note: 'În afara parcului mâncarea e la jumătate de preț. Căutați restaurantele cu localnici, nu cele de pe faleză.', lat: 41.0770, lng: 1.1410, approx: true },
   { zone: 'poblenou', cat: 'food', title: 'El 58 (tapas cu twist)', address: 'Rambla del Poblenou 58', placeQuery: 'El 58 Poblenou', hours: 'Verificați (luni de obicei închis)', price: '€€', note: 'Tapas franco-catalane, preferatul cartierului. Bun pentru cina de vineri dacă Bitácora e plin.', lat: 41.4003, lng: 2.2002, approx: true, verify: true },
   { zone: 'poblenou', cat: 'food', title: 'Can Recasens (charcuterie din 1906)', address: 'Rambla del Poblenou 102', placeQuery: 'Can Recasens Barcelona', hours: 'Seara, verificați', price: '€€', note: 'Platouri de brânzeturi și mezeluri într-un local cu lumânări. Rezervați.', lat: 41.4020, lng: 2.1990, approx: true, verify: true },
@@ -406,6 +406,7 @@ export const COFFEE_TYPES = [
 export const DAY_OPPS = {
   thu: [
     { title: 'Halloween la PortAventura, inclus în bilet', when: 'Toată ziua, până pe 15 nov', price: 'Inclus', link: 'https://www.portaventuraworld.com/en/halloween', locId: 'pa-halloween', kind: 'inclus' },
+    { title: 'Ferrari Land e deschis: Red Force, 180 km/h', when: 'Program de toamnă ≈ 10:00 – 17:00', price: 'Bilet separat sau combinat', link: 'https://www.portaventuraworld.com/en/dates-times/ferrari-land', locId: 'alt-0', kind: 'tip' },
     { title: 'Single Rider la Shambhala', when: 'Coada separată, de 3× mai rapidă', price: 'Gratis', link: 'https://www.portaventuraworld.com/en/rides/shambhala', locId: 'pa-morning', kind: 'tip' },
   ],
   fri: [
