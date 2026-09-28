@@ -22,6 +22,10 @@ Fără Firebase, aplicația merge oricum: totul se salvează local, pe telefonul
 - **Navighează** (Google Maps pe jos) și **Maps & ore** (orele live) pe fiecare card. „Fixează aici” salvează poziția exactă a unui loc, pentru toți.
 - **Bifează „Am fost”**, contorul de espresso, quest log-ul Marei și **notițe comune** (adresă, cod ușă, wifi), toate sincronizate live între telefoane.
 - **Vreme** pe zilele excursiei (Open-Meteo, apare cu ~2 săptămâni înainte), **numărătoare inversă**, tab-ul zilei curente se selectează singur, cardul „ACUM”.
+- **Info** strânge tot ce e util într-un singur loc: **Rezervări** (site / telefon / e-mail cu mesaj gata scris în spaniolă / Google Maps, cu „Am rezervat” comun), **Buget** (estimare pe tot tripul din `budget`-ul fiecărei opriri + cheltuieli reale împărțite la trei), **De împachetat** (listă comună, bifabilă, adaptată noiembrie/parc/plajă/zbor), **Cum spui în spaniolă** (fraze RO→ES/catalană cu pronunție), **În jurul cazării** (supermarket, apă non-stop, farmacii, urgențe, metrou), notițe comune și share.
+- **Colecții** (idee din Klad) în Explorare: toate locurile pe categorii cu „de făcut / făcute”, plus **Top 3 localnici** pentru pho, paella, tapas și piețe.
+- **Fiecare zi** are un nume după specific (Ziua adrenalinei, Marea zi de shopping…), începe cu **cafeaua zilei** marcată special, are verificarea **prânz · cină · 2 cafenele · 2 dulciuri**, răsărit/apus și temperatura tipică, și **avertismente „închide curând”** cu planul B la o atingere.
+- **Progres pe tot tripul** și confetti „zi completă!” când bifați toate opririle unei zile. Note „Păreri de la noi” pe fiecare loc.
 - **Offline**: după prima deschidere, aplicația pornește și fără semnal (service worker + cache Firestore). Se poate instala pe ecranul principal.
 
 ## Ce trebuie făcut o singură dată (≈10 minute)
