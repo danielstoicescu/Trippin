@@ -347,6 +347,7 @@ function renderDay() {
   $('#planEyebrow').textContent = `${DAY_LONG[state.day]}${todayKey() === state.day ? ' · azi' : ''}`;
   const cd = $('#planCountdown'); if (cd) cd.textContent = countdownText().replace('Barcelona · ', '');
   $('#planHeadline').innerHTML = `<span class="theme-ic" style="--th: ${th.color}">${icon(th.icon, 'i-24 ms-fill')}</span><span>${esc(th.name)}</span>`; $('#planSub').textContent = th.sub;
+  { const all = DAYS.flatMap((d) => dayItems(d)); const done = all.filter((l) => state.shared.visited[l.id]).length; const tp = $('#tripProgress'); if (tp) tp.innerHTML = done ? `<div class="trip-prog"><div class="tp-bar"><i style="width:${Math.round(done / all.length * 100)}%"></i></div><span class="cap">${done}/${all.length} locuri bifate în tot tripul</span></div>` : ''; }
   renderDates(); renderSummary(); renderFilters();
   const list = dayItems(state.day, true).filter((l) => state.filter === 'all' || catKey(enriched(l).cat) === state.filter);
   $('#dayTip').innerHTML = DAY_TIPS[state.day] && state.filter === 'all' ? `<div class="card-flat p-3 mt-4 flex gap-3">${icon('lightbulb', 'i-20', 'color: var(--amber)')}<span class="t-2">${esc(DAY_TIPS[state.day])}</span></div>` : '';
@@ -879,8 +880,14 @@ async function saveLocation(data, editingId) {
 async function deleteLocation(id) { if (!confirm('Ștergi acest loc din programul comun?')) return; if (fb && state.online && !String(id).startsWith('local-')) { const { db, fs } = fb; await fs.deleteDoc(fs.doc(db, 'trips', TRIP_ID, 'locations', id)); } else { state.custom = state.custom.filter((l) => l.id !== id); persistLocal(); renderAll(); } addState = null; closeModals(); toast('Locul a fost șters.', 'delete'); }
 async function toggleVisited(k, el) {
   const v = { ...state.shared.visited, [k]: !state.shared.visited[k] }; state.shared.visited = v;
-  if (v[k]) { buzz(14); const r = (el || document.body).getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + Math.min(r.height / 2, 40)); toast(`Bifat: ${shortTitle(findLoc(k)?.title || '')}`, 'check_circle', 3500, { label: 'Anulează', run: () => toggleVisited(k) }); }
+  if (v[k]) { buzz(14); const r = (el || document.body).getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + Math.min(r.height / 2, 40)); toast(`Bifat: ${shortTitle(findLoc(k)?.title || '')}`, 'check_circle', 3500, { label: 'Anulează', run: () => toggleVisited(k) });
+    const loc = findLoc(k); const day = loc && DAYS.includes(loc.day) ? loc.day : null;
+    if (day) { const stops = dayItems(day); if (stops.length && stops.every((l) => v[l.id])) setTimeout(() => dayDone(day), 400); } }
   renderAll(); refreshDetail(); await saveShared({ visited: v });
+}
+function dayDone(day) {
+  buzz(24); for (let i = 0; i < 3; i++) setTimeout(() => confetti(window.innerWidth * (0.2 + Math.random() * 0.6), window.innerHeight * 0.3), i * 180);
+  toast(`${DAY_THEMES[day]?.name || DAY_LABEL[day]}: zi completă! 🎉`, 'celebration', 5000);
 }
 async function chooseSkip(k) { const s = { ...state.shared.skipped, [k]: true }; state.shared.skipped = s; buzz(); renderAll(); await saveShared({ skipped: s }); toast(`Sărim peste ${shortTitle(findLoc(k)?.title || '')}.`, 'skip_next', 4000, { label: 'Anulează', run: () => toggleSkip(k) }); }
 async function shiftTime(id, time) {
