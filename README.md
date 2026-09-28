@@ -83,6 +83,10 @@ npm run deploy                # build + hosting + firestore rules
   - `arrive` = unde se termină locul, dacă e altundeva (trenul ajunge la Sants, plimbarea pe plajă în Barceloneta).
   - `day: 'pool'` + `poolNote` = rezerve, la „Locuri dorite”.
 - Din aplicație orice loc se poate muta în altă zi sau oră („Mută”); mutările la locurile din program se salvează în `state/shared` (`days`, `times`).
+- `DAY_THEMES` = numele zilei după specific (titlul zilei și eticheta de pe butonul cu data).
+- Cafeaua zilei: prima cafenea din primele două opriri ale zilei e marcată special, cu buton „Am băut espresso-ul aici”.
+- Colecții (idee din Klad): tile-uri pe categorii + „Top 3 pho / paella / tapas” (`ALTERNATIVES` cu `pick` și `rank`), fiecare cu „de făcut / făcute”.
+- Păreri de la noi: note scurte pe fiecare loc, văzute de toată familia (`state/shared.comments`).
 
 ## Traseul zilei în Google Maps
 Google Maps acceptă cel mult 3 opriri intermediare într-un link deschis din browserul telefonului și niciuna în modul „transport public”. De aceea ziua se împarte în bucăți pe jos de maximum 5 opriri, iar drumurile lungi apar separat, cu metroul.
