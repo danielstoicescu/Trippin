@@ -13,7 +13,7 @@ const PERSONS = ['mara', 'anne', 'daniel'];
 const LS = { locations: 'bcn_locations', shared: 'bcn_shared', photos: 'bcn_photos', theme: 'bcn_theme', alerted: 'bcn_alerted', view: 'bcn_view', me: 'bcn_me', install: 'bcn_install_seen', weather: 'bcn_weather', img: 'bcn_img' };
 const BCN = { lat: 41.3874, lng: 2.1686 };
 const SUMMARY_TEXT = `Trippin · Barcelona (Mara 13, Anne & Daniel), 5–9 nov:
-• Joi 5 · Ziua adrenalinei: aterizare 8:45, Syra la Sants, tren, PortAventura (Shambhala, Halloween), Café Saula, crêpes, cină & gelato în Salou
+• Joi 5 · Ziua adrenalinei: aterizare 8:45, Syra la Sants, tren, PortAventura (Shambhala, Halloween), Café Saula, cină în Salou
 • Vineri 6 · Red Force & apus la mare: Ferrari Land, tren, paella la Els Pescadors, Demasié, Nomad, apus pe plajă, La Cova Fumada, gelato, TK Maxx
 • Sâmbătă 7 · Marea zi de shopping: SlowMov, La Pubilla, Subdued, Sephora, Chök, Hollister & Brandy Melville, Satan's, churros, Cereria, Santa Caterina, Bar del Pla, MEMS & The Hands, terasa MNAC, Blai, Bar Marsella
 • Duminică 8 · Pe jos, gratis: La Papa, târgul de cărți Sant Antoni, Gaudí pe dinafară, House of Candy, SAISEI, Sagrada, Vietnam House, Three Marks, Ciutadella, MUHBA, Casa Amàlia
