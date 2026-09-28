@@ -312,3 +312,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .btn-booked { background: var(--green-soft); color: var(--green); }
 .bubble-es { background: var(--surface-2); border-radius: 4px 16px 16px 16px; padding: 12px 14px; font-size: 15px; line-height: 22px; border-left: 3px solid var(--brand); }
 .act.on { color: var(--green); }
+/* Esențialele zilei: cafele, mese, dulciuri */
+.ess-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.ess { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 10px 0 8px; border-radius: 99px; font-size: 13px; background: var(--surface-2); color: var(--text-2); }
+.ess.ok { background: var(--green-soft); color: var(--green); }
+.ess.miss { background: var(--amber-soft); color: var(--amber); }
+/* Pinii de pe hartă: culoarea categoriei + insignă pentru cafele și dulciuri */
+.pin[class*="k-"]:not(.done) { background: var(--cat); position: relative; }
+.pin.k-coffee:not(.done) { background: #8D5524; }
+.pin-b { position: absolute; right: -6px; top: -6px; width: 16px; height: 16px; border-radius: 99px; background: #fff; color: #8D5524; display: grid; place-items: center; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.pin.k-sweet .pin-b { color: #E8467C; }
