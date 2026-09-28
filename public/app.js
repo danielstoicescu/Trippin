@@ -22,7 +22,7 @@ const SUMMARY_TEXT = `Trippin · Barcelona (Mara 13, Anne & Daniel), 5–9 nov:
 const state = {
   view: 'plan', day: 'thu', filter: 'all', person: 'mara',
   custom: [], photos: {},
-  shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, times: {}, days: {}, comments: {}, booked: {}, notes: '' },
+  shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, times: {}, days: {}, comments: {}, booked: {}, expenses: [], notes: '' },
   online: false, radarOn: false, pos: null, watchId: null, alerted: {},
   installPrompt: null, map: null, markers: [], meMarker: null, homeMarker: null, newMarker: null, detailId: null, photoTarget: null, picking: false,
 };
@@ -501,6 +501,55 @@ function nearHomeHTML() {
 }
 function renderBookings() { const el = $('#bookings'); if (el) el.innerHTML = bookingsHTML(); const nh = $('#nearHome'); if (nh && !nh.dataset.done) { nh.innerHTML = nearHomeHTML(); nh.dataset.done = '1'; } }
 
+// ---------- Buget: estimat din program + cheltuieli reale, împărțite la trei ----------
+const eur = (n) => `${Math.round(n)} €`;
+function estBudget(loc) { // estimare grosieră pentru trei, din textul budget/price
+  const b = enriched(loc).budget || enriched(loc).price || ''; if (!b) return 0;
+  const m = [...b.matchAll(/(\d+)(?:\s*[–-]\s*(\d+))?\s*€/g)]; if (!m.length) return 0;
+  const lo = +m[0][1], hi = m[0][2] ? +m[0][2] : lo; let v = (lo + hi) / 2;
+  if (/\/\s*pers/i.test(b)) v *= 3; return v;
+}
+const expenses = () => (Array.isArray(state.shared.expenses) ? state.shared.expenses : []);
+function dayEstimate(day) { return dayItems(day).filter((l) => !state.shared.skipped[l.id]).reduce((s, l) => s + estBudget(l), 0); }
+const tripEstimate = () => DAYS.reduce((s, d) => s + dayEstimate(d), 0);
+const spentTotal = () => expenses().reduce((s, e) => s + (Number(e.amount) || 0), 0);
+function budgetHTML() {
+  const est = tripEstimate(), spent = spentTotal(), list = [...expenses()].reverse().slice(0, 8);
+  const perDay = DAYS.map((d) => ({ d, e: dayEstimate(d), s: expenses().filter((x) => x.day === d).reduce((a, x) => a + (+x.amount || 0), 0) }));
+  return `<div class="sec"><div class="sec-h"><h2 class="ttl-2">Buget</h2><span class="cap">estimativ, pentru trei</span></div>
+    <div class="card p-4">
+      <div class="flex items-end justify-between gap-3">
+        <div><div class="cap">Cheltuit până acum</div><div class="h-display" style="font-size: 26px; line-height: 30px">${eur(spent)}</div></div>
+        <div class="text-right"><div class="cap">Estimat pe tot tripul</div><div class="ttl-2">≈ ${eur(est)}</div></div>
+      </div>
+      <div class="budget-bar mt-3"><i style="width: ${est ? Math.min(100, Math.round(spent / est * 100)) : 0}%"></i></div>
+      <div class="flex justify-between cap mt-2"><span>≈ ${eur(spent / 3)} de persoană</span><span>${spent <= est ? `${eur(est - spent)} sub estimat` : `${eur(spent - est)} peste estimat`}</span></div>
+    </div>
+    <div class="budget-days mt-3">${perDay.map((x) => `<button data-action="add-expense" data-day="${x.d}" class="bd press"><div class="cap">${DAY_SHORT[x.d][0]} ${DAY_SHORT[x.d][1]}</div><div class="font-medium tabular">${x.s ? eur(x.s) : '—'}</div><div class="cap t-3">din ≈${Math.round(x.e)}</div></button>`).join('')}</div>
+    <button data-action="add-expense" class="btn btn-primary btn-lg press w-full mt-3">${icon('add', 'i-20')} Adaugă o cheltuială</button>
+    ${list.length ? `<div class="card list mt-3">${list.map((e) => `<div class="li tight"><span class="avatar p-${personKey(e.by)}" style="width:30px;height:30px;font-size:13px">${esc((e.by || '?')[0])}</span><div class="flex-1 min-w-0"><div class="font-medium truncate">${esc(e.label || 'Cheltuială')}</div><div class="cap">${e.day && DAY_LABEL[e.day] ? DAY_LABEL[e.day] + ' · ' : ''}${esc(e.by || '')}</div></div><div class="font-medium tabular">${eur(+e.amount || 0)}</div><button data-action="del-expense" data-id="${esc(e.id)}" class="icon-btn press" aria-label="Șterge">${icon('close', 'i-18')}</button></div>`).join('')}</div>` : '<p class="cap mt-3">Adăugați ce cheltuiți (bilete, mese, taxi) și aplicația ține totalul și cât iese de persoană.</p>'}
+    </div>`;
+}
+function renderBudget() { const el = $('#budget'); if (el) el.innerHTML = budgetHTML(); }
+let expenseDraft = null;
+function openExpense(day) { expenseDraft = { by: me(), day: day || (DAYS.includes(state.day) ? state.day : 'fri'), amount: '', label: '' }; openSheet(expenseSheetHTML()); setTimeout(() => $('#expAmount')?.focus(), 250); }
+function expenseSheetHTML() {
+  const dr = expenseDraft;
+  return `${sheetHead('Cheltuială', 'Cât și pe ce')}
+    <label class="field"><span>Sumă (€, pentru trei)</span><input id="expAmount" type="number" inputmode="decimal" min="0" step="0.5" class="input" value="${dr.amount}" placeholder="Ex: 68"></label>
+    <label class="field mt-3"><span>Pe ce</span><input id="expLabel" class="input" maxlength="60" value="${esc(dr.label)}" placeholder="Ex: prânz Bar Joan, bilete metrou"></label>
+    <h3 class="ttl-3 mt-4 mb-2">Ziua</h3><div class="flex flex-wrap gap-2" id="expDays">${DAYS.map((d) => `<button data-action="exp-day" data-day="${d}" class="chip press ${d === dr.day ? 'on' : ''}">${DAY_LABEL[d]}</button>`).join('')}</div>
+    <h3 class="ttl-3 mt-4 mb-2">Cine a plătit</h3><div class="flex gap-2">${PERSONS.map((pp) => `<button data-action="exp-who" data-person="${pp}" class="chip press ${PEOPLE_META[pp].name === dr.by ? 'on' : ''}"><span class="avatar p-${pp}" style="width:22px;height:22px;font-size:11px">${PEOPLE_META[pp].name[0]}</span>${PEOPLE_META[pp].name}</button>`).join('')}</div>
+    <button data-action="exp-save" class="btn btn-primary btn-lg w-full mt-5 press">Adaugă în buget</button><div style="height:12px"></div>`;
+}
+async function expenseSave() {
+  const amount = parseFloat($('#expAmount')?.value); if (!amount || amount <= 0) return $('#expAmount')?.focus();
+  const e = { id: 'e' + Date.now(), amount: Math.round(amount * 100) / 100, label: ($('#expLabel')?.value || '').trim(), day: expenseDraft.day, by: expenseDraft.by, at: Date.now() };
+  const list = [...expenses(), e].slice(-500); state.shared.expenses = list; buzz(); $('#coffeeSheet').classList.add('hidden');
+  toast(`+${eur(e.amount)} adăugat în buget.`, 'payments', 3500); renderAll(); await saveShared({ expenses: list });
+}
+async function expenseDel(id) { const list = expenses().filter((e) => e.id !== id); state.shared.expenses = list; renderAll(); await saveShared({ expenses: list }); }
+
 // ---------- Păreri de la noi, pe fiecare loc ----------
 const commentsOf = (id) => (Array.isArray(state.shared.comments?.[id]) ? state.shared.comments[id] : []);
 const personKey = (name) => PERSONS.find((p) => PEOPLE_META[p].name === name) || 'daniel';
@@ -734,7 +783,7 @@ function goToLoc(id, day) { setView('plan'); state.filter = 'all'; if (day && DA
 function switchDay(day) { if (!DAYS.includes(day)) return; state.day = day; state.filter = 'all'; renderDay(); renderMap(); renderNextStop(); }
 function setFilter(c) { state.filter = c; renderDay(); }
 function renderNotes() { const ta = $('#sharedNotes'); if (ta && document.activeElement !== ta) ta.value = state.shared.notes || ''; }
-function renderAll() { renderDay(); renderMap(); renderNextStop(); renderNearby(); renderCollections(); renderUs(); renderHome(); renderBookings(); }
+function renderAll() { renderDay(); renderMap(); renderNextStop(); renderNearby(); renderCollections(); renderUs(); renderHome(); renderBookings(); renderBudget(); }
 function setView(v) {
   if (!['plan', 'explore', 'us', 'info'].includes(v)) v = 'plan';
   if (state.picking && v !== 'explore') stopPick();
@@ -781,7 +830,7 @@ async function connectFirebase() {
       state.custom = snap.docs.map((d) => ({ id: d.id, isCustom: true, ...d.data() })); lsSet(LS.locations, state.custom); renderAll(); refreshDetail();
       if (first) { first = false; state.online = true; setSyncStatus('online'); syncLocalLocations(local); }
     }, (err) => { console.error(err); state.online = false; setSyncStatus('local', err.message); toast('Nu m-am putut conecta la baza de date. Salvez local.', 'info'); });
-    fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters', 'times', 'days', 'comments', 'booked']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
+    fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters', 'times', 'days', 'comments', 'booked']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.expenses)) state.shared.expenses = d.expenses; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
     fs.onSnapshot(fs.collection(db, 'trips', TRIP_ID, 'photos'), (snap) => { state.photos = {}; snap.forEach((d) => { state.photos[d.id] = d.data(); }); renderAll(); refreshDetail(); }, (err) => console.error(err));
   } catch (err) { console.error(err); setSyncStatus('local', err.message); }
 }
@@ -1162,6 +1211,9 @@ document.addEventListener('click', (e) => {
     'open-detail': () => { if (addState) { addState = null; $('#addSheet').classList.add('hidden'); clearNewMarker(); } $('#coffeeSheet').classList.add('hidden'); openDetail(id); }, 'delete-loc': () => deleteLocation(id), 'edit-loc': () => { const l = state.custom.find((x) => x.id === id); if (l) openAdd({ editing: l }); },
     'toggle-visited': () => toggleVisited(id, el), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => { homeOpen = false; openPhotoSheet(id); }, 'photo-file': () => { $('#coffeeSheet').classList.add('hidden'); state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); }, 'photo-remove': () => removePhoto(id),
     'day-route': dayRoute, 'locate': locate, 'open-link': () => window.open(el.dataset.href, '_blank', 'noopener'), 'close-banner': () => $('#radarBanner').classList.add('hidden'), 'install': installApp, 'open-install': openInstallSheet, 'refresh': hardRefresh,
+    'add-expense': () => openExpense(el.dataset.day), 'del-expense': () => expenseDel(el.dataset.id), 'exp-save': () => expenseSave(),
+    'exp-day': () => { expenseDraft.day = el.dataset.day; $$('#expDays .chip').forEach((c) => c.classList.toggle('on', c === el)); },
+    'exp-who': () => { expenseDraft.by = PEOPLE_META[el.dataset.person].name; $$('[data-action="exp-who"]').forEach((c) => c.classList.toggle('on', c === el)); },
     'book': () => openBook(id), 'book-done': () => bookToggle(id), 'book-copy': () => { const loc = findLoc(id); if (loc) copyText(bookMessage(loc), 'Mesajul e copiat: lipiți-l în WhatsApp, Instagram sau e-mail.'); },
     'note-add': () => noteAdd(id), 'note-del': () => noteDel(id, el.dataset.i), 'note-who': () => { lsSet(LS.me, PEOPLE_META[el.dataset.person].name); const t = $('#noteText')?.value || ''; refreshDetail(); if ($('#noteText')) { $('#noteText').value = t; $('#noteText').focus(); } },
     'coll-open': () => openCollection(el.dataset.coll), 'coll-filter': () => { collState.filter = el.dataset.f; renderCollectionSheet(); }, 'coll-visit': async () => { await toggleVisited(id, el); renderCollectionSheet(); },

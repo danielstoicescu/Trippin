@@ -324,3 +324,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .pin.k-sweet .pin-b { color: #E8467C; }
 /* „Închide curând”: avertisment blând, informativ */
 .watch.soft { background: var(--surface-2); border-left-color: var(--amber); }
+
+/* Buget & cheltuieli */
+.budget-bar { height: 8px; border-radius: 8px; background: var(--surface-3); overflow: hidden; }
+.budget-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--green), var(--brand)); border-radius: 8px; transition: width .6s var(--ease); }
+.budget-days { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.bd { padding: 8px 4px; border-radius: 12px; background: var(--surface-2); text-align: center; }
+.bd .font-medium { font-size: 15px; }
