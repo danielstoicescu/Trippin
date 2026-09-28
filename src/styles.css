@@ -348,3 +348,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* Banner de ziua Marei */
 .bday { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px 16px 16px 4px; background: linear-gradient(120deg, var(--brand-soft), var(--pink-soft)); color: var(--brand); }
 .bday .font-medium { color: var(--text); }
+
+/* Bară de navigare glisantă (mai multe file) */
+.nav { position: relative; }
+.nav-in { display: flex; overflow-x: auto; scroll-snap-type: x proximity; -ms-overflow-style: none; scrollbar-width: none; scroll-padding: 0 24px; }
+.nav-in::-webkit-scrollbar { display: none; }
+.nav-in > .nav-btn { flex: 0 0 auto; width: 76px; scroll-snap-align: center; }
+@media (min-width: 500px) { .nav-in { justify-content: center; } .nav-in > .nav-btn { width: calc(100% / 7); max-width: 96px; } }
+.nav::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 22px; z-index: 1; pointer-events: none; background: linear-gradient(270deg, var(--bg), transparent); }

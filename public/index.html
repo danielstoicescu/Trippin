@@ -115,9 +115,7 @@
         <p class="page-sub">Rezervări, cazare, notițe și numere de urgență</p>
       </header>
       <div id="bookings"></div>
-      <div id="budget"></div>
       <div id="packing"></div>
-      <div id="phrases"></div>
       <div id="homeInfo" class="mt-4"></div>
       <div class="sec"><div class="sec-h"><h2 class="ttl-2">Notițe comune</h2></div>
         <label class="field"><span>Adresă, cod ușă, wifi, rezervări</span><textarea id="sharedNotes" rows="5" maxlength="2000" placeholder="Ex: Carrer de Pellaires 35, et. …, cod ușă …. Wifi: … Rezervare Bar del Pla sâmbătă 14:00."></textarea></label>
@@ -145,13 +143,35 @@
         <p class="t-2">Apasă <b>Adaugă</b> și scrie 2–3 litere din nume: caută direct pe hartă și îl pune singur în ziua în care sunteți prin zonă. Pe <b>Hartă</b>, ține apăsat pe orice punct. Din Instagram: apasă pe locația de sub numele contului (sau pe profilul localului) → Share → Trippin; numele vine singur. Din TikTok și Google Maps: Share → Trippin sau lipește linkul în căutare.</p>
       </div>
     </section>
+
+    <!-- ============ BUGET ============ -->
+    <section id="view-budget" data-view="budget" class="hidden">
+      <header class="page-head">
+        <div class="kicker"><span>Buget</span></div>
+        <h1 class="h-display">Cheltuieli</h1>
+        <p class="page-sub">Cât cheltuim, împărțit la trei</p>
+      </header>
+      <div id="budget"></div>
+    </section>
+
+    <!-- ============ TRADUCERE ============ -->
+    <section id="view-translate" data-view="translate" class="hidden">
+      <header class="page-head">
+        <div class="kicker"><span>Traducere</span></div>
+        <h1 class="h-display">Cum spui în spaniolă</h1>
+        <p class="page-sub">Fraze utile, cu pronunție · și puțină catalană</p>
+      </header>
+      <div id="phrases"></div>
+    </section>
   </main>
 
   <nav class="nav" aria-label="Navigare">
-    <div class="nav-in">
+    <div class="nav-in" id="navIn">
       <button data-action="view" data-view="plan" class="nav-btn press"><span class="ind"><span class="material-symbols-rounded">calendar_month</span></span>Plan</button>
       <button data-action="view" data-view="explore" class="nav-btn press"><span class="ind"><span class="material-symbols-rounded">map</span></span>Hartă</button>
       <button data-action="view" data-view="us" class="nav-btn press"><span class="ind"><span class="material-symbols-rounded">group</span></span>Noi</button>
+      <button data-action="view" data-view="budget" class="nav-btn press"><span class="ind"><span class="material-symbols-rounded">payments</span></span>Buget</button>
+      <button data-action="view" data-view="translate" class="nav-btn press"><span class="ind"><span class="material-symbols-rounded">translate</span></span>Traducere</button>
       <button data-action="view" data-view="info" class="nav-btn press"><span class="ind"><span class="material-symbols-rounded">info</span></span>Info</button>
       <button data-action="open-home" class="nav-btn nav-home press" aria-label="Cazarea noastră, Poblenou"><span class="ind"><span class="material-symbols-rounded">hotel</span></span><span id="homeNavLabel">Cazare</span></button>
     </div>

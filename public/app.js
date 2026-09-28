@@ -818,13 +818,14 @@ function setFilter(c) { state.filter = c; renderDay(); }
 function renderNotes() { const ta = $('#sharedNotes'); if (ta && document.activeElement !== ta) ta.value = state.shared.notes || ''; }
 function renderAll() { renderDay(); renderMap(); renderNextStop(); renderNearby(); renderCollections(); renderUs(); renderHome(); renderBookings(); renderBudget(); renderPacking(); renderPhrases(); }
 function setView(v) {
-  if (!['plan', 'explore', 'us', 'info'].includes(v)) v = 'plan';
+  if (!['plan', 'explore', 'us', 'info', 'budget', 'translate'].includes(v)) v = 'plan';
   if (state.picking && v !== 'explore') stopPick();
   state.view = v; lsSet(LS.view, v); if (homeOpen) closeModals();
   $('#radarBanner').classList.add('hidden');
   $$('section[data-view]').forEach((s) => s.classList.toggle('hidden', s.dataset.view !== v));
   $$('.nav-btn[data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === v));
-  $('#fab').classList.toggle('hidden', v === 'info' || v === 'explore');
+  $('#fab').classList.toggle('hidden', v === 'info' || v === 'explore' || v === 'budget' || v === 'translate');
+  const act = $(`.nav-btn[data-view="${v}"]`); if (act) act.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   window.scrollTo({ top: 0 });
   if (v === 'explore') { ensureMap(); renderMap(); renderNextStop(); if (!state.radarOn) startRadar(); }
   if (v === 'us') renderUs();
