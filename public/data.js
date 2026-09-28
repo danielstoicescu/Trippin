@@ -717,3 +717,39 @@ export const NEAR_HOME = [
   { group: 'Altele', icon: 'euro', color: 'var(--blue)', title: 'Bancomat CaixaBank', address: 'Carrer de Pujades 328', q: 'CaixaBank Pujades 328 Barcelona' },
   { group: 'Altele', icon: 'water_drop', color: 'var(--blue)', title: 'Spălătorie self-service La Wash', address: 'Carrer de Pere IV 77', hours: 'Zilnic 7:00 – 22:00', q: 'La Wash Pere IV 77 Barcelona' },
 ];
+
+// Ce împachetăm (listă comună, bifabilă). Adaptată: noiembrie ~17 °C, PortAventura, plajă, zbor.
+export const PACK_DEFAULTS = [
+  { cat: 'Acte & bani', icon: 'badge', items: ['Pașapoarte / cărți de identitate (toți trei)', 'Card de sănătate european', 'Carduri bancare + ceva cash €', 'Capturi cu biletele de avion', 'Bilete PortAventura + Ferrari Land', 'Adresa cazării salvată offline'] },
+  { cat: 'Haine (~17 °C)', icon: 'checkroom', items: ['Geacă / hanorac de vânt', 'Straturi: tricouri + pulover', 'Pantaloni lungi', 'O ținută mai bună pentru cine', 'Pijamale', 'Lenjerie & șosete (5 zile)', 'Pantofi comozi de mers mult'] },
+  { cat: 'Vreme & plajă', icon: 'umbrella', items: ['Pelerină subțire / umbrelă mică', 'Ochelari de soare', 'Costum de baie (Mara)', 'Prosop subțire de plajă', 'Șapcă / căciulă'] },
+  { cat: 'Ziua din parc', icon: 'rocket_launch', items: ['Rucsac mic de zi', 'Sticlă de apă reutilizabilă', 'Powerbank', 'Pungă pt. lucruri ude la coastere', 'Gustări'] },
+  { cat: 'Tech', icon: 'mobile', items: ['Încărcătoare de telefon', 'Powerbank + cablu', 'Căști', 'Adaptor (opțional, ES are prize UE)'] },
+  { cat: 'Sănătate & igienă', icon: 'local_pharmacy', items: ['Periuțe & pastă de dinți', 'Deodorant, cremă, ochelari/lentile', 'Medicamentele personale', 'Plasturi + ceva de stomac', 'Dezinfectant & șervețele umede'] },
+  { cat: 'Mara (13)', icon: 'cake', items: ['Încărcător + căști', 'Ceva de citit / de făcut în tren', 'Bani de buzunar', 'Aparat foto (opțional)'] },
+];
+
+// Mini-ghid de conversație: română → spaniolă, cu pronunție aproximativă. Câteva în catalană.
+export const PHRASES = [
+  { cat: 'Salut & politețe', icon: 'waving_hand', items: [
+    ['Bună / Salut', 'Hola', 'ola'], ['Bună ziua', 'Buenos días', 'buenos dias'], ['Bună seara', 'Buenas tardes', 'buenas tardes'],
+    ['Mulțumesc', 'Gracias', 'grasias'], ['Vă rog / Te rog', 'Por favor', 'por favor'], ['Scuzați', 'Perdón', 'perdon'],
+    ['Da / Nu', 'Sí / No', 'si / no'], ['La revedere', 'Adiós', 'adios'], ['Vorbiți engleză?', '¿Habla inglés?', 'abla ingles'] ] },
+  { cat: 'La cafenea & restaurant', icon: 'restaurant', items: [
+    ['Un espresso, vă rog', 'Un café solo, por favor', 'un cafe solo'], ['Un cortado', 'Un cortado', 'un cortado'],
+    ['Masă pentru trei', 'Mesa para tres', 'mesa para tres'], ['Meniul, vă rog', 'La carta, por favor', 'la carta'],
+    ['Apă de la robinet', 'Agua del grifo', 'agua del grifo'], ['Fără gluten', 'Sin gluten', 'sin gluten'],
+    ['E foarte bun', 'Está muy bueno', 'esta muy bueno'], ['Nota, vă rog', 'La cuenta, por favor', 'la cuenta'] ] },
+  { cat: 'Cumpărături', icon: 'shopping_bag', items: [
+    ['Cât costă?', '¿Cuánto cuesta?', 'cuanto cuesta'], ['Doar mă uit', 'Solo estoy mirando', 'solo estoi mirando'],
+    ['Aveți altă mărime?', '¿Tienen otra talla?', 'tienen otra talia'], ['Plătesc cu cardul', 'Pago con tarjeta', 'pago con tarheta'] ] },
+  { cat: 'Pe drum', icon: 'directions', items: [
+    ['Unde e...?', '¿Dónde está...?', 'donde esta'], ['Metroul', 'El metro', 'el metro'],
+    ['La stânga / dreapta', 'A la izquierda / derecha', 'iskierda / derecia'], ['Aproape / departe', 'Cerca / lejos', 'serca / lehos'],
+    ['Ne-am rătăcit', 'Nos hemos perdido', 'nos emos perdido'] ] },
+  { cat: 'Urgențe', icon: 'call', items: [
+    ['Ajutor!', '¡Ayuda!', 'ayuda'], ['Sunați la 112', 'Llame al 112', 'iame al 112'],
+    ['Am nevoie de un doctor', 'Necesito un médico', 'nesesito un mediko'], ['Unde e o farmacie?', '¿Dónde hay una farmacia?', 'donde ai una farmasia'] ] },
+  { cat: 'În catalană (bonus)', icon: 'translate', items: [
+    ['Bună ziua', 'Bon dia', 'bon dia'], ['Mulțumesc', 'Gràcies', 'grasiés'], ['Vă rog', 'Si us plau', 'sisplau'], ['La revedere', 'Adéu', 'adéu'] ] },
+];

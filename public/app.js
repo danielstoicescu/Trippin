@@ -1,5 +1,5 @@
 // Trippin · Barcelona – Mara (13), Anne & Daniel. Offline-first, mobil, stil Google Flights.
-import { TRIP, ZONES, DAY_ZONES, DAY_TIPS, DAY_THEMES, NEAR_HOME, DAY_OPPS, ITINERARY, ALTERNATIVES, CURATED, PEOPLE_META, BUCKET_DEFAULTS, COFFEE_TYPES } from './data.js';
+import { TRIP, ZONES, DAY_ZONES, DAY_TIPS, DAY_THEMES, NEAR_HOME, PACK_DEFAULTS, PHRASES, DAY_OPPS, ITINERARY, ALTERNATIVES, CURATED, PEOPLE_META, BUCKET_DEFAULTS, COFFEE_TYPES } from './data.js';
 import { ICONS } from './icons.js';
 
 const TRIP_ID = TRIP.id;
@@ -22,7 +22,7 @@ const SUMMARY_TEXT = `Trippin · Barcelona (Mara 13, Anne & Daniel), 5–9 nov:
 const state = {
   view: 'plan', day: 'thu', filter: 'all', person: 'mara',
   custom: [], photos: {},
-  shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, times: {}, days: {}, comments: {}, booked: {}, expenses: [], notes: '' },
+  shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, times: {}, days: {}, comments: {}, booked: {}, expenses: [], packing: {}, packAdd: [], notes: '' },
   online: false, radarOn: false, pos: null, watchId: null, alerted: {},
   installPrompt: null, map: null, markers: [], meMarker: null, homeMarker: null, newMarker: null, detailId: null, photoTarget: null, picking: false,
 };
@@ -531,6 +531,35 @@ function budgetHTML() {
     </div>`;
 }
 function renderBudget() { const el = $('#budget'); if (el) el.innerHTML = budgetHTML(); }
+
+// ---------- Ce împachetăm: listă comună, bifabilă ----------
+const packKey = (t) => 'p_' + t.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 24);
+function packGroups() {
+  const custom = Array.isArray(state.shared.packAdd) ? state.shared.packAdd : [];
+  return PACK_DEFAULTS.map((g) => ({ ...g, items: g.items.map((t) => ({ key: packKey(t + g.cat), text: t })).concat(custom.filter((c) => c.cat === g.cat).map((c) => ({ key: c.key, text: c.text, custom: true }))) }));
+}
+function packStats() { const all = packGroups().flatMap((g) => g.items); return { done: all.filter((i) => state.shared.packing?.[i.key]).length, total: all.length }; }
+let packingOpen = false;
+function packingHTML() {
+  const gs = packGroups(), st = packStats(), open = !!packingOpen;
+  return `<div class="sec"><button data-action="pack-toggle" class="sec-h w-full press" style="cursor:pointer"><h2 class="ttl-2">De împachetat</h2><span class="cap flex items-center gap-2">${st.done}/${st.total} ${icon(open ? 'expand_less' : 'expand_more', 'i-20')}</span></button>
+    <div class="prog-line mb-3"><i style="width:${st.total ? Math.round(st.done / st.total * 100) : 0}%"></i></div>
+    ${open ? gs.map((g) => `<h3 class="ttl-3 mt-4 mb-2 flex items-center gap-2">${icon(g.icon, 'i-20', 'color: var(--brand)')} ${esc(g.cat)}</h3><div class="card list">${g.items.map((it) => { const on = !!state.shared.packing?.[it.key]; return `<div class="li tight pack-row ${on ? 'on' : ''}"><button data-action="pack-item" data-key="${it.key}" class="chk press" aria-label="${on ? 'Debifează' : 'Bifează'} ${esc(it.text)}" aria-pressed="${on}">${on ? icon('check', 'i-18') : ''}</button><span class="flex-1">${esc(it.text)}</span>${it.custom ? `<button data-action="pack-del" data-key="${it.key}" class="icon-btn press" aria-label="Șterge">${icon('close', 'i-18')}</button>` : ''}</div>`; }).join('')}<button data-action="pack-add" data-cat="${esc(g.cat)}" class="li tight press t-blue" style="width:100%">${icon('add', 'i-18')} Adaugă ceva</button></div>`).join('') : '<p class="cap">Bifați pe măsură ce puneți în bagaj. E comună: o vedeți toți trei.</p>'}
+    </div>`;
+}
+function renderPacking() { const el = $('#packing'); if (el) el.innerHTML = packingHTML(); }
+
+// ---------- Mini-ghid de conversație ----------
+let phrasesOpen = false;
+function phrasesHTML() {
+  return `<div class="sec pb-6"><button data-action="phr-toggle" class="sec-h w-full press" style="cursor:pointer"><h2 class="ttl-2">Cum spui în spaniolă</h2><span class="cap flex items-center gap-2">${icon(phrasesOpen ? 'expand_less' : 'expand_more', 'i-20')}</span></button>
+    ${phrasesOpen ? PHRASES.map((g) => `<h3 class="ttl-3 mt-4 mb-2 flex items-center gap-2">${icon(g.icon, 'i-20', 'color: var(--brand)')} ${esc(g.cat)}</h3><div class="card list">${g.items.map(([ro, es, say]) => `<div class="li tight phr"><div class="flex-1 min-w-0"><div class="cap">${esc(ro)}</div><div class="font-medium">${esc(es)}</div><div class="cap t-3">„${esc(say)}”</div></div></div>`).join('')}</div>`).join('') : '<p class="cap">Cele mai utile fraze: salut, comandat, cumpărături, drum, urgențe.</p>'}
+    </div>`;
+}
+function renderPhrases() { const el = $('#phrases'); if (el) el.innerHTML = phrasesHTML(); }
+async function packToggleItem(key) { const p = { ...(state.shared.packing || {}) }; if (p[key]) delete p[key]; else { p[key] = true; buzz(8); } state.shared.packing = p; renderPacking(); await saveShared({ packing: p }); }
+async function packAddItem(cat) { const text = (prompt('Ce mai adăugăm?') || '').trim(); if (!text) return; const item = { key: 'pc' + Date.now(), cat, text: text.slice(0, 60) }; const list = [...(state.shared.packAdd || []), item].slice(-200); state.shared.packAdd = list; renderPacking(); await saveShared({ packAdd: list }); }
+async function packDelItem(key) { const list = (state.shared.packAdd || []).filter((c) => c.key !== key); const p = { ...(state.shared.packing || {}) }; delete p[key]; state.shared.packAdd = list; state.shared.packing = p; renderPacking(); await saveShared({ packAdd: list, packing: p }); }
 let expenseDraft = null;
 function openExpense(day) { expenseDraft = { by: me(), day: day || (DAYS.includes(state.day) ? state.day : 'fri'), amount: '', label: '' }; openSheet(expenseSheetHTML()); setTimeout(() => $('#expAmount')?.focus(), 250); }
 function expenseSheetHTML() {
@@ -783,7 +812,7 @@ function goToLoc(id, day) { setView('plan'); state.filter = 'all'; if (day && DA
 function switchDay(day) { if (!DAYS.includes(day)) return; state.day = day; state.filter = 'all'; renderDay(); renderMap(); renderNextStop(); }
 function setFilter(c) { state.filter = c; renderDay(); }
 function renderNotes() { const ta = $('#sharedNotes'); if (ta && document.activeElement !== ta) ta.value = state.shared.notes || ''; }
-function renderAll() { renderDay(); renderMap(); renderNextStop(); renderNearby(); renderCollections(); renderUs(); renderHome(); renderBookings(); renderBudget(); }
+function renderAll() { renderDay(); renderMap(); renderNextStop(); renderNearby(); renderCollections(); renderUs(); renderHome(); renderBookings(); renderBudget(); renderPacking(); renderPhrases(); }
 function setView(v) {
   if (!['plan', 'explore', 'us', 'info'].includes(v)) v = 'plan';
   if (state.picking && v !== 'explore') stopPick();
@@ -830,7 +859,7 @@ async function connectFirebase() {
       state.custom = snap.docs.map((d) => ({ id: d.id, isCustom: true, ...d.data() })); lsSet(LS.locations, state.custom); renderAll(); refreshDetail();
       if (first) { first = false; state.online = true; setSyncStatus('online'); syncLocalLocations(local); }
     }, (err) => { console.error(err); state.online = false; setSyncStatus('local', err.message); toast('Nu m-am putut conecta la baza de date. Salvez local.', 'info'); });
-    fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters', 'times', 'days', 'comments', 'booked']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.expenses)) state.shared.expenses = d.expenses; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
+    fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters', 'times', 'days', 'comments', 'booked']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.expenses)) state.shared.expenses = d.expenses; if (d.packing && typeof d.packing === 'object') state.shared.packing = d.packing; if (Array.isArray(d.packAdd)) state.shared.packAdd = d.packAdd; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
     fs.onSnapshot(fs.collection(db, 'trips', TRIP_ID, 'photos'), (snap) => { state.photos = {}; snap.forEach((d) => { state.photos[d.id] = d.data(); }); renderAll(); refreshDetail(); }, (err) => console.error(err));
   } catch (err) { console.error(err); setSyncStatus('local', err.message); }
 }
@@ -1211,6 +1240,8 @@ document.addEventListener('click', (e) => {
     'open-detail': () => { if (addState) { addState = null; $('#addSheet').classList.add('hidden'); clearNewMarker(); } $('#coffeeSheet').classList.add('hidden'); openDetail(id); }, 'delete-loc': () => deleteLocation(id), 'edit-loc': () => { const l = state.custom.find((x) => x.id === id); if (l) openAdd({ editing: l }); },
     'toggle-visited': () => toggleVisited(id, el), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => { homeOpen = false; openPhotoSheet(id); }, 'photo-file': () => { $('#coffeeSheet').classList.add('hidden'); state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); }, 'photo-remove': () => removePhoto(id),
     'day-route': dayRoute, 'locate': locate, 'open-link': () => window.open(el.dataset.href, '_blank', 'noopener'), 'close-banner': () => $('#radarBanner').classList.add('hidden'), 'install': installApp, 'open-install': openInstallSheet, 'refresh': hardRefresh,
+    'phr-toggle': () => { phrasesOpen = !phrasesOpen; renderPhrases(); },
+    'pack-toggle': () => { packingOpen = !packingOpen; renderPacking(); }, 'pack-item': () => packToggleItem(el.dataset.key), 'pack-add': () => packAddItem(el.dataset.cat), 'pack-del': () => packDelItem(el.dataset.key),
     'add-expense': () => openExpense(el.dataset.day), 'del-expense': () => expenseDel(el.dataset.id), 'exp-save': () => expenseSave(),
     'exp-day': () => { expenseDraft.day = el.dataset.day; $$('#expDays .chip').forEach((c) => c.classList.toggle('on', c === el)); },
     'exp-who': () => { expenseDraft.by = PEOPLE_META[el.dataset.person].name; $$('[data-action="exp-who"]').forEach((c) => c.classList.toggle('on', c === el)); },
