@@ -42,17 +42,17 @@
   <main class="wrap">
     <!-- ============ PLAN ============ -->
     <section id="view-plan" data-view="plan">
-      <div class="pt-4">
-        <div class="cap" id="planEyebrow">Barcelona & PortAventura</div>
-        <h1 class="h-display mt-1" id="planHeadline">Joi, 5 noiembrie</h1>
-        <div class="t-2 mt-0.5" id="planSub"></div>
-      </div>
+      <header class="page-head">
+        <div class="kicker"><span>Plan</span><span class="dot-sep" aria-hidden="true"></span><span id="planEyebrow" class="ov-date">Barcelona & PortAventura</span><span id="planCountdown" class="ov-pill"></span></div>
+        <h1 class="h-display" id="planHeadline">Joi, 5 noiembrie</h1>
+        <p class="page-sub" id="planSub"></p>
+      </header>
       <div class="dates mt-5" id="dates" role="tablist" aria-label="Zilele excursiei"></div>
       <div id="daySummary" class="mt-3"></div>
       <div id="nextStop" class="mt-3"></div>
       <div class="chips mt-5" id="filters"></div>
       <div id="dayTip"></div>
-      <div class="sec-h mt-6"><h2 class="ttl-2">Programul zilei</h2><span class="cap">apasă bulina când ați fost</span></div>
+      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Programul zilei</h2><span class="cap">bulina = am fost</span></div></div>
       <div id="itinerary"></div>
       <div id="opps"></div>
       <div id="pool"></div>
@@ -65,7 +65,12 @@
 
     <!-- ============ HARTĂ ============ -->
     <section id="view-explore" data-view="explore" class="hidden">
-      <div class="map-wrap">
+      <header class="page-head">
+        <div class="kicker"><span>Hartă</span></div>
+        <h1 class="h-display">Explorează</h1>
+        <p class="page-sub">Locurile zilei pe hartă, ce e lângă voi și colecțiile</p>
+      </header>
+      <div class="map-wrap mt-4">
         <div id="map" role="application" aria-label="Harta zilei"></div>
         <div class="map-top">
           <button data-action="open-add" class="search float press w-full" aria-label="Caută un loc de adăugat"><span class="material-symbols-rounded">search</span><span class="flex-1 text-left t-2" style="font-size: 16px">Caută sau adaugă un loc</span><span class="icon-btn sm"><span class="material-symbols-rounded i-20">add_location_alt</span></span></button>
@@ -84,28 +89,37 @@
       </div>
       <p id="radarStatus" class="cap mt-3 flex gap-2"><span class="material-symbols-rounded i-16">info</span><span>Ține apăsat pe hartă ca să adaugi locul de acolo. Radarul te anunță la ~150 m de un loc din program.</span></p>
       <div id="nextStopExplore" class="mt-4"></div>
-      <div class="sec-h mt-6"><h2 class="ttl-2">Lângă tine</h2></div>
+      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Lângă tine</h2></div></div>
       <div id="nearbyList" class="card list"></div>
-      <div class="sec-h mt-6"><h2 class="ttl-2">Colecții</h2><span class="cap">de făcut / făcute</span></div>
+      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Colecții</h2><span class="cap">de făcut / făcute</span></div></div>
       <div id="collections"></div>
     </section>
 
     <!-- ============ NOI ============ -->
     <section id="view-us" data-view="us" class="hidden">
-      <h1 class="h-display pt-4">Bucketlist</h1>
-      <div class="tabs mt-3" id="peopleTabs"></div>
+      <header class="page-head">
+        <div class="kicker"><span>Noi</span></div>
+        <h1 class="h-display">Bucketlist-urile noastre</h1>
+        <p class="page-sub">Ce vrea fiecare: Mara, Anne și Daniel</p>
+      </header>
+      <div class="tabs mt-4" id="peopleTabs"></div>
       <div id="usContent" class="pt-4"></div>
     </section>
 
     <!-- ============ INFO ============ -->
     <section id="view-info" data-view="info" class="hidden">
-      <h1 class="h-display pt-4">Info</h1>
+      <header class="page-head">
+        <div class="kicker"><span>Info</span></div>
+        <h1 class="h-display">Tot ce e util</h1>
+        <p class="page-sub">Rezervări, cazare, notițe și numere de urgență</p>
+      </header>
+      <div id="bookings"></div>
       <div id="homeInfo" class="mt-4"></div>
-      <div class="sec"><h2 class="ttl-2 mb-3">Notițe comune</h2>
+      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Notițe comune</h2></div>
         <label class="field"><span>Adresă, cod ușă, wifi, rezervări</span><textarea id="sharedNotes" rows="5" maxlength="2000" placeholder="Ex: Carrer de Pellaires 35, et. …, cod ușă …. Wifi: … Rezervare Bar del Pla sâmbătă 14:00."></textarea></label>
         <div id="notesStatus" class="cap mt-1">&nbsp;</div>
       </div>
-      <div class="sec"><h2 class="ttl-2 mb-3">Utile</h2>
+      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Utile</h2></div>
         <div class="card list">
           <a href="tel:112" class="li press"><span class="material-symbols-rounded t-red">call</span><span class="flex-1">Urgențe 112</span><span class="material-symbols-rounded t-3 i-20">chevron_right</span></a>
           <a href="https://www.google.com/maps/search/?api=1&query=farmacia+Poblenou+Barcelona" target="_blank" rel="noopener" class="li press"><span class="material-symbols-rounded t-green">local_pharmacy</span><span class="flex-1">Farmacie aproape</span><span class="material-symbols-rounded t-3 i-20">chevron_right</span></a>
@@ -113,7 +127,7 @@
           <div id="syncText" class="li"></div>
         </div>
       </div>
-      <div class="sec"><h2 class="ttl-2 mb-3">Trimite aplicația</h2>
+      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Trimite aplicația</h2></div>
         <div class="flex gap-2"><input id="shareUrl" readonly class="input flex-1 min-w-0" style="font-size: 13px"><button data-action="copy-link" class="btn btn-outline press">Copiază</button></div>
         <div class="flex flex-wrap gap-2 mt-3">
           <a id="whatsappShareBtn" href="#" target="_blank" rel="noopener" class="btn btn-tonal press">WhatsApp</a>
@@ -122,7 +136,7 @@
           <button data-action="install" id="installBtn" class="hidden btn btn-primary press">Instalează acum</button>
         </div>
       </div>
-      <div class="sec pb-6"><h2 class="ttl-2 mb-2">Cum adaugi locuri</h2>
+      <div class="sec pb-6"><div class="sec-h"><h2 class="ttl-2">Cum adaugi locuri</h2></div>
         <p class="t-2">Apasă <b>Adaugă</b> și scrie 2–3 litere din nume: caută direct pe hartă și îl pune singur în ziua în care sunteți prin zonă. Pe <b>Hartă</b>, ține apăsat pe orice punct. Din Instagram: apasă pe locația de sub numele contului (sau pe profilul localului) → Share → Trippin; numele vine singur. Din TikTok și Google Maps: Share → Trippin sau lipește linkul în căutare.</p>
       </div>
     </section>
