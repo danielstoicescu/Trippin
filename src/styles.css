@@ -322,3 +322,5 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .pin.k-coffee:not(.done) { background: #8D5524; }
 .pin-b { position: absolute; right: -6px; top: -6px; width: 16px; height: 16px; border-radius: 99px; background: #fff; color: #8D5524; display: grid; place-items: center; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
 .pin.k-sweet .pin-b { color: #E8467C; }
+/* „Închide curând”: avertisment blând, informativ */
+.watch.soft { background: var(--surface-2); border-left-color: var(--amber); }

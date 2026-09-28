@@ -224,11 +224,15 @@ function planDay(day, excludeId = null) {
     else if (a.end + t > b.start + 5) issues.push({ type: 'tight', a, b, late: a.end + t - b.start, travel: t });
   }
   for (const sl of slots) if (enriched(sl.loc).closed?.includes(day)) issues.push({ type: 'closed', a: sl, b: sl });
+  // Ora de închidere: după ea e problemă; cu mai puțin de 30 min înainte e doar un „atenție”
+  const notes = [];
+  for (const sl of slots) { const c = enriched(sl.loc).closes?.[day]; if (!c) continue; const [h, m] = c.split(':').map(Number), close = h * 60 + m;
+    if (sl.end > close + 5) issues.push({ type: 'late', a: sl, b: sl, close: c }); else if (close - sl.end <= 30) notes.push({ type: 'closing', a: sl, b: sl, close: c, margin: close - sl.end }); }
   const first = slots.length ? slots[0].start : null, last = slots.length ? Math.max(...slots.map((x) => x.end)) : null;
   const busy = slots.reduce((sum, x) => sum + (x.end - x.start), 0) + travel; const free = first != null ? last - first - busy : 0;
   // Galben și când ziua e lungă: multe opriri sau mult mers pe jos, chiar dacă totul încape
   const level = !slots.length ? 'none' : issues.some((i) => i.type !== 'tight' || i.late > 10) ? 'red' : issues.length || free < 30 || slots.length >= 12 || walkT >= 110 ? 'amber' : 'green';
-  return { slots, issues, level, free, walkM, walkT, other, first, last, end: dayEndOf(slots), coffeeId: morningCoffeeId(slots), ess: essentials(slots) };
+  return { slots, issues, notes, level, free, walkM, walkT, other, first, last, end: dayEndOf(slots), coffeeId: morningCoffeeId(slots), ess: essentials(slots) };
 }
 const LOAD = { green: ['Zi lejeră', 'var(--green)'], amber: ['Zi plină', '#F29900'], red: ['Prea plină', 'var(--red)'], none: ['Liberă', 'var(--text-3)'] };
 function daySummary(day) { const p = planDay(day); return { n: p.slots.length, walkM: p.walkM, walkT: p.walkT, other: p.other, from: p.first, to: p.last, plan: p }; }
@@ -293,6 +297,11 @@ function legHTML(a, b, day) {
 function shortName(l) { const t = shortTitle(l.title); return esc(t.length > 20 ? t.split(' ').slice(0, 2).join(' ') : t); }
 function warnHTML(is) {
   const A = is.a.loc, B = is.b.loc;
+  if (is.type === 'closing' || is.type === 'late') { const late = is.type === 'late', e = enriched(B), plan = B.id === 'barjoan' ? 'bardelpla' : null;
+    return `<li class="warn" ${late ? 'data-warn' : ''}><div class="tm"></div><div class="rail"><span class="warn-ic">${icon(late ? 'warning' : 'schedule', 'i-18 ms-fill')}</span></div><div class="body"><div class="watch ${late ? '' : 'soft'}">
+    <div class="font-medium">${late ? `${shortName(B)} se închide la ${is.close}` : `Atenție: ${shortName(B)} închide la ${is.close}`}</div>
+    <div class="t-2 mt-1">${late ? `În program ați rămâne până la ${hhmm(is.b.end)}. Mutați-l mai devreme sau alegeți altceva.` : `Plecați de acolo cu ${is.margin} min înainte de închidere: nu întârziați la opririle de dinainte.${e.tips?.find((t) => /^Plan B/i.test(t)) ? ' ' + esc(e.tips.find((t) => /^Plan B/i.test(t))) : ''}`}</div>
+    ${plan ? `<div class="flex flex-wrap gap-2 mt-3"><button data-action="open-detail" data-id="${plan}" class="btn btn-sm btn-outline press">${icon('restaurant', 'i-18')} Planul B: Bar del Pla</button></div>` : ''}</div></div></li>`; }
   if (is.type === 'closed') { const e = enriched(B); return `<li class="warn" data-warn><div class="tm"></div><div class="rail"><span class="warn-ic">${icon('warning', 'i-18 ms-fill')}</span></div><div class="body"><div class="watch">
     <div class="font-medium">${shortName(B)} e închis în ziua asta</div><div class="t-2 mt-1">${e.hours ? `Program: ${esc(e.hours)}. ` : ''}Mutați-l într-o zi în care e deschis sau săriți peste.</div>
     <div class="flex flex-wrap gap-2 mt-3">${B.fixed ? '' : `<button data-action="schedule" data-id="${esc(B.id)}" class="btn btn-sm btn-tonal press">${icon('edit_calendar', 'i-18')} Mută în altă zi</button><button data-action="choose" data-skip="${esc(B.id)}" class="btn btn-sm btn-outline press">Sari peste</button>`}</div></div></div></li>`; }
@@ -317,7 +326,7 @@ function timelineHTML(list) {
   for (const en of entries) {
     if (en.l) { html += stopHTML(en.l); continue; }
     const sl = en.sl; if (prev) html += legHTML(prev.loc, sl.loc, state.day);
-    for (const is of plan.issues.filter((x) => x.b === sl)) html += warnHTML(is);
+    for (const is of [...plan.issues, ...plan.notes].filter((x) => x.b === sl)) html += warnHTML(is);
     html += stopHTML(sl.loc, sl, sl.loc.id === plan.coffeeId); prev = sl;
   }
   return `<ol class="tl">${html}</ol>`;
