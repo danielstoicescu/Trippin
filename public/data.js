@@ -753,3 +753,13 @@ export const PHRASES = [
   { cat: 'În catalană (bonus)', icon: 'translate', items: [
     ['Bună ziua', 'Bon dia', 'bon dia'], ['Mulțumesc', 'Gràcies', 'grasiés'], ['Vă rog', 'Si us plau', 'sisplau'], ['La revedere', 'Adéu', 'adéu'] ] },
 ];
+
+// Răsărit/apus (Barcelona, CET) și vremea tipică de noiembrie. Joi = Salou.
+export const SUN = {
+  thu: { rise: '7:26', set: '17:48', temp: '17°/11°', place: 'Salou' },
+  fri: { rise: '7:24', set: '17:43', temp: '17°/10°' },
+  sat: { rise: '7:25', set: '17:42', temp: '17°/10°' },
+  sun: { rise: '7:27', set: '17:41', temp: '16°/10°' },
+  mon: { rise: '7:28', set: '17:39', temp: '16°/10°' },
+};
+export const WEATHER_NOTE = 'Noiembrie la Barcelona: ~17 °C ziua, ~10 °C noaptea, marea ~18 °C. Zile scurte (se întunecă pe la 17:40) și câteva ploi scurte. O geacă de vânt și un strat în plus ajung.';

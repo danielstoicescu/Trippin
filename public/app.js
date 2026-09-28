@@ -1,5 +1,5 @@
 // Trippin · Barcelona – Mara (13), Anne & Daniel. Offline-first, mobil, stil Google Flights.
-import { TRIP, ZONES, DAY_ZONES, DAY_TIPS, DAY_THEMES, NEAR_HOME, PACK_DEFAULTS, PHRASES, DAY_OPPS, ITINERARY, ALTERNATIVES, CURATED, PEOPLE_META, BUCKET_DEFAULTS, COFFEE_TYPES } from './data.js';
+import { TRIP, ZONES, DAY_ZONES, DAY_TIPS, DAY_THEMES, NEAR_HOME, PACK_DEFAULTS, PHRASES, SUN, WEATHER_NOTE, DAY_OPPS, ITINERARY, ALTERNATIVES, CURATED, PEOPLE_META, BUCKET_DEFAULTS, COFFEE_TYPES } from './data.js';
 import { ICONS } from './icons.js';
 
 const TRIP_ID = TRIP.id;
@@ -254,6 +254,7 @@ function renderSummary() {
     <div><div class="v tabular">${s.walkT ? fmtMin(s.walkT) : '—'}</div><div class="k">pe jos${s.walkM ? ' · ' + fmtDist(s.walkM) : ''}</div></div>
     <div><div class="v tabular">${s.from != null ? hhmm(s.from) : '—'}${s.to ? '–' + hhmm(s.to) : ''}</div><div class="k">${s.other ? `+${fmtMin(s.other)} ${s.plan.slots.some((x) => x.leg?.icon === 'train') ? 'tren' : 'metrou'}` : 'interval'}</div></div>
   </div>
+  ${(() => { const su = SUN[state.day]; return su ? `<div class="daylight mt-3">${icon('wb_twilight', 'i-18', 'color: var(--star)')}<span>Răsărit ${su.rise} · apus <b>${su.set}</b></span><span class="dotsep">${icon('thermostat', 'i-16')} ${su.temp}${su.place ? ' · ' + su.place : ''}</span></div>` : ''; })()}
   ${iss.length ? `<button data-action="goto-warn" class="watch-banner press mt-3">${icon('warning', 'i-20 ms-fill')}<span class="flex-1 text-left">${iss.length === 1 ? 'Un loc nu merge cum e acum' : `${iss.length} locuri nu merg cum e acum`}: alegeți ce faceți</span>${icon('chevron_right', 'i-20')}</button>` : ''}
   ${essHTML(s.plan.ess)}
   <button data-action="day-route" class="route-cta press mt-3"><span class="gm">${icon('gmaps', 'i-22')}</span><span class="flex-1 text-left"><b>Traseul zilei în Google Maps</b><span class="block">${s.n} opriri${s.walkT ? ` · ${fmtMin(s.walkT)} pe jos` : ''}</span></span>${icon('chevron_right', 'i-22')}</button>`;
@@ -544,6 +545,7 @@ function packingHTML() {
   const gs = packGroups(), st = packStats(), open = !!packingOpen;
   return `<div class="sec"><button data-action="pack-toggle" class="sec-h w-full press" style="cursor:pointer"><h2 class="ttl-2">De împachetat</h2><span class="cap flex items-center gap-2">${st.done}/${st.total} ${icon(open ? 'expand_less' : 'expand_more', 'i-20')}</span></button>
     <div class="prog-line mb-3"><i style="width:${st.total ? Math.round(st.done / st.total * 100) : 0}%"></i></div>
+    ${open ? `<div class="li tight" style="border-radius:12px;background:var(--surface-2)">${icon('umbrella', 'i-20', 'color: var(--blue)')}<span class="cap flex-1">${esc(WEATHER_NOTE)}</span></div>` : ''}
     ${open ? gs.map((g) => `<h3 class="ttl-3 mt-4 mb-2 flex items-center gap-2">${icon(g.icon, 'i-20', 'color: var(--brand)')} ${esc(g.cat)}</h3><div class="card list">${g.items.map((it) => { const on = !!state.shared.packing?.[it.key]; return `<div class="li tight pack-row ${on ? 'on' : ''}"><button data-action="pack-item" data-key="${it.key}" class="chk press" aria-label="${on ? 'Debifează' : 'Bifează'} ${esc(it.text)}" aria-pressed="${on}">${on ? icon('check', 'i-18') : ''}</button><span class="flex-1">${esc(it.text)}</span>${it.custom ? `<button data-action="pack-del" data-key="${it.key}" class="icon-btn press" aria-label="Șterge">${icon('close', 'i-18')}</button>` : ''}</div>`; }).join('')}<button data-action="pack-add" data-cat="${esc(g.cat)}" class="li tight press t-blue" style="width:100%">${icon('add', 'i-18')} Adaugă ceva</button></div>`).join('') : '<p class="cap">Bifați pe măsură ce puneți în bagaj. E comună: o vedeți toți trei.</p>'}
     </div>`;
 }
