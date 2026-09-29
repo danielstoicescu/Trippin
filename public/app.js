@@ -598,6 +598,33 @@ async function expenseDel(id) { const list = expenses().filter((e) => e.id !== i
 const commentsOf = (id) => (Array.isArray(state.shared.comments?.[id]) ? state.shared.comments[id] : []);
 const personKey = (name) => PERSONS.find((p) => PEOPLE_META[p].name === name) || 'daniel';
 
+// ---------- Cine ești (identitate pe acest telefon) ----------
+const hasMe = () => { const v = lsGet(LS.me, null); return typeof v === 'string' && PERSONS.some((p) => PEOPLE_META[p].name === v); };
+const meKey = () => personKey(me());
+function renderMe() {
+  const el = $('#meChip'); if (!el) return; const set = hasMe(), k = meKey(), m = PEOPLE_META[k];
+  el.className = `me-chip press ${set ? 'p-' + k : 'unset'}`;
+  el.innerHTML = `<span class="avatar p-${k}">${set ? m.name[0] : '?'}</span><span class="me-name">${set ? m.name : 'Cine ești?'}</span>`;
+  el.setAttribute('aria-label', set ? `Ești ${m.name}. Atinge pentru a schimba persoana.` : 'Alege cine ești');
+}
+function setMe(person) {
+  const m = PEOPLE_META[person]; if (!m) return;
+  lsSet(LS.me, m.name); buzz(); $('#coffeeSheet').classList.add('hidden');
+  renderMe(); renderAll(); refreshDetail();
+  toast(`Salut, ${m.name}! Reacțiile, notițele și pozele sunt acum semnate de tine.`, 'waving_hand', 3800);
+}
+function whoAmISheetHTML(first) {
+  const cur = me(), set = hasMe();
+  const head = first
+    ? `<div class="sheet-top"><div class="handle"></div><div class="pb-2"><div class="cap">Bine ai venit în trip·in</div><h2 class="ttl-1 mt-0.5">Cine ești?</h2></div></div>`
+    : sheetHead('Persoana activă pe acest telefon', 'Cine ești?');
+  return `${head}
+    <p class="t-2 mb-4">${first ? 'Ca să știm ale cui sunt reacțiile 😍, notițele și pozele. Alegi o singură dată — te ținem minte pe telefonul ăsta.' : 'Schimbă cine folosește acum aplicația pe acest telefon.'}</p>
+    <div class="who-grid">${PERSONS.map((p) => { const m = PEOPLE_META[p]; const on = set && m.name === cur; return `<button data-action="who-set" data-person="${p}" class="who-card press ${on ? 'on' : ''}" aria-pressed="${on}"><span class="avatar p-${p} who-av">${m.name[0]}</span><span class="min-w-0 flex-1"><span class="who-name">${m.name}</span><span class="who-tag">${m.tag}</span></span>${on ? `<span class="who-check">${icon('check', 'i-20')}</span>` : ''}</button>`; }).join('')}</div>
+    <div style="height:10px"></div>`;
+}
+function openWhoAmI(first = false) { openSheet(whoAmISheetHTML(first)); }
+
 // ---------- Reacții: fiecare pune un emoji, dintr-un set de 4 ----------
 const REACTIONS = [{ k: 'love', e: '😍', t: 'Ne place mult' }, { k: 'good', e: '👍', t: 'Bun' }, { k: 'meh', e: '😐', t: 'Așa și-așa' }, { k: 'nope', e: '👎', t: 'Nu prea' }];
 const reactEmoji = (k) => (REACTIONS.find((r) => r.k === k) || {}).e || '';
@@ -1299,6 +1326,7 @@ document.addEventListener('click', (e) => {
     'exp-day': () => { expenseDraft.day = el.dataset.day; $$('#expDays .chip').forEach((c) => c.classList.toggle('on', c === el)); },
     'exp-who': () => { expenseDraft.by = PEOPLE_META[el.dataset.person].name; $$('[data-action="exp-who"]').forEach((c) => c.classList.toggle('on', c === el)); },
     'react': () => toggleReaction(el.dataset.id, el.dataset.k), 'open-comments': () => openComments(el.dataset.id),
+    'whoami': () => openWhoAmI(false), 'who-set': () => setMe(el.dataset.person),
     'book': () => openBook(id), 'book-done': () => bookToggle(id), 'book-copy': () => { const loc = findLoc(id); if (loc) copyText(bookMessage(loc), 'Mesajul e copiat: lipiți-l în WhatsApp, Instagram sau e-mail.'); },
     'note-add': () => noteAdd(id), 'note-del': () => noteDel(id, el.dataset.i), 'note-who': () => { lsSet(LS.me, PEOPLE_META[el.dataset.person].name); const t = $('#noteText')?.value || ''; refreshDetail(); if ($('#noteText')) { $('#noteText').value = t; $('#noteText').focus(); } },
     'coll-open': () => openCollection(el.dataset.coll), 'coll-filter': () => { collState.filter = el.dataset.f; renderCollectionSheet(); }, 'coll-visit': async () => { await toggleVisited(id, el); renderCollectionSheet(); },
@@ -1343,5 +1371,6 @@ loadLocal(); renderNotes(); renderWeather(); loadWeather(); setSyncStatus('conne
 state.day = todayKey() || 'thu'; renderDay(); renderNextStop(); renderHome();
 const hasShare = new URL(location.href).searchParams.has('text') || new URL(location.href).searchParams.has('url');
 setView(hasShare ? 'plan' : lsGet(LS.view, 'plan'));
-setupPWA(); connectFirebase(); handleShareTarget(); maybePromptInstall();
+renderMe(); setupPWA(); connectFirebase(); handleShareTarget();
+if (!hasMe()) setTimeout(() => openWhoAmI(true), 500); else maybePromptInstall();
 setInterval(renderNextStop, 60000);
