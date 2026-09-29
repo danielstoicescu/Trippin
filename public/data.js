@@ -732,25 +732,35 @@ export const PACK_DEFAULTS = [
 // Mini-ghid de conversație: română → spaniolă, cu pronunție aproximativă. Câteva în catalană.
 export const PHRASES = [
   { cat: 'Salut & politețe', icon: 'waving_hand', items: [
-    ['Bună / Salut', 'Hola', 'ola'], ['Bună ziua', 'Buenos días', 'buenos dias'], ['Bună seara', 'Buenas tardes', 'buenas tardes'],
-    ['Mulțumesc', 'Gracias', 'grasias'], ['Vă rog / Te rog', 'Por favor', 'por favor'], ['Scuzați', 'Perdón', 'perdon'],
-    ['Da / Nu', 'Sí / No', 'si / no'], ['La revedere', 'Adiós', 'adios'], ['Vorbiți engleză?', '¿Habla inglés?', 'abla ingles'] ] },
-  { cat: 'La cafenea & restaurant', icon: 'restaurant', items: [
-    ['Un espresso, vă rog', 'Un café solo, por favor', 'un cafe solo'], ['Un cortado', 'Un cortado', 'un cortado'],
-    ['Masă pentru trei', 'Mesa para tres', 'mesa para tres'], ['Meniul, vă rog', 'La carta, por favor', 'la carta'],
+    ['Bună / Salut', 'Hola', 'ola'], ['Bună ziua', 'Buenos días', 'buenos dias'], ['Mulțumesc mult', 'Muchas gracias', 'muchas grasias'],
+    ['Vă rog', 'Por favor', 'por favor'], ['Scuzați', 'Perdón', 'perdon'], ['Vorbiți engleză?', '¿Habla inglés?', 'abla ingles'] ] },
+  { cat: 'Cafea (pentru Daniel)', icon: 'coffee', items: [
+    ['Un espresso, vă rog', 'Un café solo, por favor', 'un cafe solo por favor'], ['Un cortado', 'Un cortado', 'un cortado'],
+    ['Un flat white', 'Un flat white', 'un flat uait'], ['Cu lapte de ovăz', 'Con leche de avena', 'con lece de avena'],
+    ['La pachet', 'Para llevar', 'para ievar'] ] },
+  { cat: 'La restaurant & tapas', icon: 'restaurant', items: [
+    ['Masă pentru trei', 'Mesa para tres', 'mesa para tres'], ['Meniul, vă rog', 'La carta, por favor', 'la carta por favor'],
+    ['Ce ne recomandați?', '¿Qué nos recomienda?', 'ke nos recomienda'], ['Încă o porție din asta', 'Otra ración de esto', 'otra rasion de esto'],
     ['Apă de la robinet', 'Agua del grifo', 'agua del grifo'], ['Fără gluten', 'Sin gluten', 'sin gluten'],
-    ['E foarte bun', 'Está muy bueno', 'esta muy bueno'], ['Nota, vă rog', 'La cuenta, por favor', 'la cuenta'] ] },
-  { cat: 'Cumpărături', icon: 'shopping_bag', items: [
+    ['Era foarte bun!', '¡Estaba buenísimo!', 'estaba buenisimo'], ['Nota, vă rog', 'La cuenta, por favor', 'la cuenta por favor'] ] },
+  { cat: 'Dulciuri (pentru Mara)', icon: 'icecream', items: [
+    ['Churros cu ciocolată', 'Churros con chocolate', 'ciurros con ciocolate'], ['Un matcha, vă rog', 'Un matcha, por favor', 'un macia por favor'],
+    ['Câte o înghețată', 'Un helado para cada uno', 'un elado para cada uno'], ['Ce e cel mai bun aici?', '¿Cuál es el mejor de aquí?', 'cual es el mehor de aki'] ] },
+  { cat: 'Shopping', icon: 'shopping_bag', items: [
     ['Cât costă?', '¿Cuánto cuesta?', 'cuanto cuesta'], ['Doar mă uit', 'Solo estoy mirando', 'solo estoi mirando'],
-    ['Aveți altă mărime?', '¿Tienen otra talla?', 'tienen otra talia'], ['Plătesc cu cardul', 'Pago con tarjeta', 'pago con tarheta'] ] },
-  { cat: 'Pe drum', icon: 'directions', items: [
-    ['Unde e...?', '¿Dónde está...?', 'donde esta'], ['Metroul', 'El metro', 'el metro'],
+    ['Aveți altă mărime?', '¿Tienen otra talla?', 'tienen otra taia'], ['Pot să probez?', '¿Me lo puedo probar?', 'me lo puedo probar'],
+    ['Plătesc cu cardul', 'Pago con tarjeta', 'pago con tarheta'] ] },
+  { cat: 'Pe drum & metrou', icon: 'directions', items: [
+    ['Unde e metroul?', '¿Dónde está el metro?', 'donde esta el metro'], ['Spre plajă, vă rog', 'Hacia la playa, por favor', 'asia la plaia'],
     ['La stânga / dreapta', 'A la izquierda / derecha', 'iskierda / derecia'], ['Aproape / departe', 'Cerca / lejos', 'serca / lehos'],
-    ['Ne-am rătăcit', 'Nos hemos perdido', 'nos emos perdido'] ] },
+    ['Ne-am rătăcit', 'Nos hemos perdido', 'nos emos perdido'], ['Un taxi, vă rog', 'Un taxi, por favor', 'un taxi por favor'] ] },
+  { cat: 'La PortAventura', icon: 'rocket_launch', items: [
+    ['Unde e Shambhala?', '¿Dónde está Shambhala?', 'donde esta ciambala'], ['Cât e coada?', '¿Cuánto se espera?', 'cuanto se espera'],
+    ['Unde sunt dulapurile?', '¿Dónde están las taquillas?', 'donde estan las takiias'], ['Ne-am pierdut copilul', 'Hemos perdido a nuestra hija', 'emos perdido a nuestra iha'] ] },
   { cat: 'Urgențe', icon: 'call', items: [
     ['Ajutor!', '¡Ayuda!', 'ayuda'], ['Sunați la 112', 'Llame al 112', 'iame al 112'],
     ['Am nevoie de un doctor', 'Necesito un médico', 'nesesito un mediko'], ['Unde e o farmacie?', '¿Dónde hay una farmacia?', 'donde ai una farmasia'] ] },
-  { cat: 'În catalană (bonus)', icon: 'translate', items: [
+  { cat: 'În catalană (bonus)', icon: 'translate', lang: 'ca', items: [
     ['Bună ziua', 'Bon dia', 'bon dia'], ['Mulțumesc', 'Gràcies', 'grasiés'], ['Vă rog', 'Si us plau', 'sisplau'], ['La revedere', 'Adéu', 'adéu'] ] },
 ];
 

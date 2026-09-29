@@ -553,10 +553,19 @@ function packingHTML() {
 function renderPacking() { const el = $('#packing'); if (el) el.innerHTML = packingHTML(); }
 
 // ---------- Mini-ghid de conversație ----------
-let phrasesOpen = false;
+const canSpeak = () => typeof window !== 'undefined' && 'speechSynthesis' in window;
+function speak(text, lang = 'es-ES') {
+  if (!canSpeak()) return; try { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = lang; u.rate = 0.9;
+    const v = window.speechSynthesis.getVoices().find((x) => x.lang && x.lang.toLowerCase().startsWith(lang.slice(0, 2))); if (v) u.voice = v; window.speechSynthesis.speak(u); } catch {}
+}
 function phrasesHTML() {
-  return `<div class="sec pb-6"><button data-action="phr-toggle" class="sec-h w-full press" style="cursor:pointer"><h2 class="ttl-2">Cum spui în spaniolă</h2><span class="cap flex items-center gap-2">${icon(phrasesOpen ? 'expand_less' : 'expand_more', 'i-20')}</span></button>
-    ${phrasesOpen ? PHRASES.map((g) => `<h3 class="ttl-3 mt-4 mb-2 flex items-center gap-2">${icon(g.icon, 'i-20', 'color: var(--brand)')} ${esc(g.cat)}</h3><div class="card list">${g.items.map(([ro, es, say]) => `<div class="li tight phr"><div class="flex-1 min-w-0"><div class="cap">${esc(ro)}</div><div class="font-medium">${esc(es)}</div><div class="cap t-3">„${esc(say)}”</div></div></div>`).join('')}</div>`).join('') : '<p class="cap">Cele mai utile fraze: salut, comandat, cumpărături, drum, urgențe.</p>'}
+  const sp = canSpeak();
+  return `<div class="pb-6">${PHRASES.map((g) => `<div class="sec"><div class="sec-h"><h2 class="ttl-2 flex items-center gap-2">${icon(g.icon, 'i-22', 'color: var(--brand)')} ${esc(g.cat)}</h2></div>
+    <div class="phr-grid">${g.items.map(([ro, es, say], i) => { const cat = g.lang === 'ca'; return `<div class="phr-card k-art">
+      <div class="phr-ro">${esc(ro)}</div>
+      <div class="phr-main"><span class="phr-es">${esc(es)}</span>${sp ? `<button data-action="speak" data-text="${esc(es)}" data-lang="${cat ? 'ca-ES' : 'es-ES'}" class="phr-say press" aria-label="Ascultă: ${esc(es)}">${icon('volume_up', 'i-20')}</button>` : ''}</div>
+      <div class="phr-say-txt">„${esc(say)}”</div></div>`; }).join('')}</div></div>`).join('')}
+    ${sp ? '' : '<p class="cap mt-3">Butonul de audio nu e disponibil pe acest telefon; pronunția scrisă rămâne.</p>'}
     </div>`;
 }
 function renderPhrases() { const el = $('#phrases'); if (el) el.innerHTML = phrasesHTML(); }
@@ -1251,7 +1260,7 @@ document.addEventListener('click', (e) => {
     'open-detail': () => { if (addState) { addState = null; $('#addSheet').classList.add('hidden'); clearNewMarker(); } $('#coffeeSheet').classList.add('hidden'); openDetail(id); }, 'delete-loc': () => deleteLocation(id), 'edit-loc': () => { const l = state.custom.find((x) => x.id === id); if (l) openAdd({ editing: l }); },
     'toggle-visited': () => toggleVisited(id, el), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => { homeOpen = false; openPhotoSheet(id); }, 'photo-file': () => { $('#coffeeSheet').classList.add('hidden'); state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); }, 'photo-remove': () => removePhoto(id),
     'day-route': dayRoute, 'locate': locate, 'open-link': () => window.open(el.dataset.href, '_blank', 'noopener'), 'close-banner': () => $('#radarBanner').classList.add('hidden'), 'install': installApp, 'open-install': openInstallSheet, 'refresh': hardRefresh,
-    'phr-toggle': () => { phrasesOpen = !phrasesOpen; renderPhrases(); },
+    'speak': () => { $$('.phr-say.speaking').forEach((x) => x.classList.remove('speaking')); el.classList.add('speaking'); speak(el.dataset.text, el.dataset.lang || 'es-ES'); const done = () => el.classList.remove('speaking'); setTimeout(done, 2200); if (canSpeak()) window.speechSynthesis.addEventListener('end', done, { once: true }); },
     'pack-toggle': () => { packingOpen = !packingOpen; renderPacking(); }, 'pack-item': () => packToggleItem(el.dataset.key), 'pack-add': () => packAddItem(el.dataset.cat), 'pack-del': () => packDelItem(el.dataset.key),
     'add-expense': () => openExpense(el.dataset.day), 'del-expense': () => expenseDel(el.dataset.id), 'exp-save': () => expenseSave(),
     'exp-day': () => { expenseDraft.day = el.dataset.day; $$('#expDays .chip').forEach((c) => c.classList.toggle('on', c === el)); },
