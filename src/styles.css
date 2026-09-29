@@ -350,7 +350,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .bday .font-medium { color: var(--text); }
 
 /* Bară de navigare glisantă (mai multe file) */
-.nav { position: relative; }
 .nav-in { display: flex; overflow-x: auto; scroll-snap-type: x proximity; -ms-overflow-style: none; scrollbar-width: none; scroll-padding: 0 24px; }
 .nav-in::-webkit-scrollbar { display: none; }
 .nav-in > .nav-btn { flex: 0 0 auto; width: 76px; scroll-snap-align: center; }
