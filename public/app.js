@@ -22,7 +22,7 @@ const SUMMARY_TEXT = `Trippin · Barcelona (Mara 13, Anne & Daniel), 5–9 nov:
 const state = {
   view: 'plan', day: 'thu', filter: 'all', person: 'mara',
   custom: [], photos: {},
-  shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, times: {}, days: {}, comments: {}, booked: {}, expenses: [], packing: {}, packAdd: [], notes: '' },
+  shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, times: {}, days: {}, comments: {}, reactions: {}, booked: {}, expenses: [], packing: {}, packAdd: [], notes: '' },
   online: false, radarOn: false, pos: null, watchId: null, alerted: {},
   installPrompt: null, map: null, markers: [], meMarker: null, homeMarker: null, newMarker: null, detailId: null, photoTarget: null, picking: false,
 };
@@ -285,6 +285,7 @@ function stopHTML(loc, slot = null, amCoffee = false) {
         <div class="stop-sub">${esc(loc.short || cat(e.cat).label)}</div>
         ${meta ? `<div class="stop-meta">${meta}</div>` : ''}
       </button>
+      ${skipped ? '' : `<div class="feed-social">${feedSocialHTML(loc)}</div>`}
       ${bookOf(loc) && !skipped && bookOf(loc).need !== 'verificare' ? `<button data-action="book" data-id="${esc(loc.id)}" class="btn btn-sm ${isBooked(loc.id) ? 'btn-booked' : needsBooking(bookOf(loc)) ? 'btn-book' : 'btn-outline'} press mt-3">${icon(isBooked(loc.id) ? 'event_available' : 'event', 'i-18')} ${isBooked(loc.id) ? 'Rezervat' : needsBooking(bookOf(loc)) ? (BOOK_NEED[bookOf(loc).need] || BOOK_NEED.recomandat)[0].replace('Rezervare obligatorie', 'Rezervă (obligatoriu)').replace('Rezervare recomandată', 'Rezervă').replace('Doar cu programare', 'Fă programarea').replace('Bilet online', 'Ia biletul') : 'Bilet (opțional)'}</button>` : ''}
       ${amCoffee && !skipped ? `<button data-action="coffee-here" data-place="${esc(loc.title)}" class="btn btn-sm btn-coffee press mt-3">${icon('add', 'i-18')} Am băut espresso-ul aici</button>` : ''}
       ${skipped ? `<button data-action="toggle-skip" data-id="${esc(loc.id)}" class="btn btn-sm btn-outline press mt-2">${icon('undo', 'i-18')} Pune înapoi în program</button>` : ''}
@@ -444,6 +445,8 @@ function detailHTML(raw) {
       <div class="t-2 mt-1 flex items-center gap-1.5 flex-wrap">${icon('event', 'i-18')} ${esc(when)}${d != null ? ` <span class="t-3">·</span> <span class="t-blue">${fmtDist(d)}, ${fmtMin(walkMin(d))} pe jos</span>` : ''}</div>
     </div>
     <div class="actions mt-4">${actions}</div>
+    ${loc.isAlt && !loc.pick ? '' : `<div class="react-card mt-4"><div class="cap mb-2">Cum vi se pare?</div>${reactionRowHTML(id, true)}</div>`}
+    ${recLineHTML(loc) ? `<div class="rec-line rec-big mt-4">${icon('lightbulb', 'i-18 ms-fill', 'color: var(--star)')}<span><b>${recOf(loc).verb}:</b> ${esc(recOf(loc).rec)}</span></div>` : ''}
     ${loc.desc || loc.note ? `<p class="mt-5" style="font-size: 15px; line-height: 23px">${esc(loc.desc || loc.note)}</p>` : ''}
     ${info ? `<div class="card list mt-5">${info}</div>` : ''}
     ${variants}${loc.isAlt ? '' : persons}${loc.isAlt && !loc.pick ? '' : commentsHTML(id)}${review}${popular}${tips}${links}<div style="height:16px"></div>`;
@@ -594,6 +597,36 @@ async function expenseDel(id) { const list = expenses().filter((e) => e.id !== i
 // ---------- Păreri de la noi, pe fiecare loc ----------
 const commentsOf = (id) => (Array.isArray(state.shared.comments?.[id]) ? state.shared.comments[id] : []);
 const personKey = (name) => PERSONS.find((p) => PEOPLE_META[p].name === name) || 'daniel';
+
+// ---------- Reacții: fiecare pune un emoji, dintr-un set de 4 ----------
+const REACTIONS = [{ k: 'love', e: '😍', t: 'Ne place mult' }, { k: 'good', e: '👍', t: 'Bun' }, { k: 'meh', e: '😐', t: 'Așa și-așa' }, { k: 'nope', e: '👎', t: 'Nu prea' }];
+const reactEmoji = (k) => (REACTIONS.find((r) => r.k === k) || {}).e || '';
+const reactionsOf = (id) => (state.shared.reactions?.[id] && typeof state.shared.reactions[id] === 'object' ? state.shared.reactions[id] : {});
+const myReaction = (id) => reactionsOf(id)[me()];
+async function toggleReaction(id, k) {
+  const cur = reactionsOf(id), mine = cur[me()]; const next = { ...cur }; if (mine === k) delete next[me()]; else { next[me()] = k; buzz(10); }
+  const all = { ...(state.shared.reactions || {}), [id]: next }; if (!Object.keys(next).length) delete all[id];
+  state.shared.reactions = all; renderAll(); refreshDetail(); await saveShared({ reactions: { [id]: Object.keys(next).length ? next : null } });
+}
+function reactionRowHTML(id, big = false) {
+  const rx = reactionsOf(id), mine = rx[me()];
+  const others = PERSONS.map((pp) => ({ pp, name: PEOPLE_META[pp].name, k: rx[PEOPLE_META[pp].name] })).filter((o) => o.k);
+  return `<div class="react-row ${big ? 'big' : ''}">
+    <div class="react-pick">${REACTIONS.map((r) => `<button data-action="react" data-id="${esc(id)}" data-k="${r.k}" class="react-btn press ${mine === r.k ? 'on' : ''}" title="${r.t}" aria-label="${r.t}" aria-pressed="${mine === r.k}">${r.e}</button>`).join('')}</div>
+    ${others.length ? `<div class="react-who">${others.map((o) => `<span class="react-chip p-${o.pp}" title="${esc(o.name)}: ${REACTIONS.find((x) => x.k === o.k)?.t || ''}"><b>${esc(o.name[0])}</b>${reactEmoji(o.k)}</span>`).join('')}</div>` : ''}
+  </div>`;
+}
+// Recomandarea: ce e cel mai bun de făcut / de mâncat aici
+function recOf(loc) { const e = enriched(loc); const rec = e.rec || (e.popular && e.popular[0]); if (!rec) return null; const verb = { food: 'De comandat', sweet: 'De comandat', coffee: 'De cerut', shop: 'De văzut', art: 'Nu rata', fun: 'Nu rata', none: 'De făcut' }[catKey(e.cat)] || 'De încercat'; return { verb, rec }; }
+function recLineHTML(loc) { const r = recOf(loc); return r ? `<div class="rec-line">${icon('lightbulb', 'i-16 ms-fill', 'color: var(--star)')}<span><b>${r.verb}:</b> ${esc(r.rec)}</span></div>` : ''; }
+// Rândul social din feed: recomandare + reacții + comentariu
+function feedSocialHTML(loc) {
+  const id = loc.id, cm = commentsOf(id), last = cm[cm.length - 1];
+  return `${recLineHTML(loc)}
+    ${reactionRowHTML(id)}
+    <button data-action="open-comments" data-id="${esc(id)}" class="feed-comment press">${last ? `<span class="avatar p-${personKey(last.by)}">${esc((last.by || '?')[0])}</span><span class="fc-txt"><b>${esc(last.by)}:</b> ${esc(last.text)}</span>${cm.length > 1 ? `<span class="cap fc-n">+${cm.length - 1}</span>` : ''}` : `${icon('add_comment', 'i-20', 'color: var(--text-2)')}<span class="fc-txt t-2">Spune ceva despre loc…</span>`}${icon('chevron_right', 'i-18 t-3')}</button>`;
+}
+function openComments(id) { openDetail(id); setTimeout(() => { const el = $('#detailBody')?.querySelector('#noteText'); if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); } }, 300); }
 function agoText(ts) { const m = Math.round((Date.now() - ts) / 60000); return m < 1 ? 'acum' : m < 60 ? `acum ${m} min` : m < 1440 ? `acum ${Math.round(m / 60)} h` : new Date(ts).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }
 function commentsHTML(id) {
   const list = commentsOf(id), who = me();
@@ -873,7 +906,7 @@ async function connectFirebase() {
       state.custom = snap.docs.map((d) => ({ id: d.id, isCustom: true, ...d.data() })); lsSet(LS.locations, state.custom); renderAll(); refreshDetail();
       if (first) { first = false; state.online = true; setSyncStatus('online'); syncLocalLocations(local); }
     }, (err) => { console.error(err); state.online = false; setSyncStatus('local', err.message); toast('Nu m-am putut conecta la baza de date. Salvez local.', 'info'); });
-    fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters', 'times', 'days', 'comments', 'booked']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.expenses)) state.shared.expenses = d.expenses; if (d.packing && typeof d.packing === 'object') state.shared.packing = d.packing; if (Array.isArray(d.packAdd)) state.shared.packAdd = d.packAdd; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
+    fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters', 'times', 'days', 'comments', 'booked']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.expenses)) state.shared.expenses = d.expenses; if (d.reactions && typeof d.reactions === 'object') state.shared.reactions = d.reactions; if (d.packing && typeof d.packing === 'object') state.shared.packing = d.packing; if (Array.isArray(d.packAdd)) state.shared.packAdd = d.packAdd; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
     fs.onSnapshot(fs.collection(db, 'trips', TRIP_ID, 'photos'), (snap) => { state.photos = {}; snap.forEach((d) => { state.photos[d.id] = d.data(); }); renderAll(); refreshDetail(); }, (err) => console.error(err));
   } catch (err) { console.error(err); setSyncStatus('local', err.message); }
 }
@@ -1265,6 +1298,7 @@ document.addEventListener('click', (e) => {
     'add-expense': () => openExpense(el.dataset.day), 'del-expense': () => expenseDel(el.dataset.id), 'exp-save': () => expenseSave(),
     'exp-day': () => { expenseDraft.day = el.dataset.day; $$('#expDays .chip').forEach((c) => c.classList.toggle('on', c === el)); },
     'exp-who': () => { expenseDraft.by = PEOPLE_META[el.dataset.person].name; $$('[data-action="exp-who"]').forEach((c) => c.classList.toggle('on', c === el)); },
+    'react': () => toggleReaction(el.dataset.id, el.dataset.k), 'open-comments': () => openComments(el.dataset.id),
     'book': () => openBook(id), 'book-done': () => bookToggle(id), 'book-copy': () => { const loc = findLoc(id); if (loc) copyText(bookMessage(loc), 'Mesajul e copiat: lipiți-l în WhatsApp, Instagram sau e-mail.'); },
     'note-add': () => noteAdd(id), 'note-del': () => noteDel(id, el.dataset.i), 'note-who': () => { lsSet(LS.me, PEOPLE_META[el.dataset.person].name); const t = $('#noteText')?.value || ''; refreshDetail(); if ($('#noteText')) { $('#noteText').value = t; $('#noteText').focus(); } },
     'coll-open': () => openCollection(el.dataset.coll), 'coll-filter': () => { collState.filter = el.dataset.f; renderCollectionSheet(); }, 'coll-visit': async () => { await toggleVisited(id, el); renderCollectionSheet(); },
