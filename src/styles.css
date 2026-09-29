@@ -58,9 +58,11 @@ body { background: var(--bg); color: var(--text); font-family: 'Google Sans', Ro
 .appbar { position: sticky; top: 0; z-index: 800; background: var(--bg); padding-top: env(safe-area-inset-top); transition: box-shadow .2s; }
 .appbar.scrolled { box-shadow: 0 1px 0 var(--line), 0 2px 6px rgba(60,64,67,.08); }
 .appbar-in { height: 56px; display: flex; align-items: center; gap: 8px; }
-.logo { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 500; color: var(--text); letter-spacing: -.2px; }
-.logo-mark { position: relative; width: 30px; height: 30px; border-radius: 9px 9px 9px 2px; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 19px; font-weight: 700; line-height: 1; box-shadow: 0 2px 6px color-mix(in srgb, var(--brand) 45%, transparent); }
-.logo-mark::after { content: ''; position: absolute; right: -3px; top: -3px; width: 9px; height: 9px; border-radius: 99px; background: #FBBC04; box-shadow: 0 0 0 2px var(--bg); }
+.logo { display: flex; align-items: center; gap: 7px; font-size: 20px; font-weight: 500; color: var(--text); letter-spacing: -.2px; }
+.logo-mark { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--brand) 38%, transparent)); }
+.logo-mark svg { display: block; }
+.logo-word { font-size: 21px; font-weight: 800; letter-spacing: -.6px; color: var(--text); line-height: 1; }
+.logo-dot { display: inline-block; width: 6px; height: 6px; margin: 0 2.5px; border-radius: 99px; background: var(--brand); vertical-align: middle; box-shadow: 0 1px 2px color-mix(in srgb, var(--brand) 45%, transparent); }
 .wx { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 8px; border-radius: 16px; border: 1px solid var(--line); color: var(--text-2); font-size: 13px; white-space: nowrap; max-width: 46vw; overflow: hidden; }
 .sync-dot { width: 8px; height: 8px; border-radius: 99px; background: var(--line); flex-shrink: 0; }
 .sync-dot[data-mode="online"] { background: var(--green); } .sync-dot[data-mode="connecting"] { animation: pulse 1.4s ease-in-out infinite; }

@@ -8,7 +8,9 @@
   <meta name="theme-color" content="#FFFFFF" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -23,7 +25,7 @@
 <body>
   <header class="appbar" id="appbar">
     <div class="wrap appbar-in">
-      <div class="logo"><span class="logo-mark" aria-hidden="true">T</span>Trippin<span id="syncDot" class="sync-dot" data-mode="connecting" role="status" aria-label="Se conectează"></span></div>
+      <div class="logo" aria-label="trip·in — Barcelona"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 512 512" width="22" height="22"><path d="M256 396 C198 318 166 277 166 214 a90 90 0 1 1 180 0 C346 277 314 318 256 396 Z" fill="#E8467C"/><circle cx="256" cy="205" r="41" fill="#fff"/><circle cx="372" cy="150" r="24" fill="#FBBC04"/></svg></span><span class="logo-word" aria-hidden="true">trip<i class="logo-dot"></i>in</span><span id="syncDot" class="sync-dot" data-mode="connecting" role="status" aria-label="Se conectează"></span></div>
       <div class="flex-1"></div>
       <button id="weather" data-action="open-weather" class="wx press" aria-label="Vremea în Barcelona"></button>
       <button data-action="toggle-theme" class="icon-btn press" aria-label="Schimbă tema"><span id="themeIcon" class="inline-flex"></span></button>

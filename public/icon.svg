@@ -5,7 +5,9 @@
     <path d="M0 400 L112 512 L0 512 Z" fill="#C92E63"/>
     <circle cx="512" cy="0" r="150" fill="#F06A96"/>
   </g>
-  <rect x="136" y="140" width="240" height="64" rx="20" fill="#fff"/>
-  <rect x="224" y="140" width="64" height="240" rx="20" fill="#fff"/>
-  <circle cx="386" cy="126" r="38" fill="#FBBC04"/>
+  <!-- pin = "trip in ..."; the dot reads as the tittle of trip·in -->
+  <path d="M256 396 C198 318 166 277 166 214 a90 90 0 1 1 180 0 C346 277 314 318 256 396 Z" fill="#fff"/>
+  <circle cx="256" cy="205" r="41" fill="#E8467C"/>
+  <!-- cheerful spark -->
+  <circle cx="374" cy="150" r="27" fill="#FBBC04"/>
 </svg>
