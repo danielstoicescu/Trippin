@@ -61,7 +61,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Google Sans', Ro
 .logo { display: flex; align-items: center; gap: 7px; font-size: 20px; font-weight: 500; color: var(--text); letter-spacing: -.2px; }
 .logo-mark { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--brand) 38%, transparent)); }
 .logo-mark svg { display: block; }
-.logo-word { font-size: 21px; font-weight: 800; letter-spacing: -.6px; color: var(--text); line-height: 1; }
+.logo-word { font-size: 21px; font-weight: 800; letter-spacing: -.6px; color: var(--text); line-height: 1; white-space: nowrap; }
 .logo-dot { display: inline-block; width: 6px; height: 6px; margin: 0 2.5px; border-radius: 99px; background: var(--brand); vertical-align: middle; box-shadow: 0 1px 2px color-mix(in srgb, var(--brand) 45%, transparent); }
 .me-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 11px 0 3px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600; white-space: nowrap; }
 .me-chip .avatar { width: 26px; height: 26px; font-size: 12px; }
