@@ -25,7 +25,7 @@ export const ZONES = {
 
 export const DAY_ZONES = {
   thu: ['salou'], fri: ['salou', 'poblenou', 'barceloneta'], sat: ['gracia', 'raval', 'gotic', 'poblesec'],
-  sun: ['eixample', 'gracia'], mon: ['poblenou', 'poblesec', 'gotic'],
+  sun: ['eixample', 'gotic', 'gracia'], mon: ['poblenou', 'poblesec', 'gotic'],
 };
 
 // Numele zilelor, după specific (apar în titlul zilei și pe butoanele cu date)
@@ -33,7 +33,7 @@ export const DAY_THEMES = {
   thu: { name: 'Ziua adrenalinei', short: 'Coastere', icon: 'rocket_launch', color: '#D93025', sub: 'Aterizare 8:45 · Syra la Sants · tren · PortAventura · Café Saula · cină în Salou' },
   fri: { name: 'Red Force & apus la mare', short: 'Ferrari', icon: 'waves', color: '#1A73E8', sub: 'Ferrari Land · tren · paella la Els Pescadors · Nomad · apus pe plajă · La Cova Fumada · TK Maxx' },
   sat: { name: 'Marea zi de shopping', short: 'Shopping', icon: 'local_mall', color: '#8430CE', sub: 'De la Gràcia la mare: Subdued, Sephora, Portal de l’Àngel, Gòtic, Born · Blai' },
-  sun: { name: 'Duminica pe jos, gratis', short: 'Pe jos', icon: 'church', color: '#E8467C', sub: 'O zi pe jos: La Papa · târgul de cărți · Gaudí gratis · House of Candy · Vietnam House · Ciutadella · MUHBA gratis · Casa Amàlia' },
+  sun: { name: 'Duminica pe jos, gratis', short: 'Pe jos', icon: 'church', color: '#E8467C', sub: 'O zi pe jos: La Papa · târgul de cărți · Gaudí gratis · House of Candy · Vietnam House · Ciutadella · El Born & MUHBA gratis · Casa Amàlia' },
   mon: { name: 'Comori de final & zborul', short: 'Zbor', icon: 'flight_takeoff', color: '#1E8E3E', sub: 'Syra · Encants · Museo Alien · Quimet · Escribà · MUJI · Nomad · Hofmann · zbor 20:20' },
 };
 
@@ -41,7 +41,7 @@ export const DAY_TIPS = {
   thu: 'Aterizați la 8:45: din T2, trenul R2 Nord până la Sants (≈ 20 min, la 30 de minute; prindeți-l pe cel de ~9:38); din T1 sau dacă îl pierdeți, taxi, ca să nu pierdeți R17. Espresso la Syra, tren pe la 10:30 (doar R17 merge direct, de ~4 ori pe zi; alternativ Avant/AVE până la Camp de Tarragona + taxi). În parc pe la 12:15, cu bagajele la hotel sau la dulapuri. Halloween ține până pe 15 nov și e inclus în bilet.',
   fri: 'Zi lungă, dar frumoasă: Ferrari Land, tren, paella la Els Pescadors (rezervați 15:00), Demasié și Nomad (închide la 18:00), apusul pe plajă la ~17:41, cina la La Cova Fumada (vineri 18:00 – 20:00, cash), gelato, apoi TK Maxx deschis până seara.',
   sat: 'Ziua cu cele mai multe opriri, dar aproape toate la câteva minute una de alta, la vale: Gràcia → Rambla de Catalunya → Plaça de Catalunya → El Call → Born. Duminică aproape totul e închis, deci cumpărăturile se fac azi. Prânzul e la Bar Joan, în piața Santa Caterina: sâmbăta închide la 15:30, deci intrați până la 14:30 (plan B: Bar del Pla, la 2 minute). Bar Marsella deschide abia seara.',
-  sun: 'Magazinele sunt închise, așa că mergem pe jos și profităm de ce e deschis duminica: târgul de cărți din Sant Antoni, fațadele lui Gaudí, Sagrada pe dinafară, Vietnam House, apoi bus V19 până la Park Güell la apus (bilet cu oră, 16:30) și coborâm pe jos prin piațetele din Gràcia spre Casa Amàlia. Fără Park Güell? Planul B e în Dorite: Ciutadella, MUHBA și El Born CCM, gratis de la 15:00.',
+  sun: 'Magazinele sunt închise, așa că mergem pe jos și profităm de ce e deschis duminica: târgul de cărți din Sant Antoni, fațadele lui Gaudí, Sagrada pe dinafară, Vietnam House, apoi Ciutadella și trei locuri gratis de la 15:00 pe același drum: El Born CCM și MUHBA (Barcino romană). Prin zonă, dacă vă e poftă: ciocolată cu churros la Granja Dulcinea sau Banys Nous, deschise duminica după-amiază. Cina la Casa Amàlia, cu metroul L4 din Jaume I.',
   mon: 'Zborul e la 20:20 din El Prat: plecăm de acasă la 17:00 cu metroul L4 și trenul R2 Nord (≈ 1 h 10 până la T2), la aeroport pe la 18:10 (Rodalies a avut întârzieri în 2026: verificați aplicația; plan B, taxi), cina după securitate. Encants e cel mai liniștit luni dimineața. Programare de făcut acum: Museo Alien (11:00). Quimet & Quimet deschide la 12:00.',
 };
 
@@ -377,10 +377,10 @@ export const ITINERARY = [
     popular: ['Platforma de sus, orientată spre mare', 'Poza cu Sagrada și Torre Glòries în același cadru', 'Traseul exterior, după închiderea incintei'],
     tips: ['Bus 119 sau 22 (din Pl. Catalunya) vă lasă la 5 minute de vârf; taxiul urcă până sus.', 'Urcarea e abruptă: pantofi buni.', 'Atenție la buzunare, e loc turistic.', 'Jachetă: bate vântul.'],
     lat: 41.4193, lng: 2.1615, radius: 250 },
-  { id: 'gracia', legIn: { min: 20, mode: 'walking', icon: 'directions_walk', label: 'pe jos, la vale din Park Güell' },
-    img: {q: 'Plaça de la Vila de Gràcia'}, site: 'https://www.barcelona.cat/en/what-to-do-in-bcn/gracia', budget: 'Gelato ≈ 10–12 € pentru trei', day: 'sun', zone: 'gracia', cat: 'art', time: '18:15 – 18:50', catLabel: 'Gràcia seara',
+  { id: 'gracia', poolNote: 'Plimbare de seară în Gràcia, gratis',
+    img: {q: 'Plaça de la Vila de Gràcia'}, site: 'https://www.barcelona.cat/en/what-to-do-in-bcn/gracia', budget: 'Gelato ≈ 10–12 € pentru trei', day: 'pool', zone: 'gracia', cat: 'art', time: '17:50 – 18:45', catLabel: 'Gràcia seara',
     title: 'Plaça del Sol, Plaça de la Vila & gelato', short: 'Satul din mijlocul orașului',
-    desc: 'Din Park Güell, 20 de minute pe jos, la vale, pe Carrer de Larrard și Travessera de Dalt: piațete cu terase, viață de cartier. Gelato la gelateria italiană din Plaça de la Revolució (nr. 2). Vitrine de designeri pe Carrer de Verdi.',
+    desc: 'Metrou L3 până la Fontana sau bus 24 (≈ 15 min): piațete cu terase, viață de cartier. Gelato la gelateria italiană din Plaça de la Revolució (nr. 2). Vitrine de designeri pe Carrer de Verdi.',
     address: 'Plaça de la Vila de Gràcia', placeQuery: 'Plaça de la Vila de Gràcia', hours: 'Oricând', price: 'Gratis · gelato €', free: true,
     tips: ['Plaça del Sol e cea mai animată; Plaça de la Virreina cea mai frumoasă pentru poze.'],
     lat: 41.4028, lng: 2.1565, radius: 250, approx: true },
@@ -402,20 +402,20 @@ export const ITINERARY = [
     popular: ['Pho bò (supa de 12 ore)', 'Nem', 'Gỏi cuốn (rulouri proaspete)', 'Bún chả'],
     tips: ['Meniul de prânz ≈ 15 €: antreu, fel principal, desert și băutură (verificați dacă e și duminica).'],
     lat: 41.3966, lng: 2.1732, radius: 120, approx: true },
-  { id: 'ciutadella', poolNote: 'Planul B de duminică după-amiază, fără Park Güell', rec: 'cascada monumentală și o poză la Arc de Triomf', free: true, minStay: 40, day: 'pool', time: '16:35 – 17:15',
+  { id: 'ciutadella', rec: 'cascada monumentală și o poză la Arc de Triomf', free: true, minStay: 40, day: 'sun', time: '16:20 – 17:00',
     img: {q: 'Cascada Parc de la Ciutadella'}, site: 'https://www.barcelona.cat/en/what-to-do-in-bcn/parks-and-gardens', budget: 'Gratis', zone: 'barceloneta', cat: 'art', catLabel: 'Gratis · parc',
     title: 'Arc de Triomf & Parc de la Ciutadella', short: 'Promenada, cascada și lacul',
     desc: '5 minute de Three Marks: Passeig de Lluís Companys, sub Arcul de Triumf, apoi în parc: cascada monumentală, lacul cu bărcuțe și mamutul de piatră. Lumina de dinainte de apus (~17:40).',
     address: 'Passeig de Lluís Companys / Passeig de Picasso', placeQuery: 'Parc de la Ciutadella', hours: 'Zilnic, iarna până pe la 19:00', price: 'Gratis',
     lat: 41.3880, lng: 2.1870, radius: 300 },
-  { id: 'muhba', rec: 'străzile Barcelonei romane, pe sub piață (gratis de la 15:00)', closes: { sun: '20:00' }, free: true, minStay: 50, day: 'pool', poolNote: 'Gratis duminica de la 15:00 · planul B, cu El Born CCM alături', time: '17:30 – 18:15', closed: ['mon'],
+  { id: 'muhba', rec: 'străzile Barcelonei romane, pe sub piață (gratis de la 15:00)', closes: { sun: '20:00' }, free: true, minStay: 50, day: 'sun', time: '17:50 – 18:40', closed: ['mon'],
     img: {q: 'MUHBA Plaça del Rei'}, site: 'https://barcelona.cat/museuhistoria/en/heritages/els-espais-del-museu/muhba-placa-de-rei', budget: 'Gratis duminica de la 15:00 (altfel 7 €)', zone: 'gotic', cat: 'art', catLabel: 'Gratis după 15:00',
     title: 'MUHBA Plaça del Rei: Barcino romană', short: 'Pe sub oraș, pe străzile romane',
     desc: '15 minute pe jos prin Born. Coborâți sub Plaça del Rei, printre străzile, prăvăliile și atelierele Barcelonei romane (Barcino) și palatul regal medieval. Duminica de la 15:00 intrarea e gratis. La ieșire: Catedrala și Carrer del Bisbe, luminate seara.',
     address: 'Plaça del Rei', placeQuery: 'MUHBA Plaça del Rei', hours: 'Du 10:00 – 20:00 · gratis de la 15:00', price: 'Gratis după 15:00',
     tips: ['Alte muzee gratis duminica de la 15:00: Museu Marítim (bilet doar la casă), Castell de Montjuïc (până la 18:00), CCCB (rezervare).', 'Museu Picasso NU e gratis pe 8 nov (doar prima duminică).', 'Sardanele se dansează duminica dimineață (≈ 11:15 – 13:00) în fața Catedralei.'],
     lat: 41.3841, lng: 2.1775, radius: 120 },
-  { id: 'casaamalia', legIn: { min: 20, mode: 'transit', icon: 'subway', label: 'metrou L4 + L3 sau taxi ≈ 10 €' }, pick: 'paella', rank: 3, legIn: { min: 18, mode: 'walking', icon: 'directions_walk', label: 'pe jos, la vale prin Gràcia' },
+  { id: 'casaamalia', pick: 'paella', rank: 3, legIn: { min: 20, mode: 'transit', icon: 'subway', label: 'metrou L4 Jaume I → Girona, apoi 5 min pe jos' },
     book: { need: 'recomandat', url: 'https://www.thefork.es/restaurante/casa-amalia-1950-mercat-de-la-concepcio-r617923', mail: 'reservas@casaamalia.com', tel: '+34934589458', note: 'Pe TheFork rezervați în 1 minut, cu confirmare pe loc. Cereți o masă înăuntru.' },
     img: {q: 'Mercat de la Concepció Barcelona'}, site: 'https://casaamalia.com', budget: '≈ 105–135 € pentru trei', day: 'sun', zone: 'eixample', cat: 'food', time: '19:15 – 20:45', catLabel: 'Cina: paella ca la carte',
     title: 'Casa Amàlia', short: 'Orez de top, lângă Mercat de la Concepció',
@@ -515,15 +515,12 @@ export const ITINERARY = [
     desc: 'Îmbarcarea începe de obicei cu 40 de minute înainte; poarta se închide cu 20 de minute înainte (≈ 20:00). Verificați poarta pe ecrane după cină.',
     address: 'Aeroport El Prat', placeQuery: 'Barcelona El Prat Airport', hours: 'Poarta ≈ 20:00', price: '',
     lat: 41.2887, lng: 2.0726, radius: 1500 },
-  { id: 'parkguell', rec: 'apusul de pe terasa cu banca ondulată (17:41) și casa de turtă dulce de la intrare', minStay: 75, day: 'sun', time: '16:30 – 17:50', closes: { sun: '18:00' },
-    legIn: { min: 30, mode: 'transit', icon: 'directions_bus', label: 'bus V19 de pe Pg. de Sant Joan (≈ 26–30 min)' },
-    book: { need: 'bilet', url: 'https://parkguell.barcelona', label: 'Park Güell, intrarea de la 16:30', note: 'Bilete doar online, pe sloturi de 30 de minute; intrați în cele 30 de minute ale slotului. Duminica se termină din timp: cumpărați cu câteva zile înainte.' },
-    img: {q: 'Park Güell'}, site: 'https://parkguell.barcelona', budget: '≈ 54 € pentru trei (18 € fiecare: și Mara, de la 13 ani, plătește bilet întreg)', zone: 'gracia', cat: 'art', catLabel: 'Gaudí la apus',
-    title: 'Park Güell la apus', short: 'Zona monumentală, cu bilet pe oră',
-    desc: 'Din Pg. de Sant Joan (la 6 minute de Three Marks) luați autobuzul V19 până la „Ramiro de Maeztu – Ctra. Carmel” și intrați pe la intrarea de sus. Zona monumentală: dragonul de mozaic, Sala Hipostilă, banca ondulată de pe terasă, cu tot orașul și marea în față, chiar la apus (~17:41). În noiembrie: 9:30 – ~18:00, ultima intrare ~17:30.',
-    address: 'Carrer d\'Olot 5, Gràcia', placeQuery: 'Park Güell', hours: 'Nov–dec: 9:30 – ~18:00 · ultima intrare ~17:30 · sloturi de 30 min', price: '18 € adulți și de la 13 ani · 13,50 € 7–12 ani',
-    tips: ['Cumpărați doar de pe parkguell.barcelona (site-ul oficial): revânzătorii cer mai mult.', 'Zona liberă din jur (pădurea, viaductele, Turó de les Tres Creus) e gratis și fără bilet, dacă nu prindeți slotul.', 'Ieșiți pe la poarta principală (Carrer d\'Olot) și coborâți pe jos spre Gràcia.', 'Plan B fără bilet: Ciutadella, MUHBA și El Born CCM, gratis duminica (în Dorite).'],
-    lat: 41.41370, lng: 2.15270, radius: 300, approx: true },
+  { id: 'borncc', rec: 'strada din 1714 păstrată sub piață, văzută de pe pasarelă', free: true, minStay: 25, day: 'sun', time: '17:10 – 17:35', closes: { sun: '20:00' },
+    img: {q: 'El Born Centre de Cultura i Memòria'}, site: 'https://elbornculturaimemoria.barcelona.cat', budget: 'Gratis duminica de la 15:00', zone: 'gotic', cat: 'art', catLabel: 'Gratis după 15:00',
+    title: 'El Born CCM', short: 'Barcelona din 1714, sub piața veche',
+    desc: 'Între Ciutadella și MUHBA, la 5 minute de amândouă. Sub acoperișul de fier al fostei piețe a Born-ului se văd străzile și casele orașului din 1714, scoase la lumină la renovare. Duminica de la 15:00 intrarea e gratis.',
+    address: 'Plaça Comercial 12', placeQuery: 'El Born Centre de Cultura i Memòria', hours: 'Du 10:00 – 20:00 · gratis de la 15:00', price: 'Gratis duminica după 15:00',
+    lat: 41.38560, lng: 2.18350, radius: 120, approx: true },
 ];
 
 export const ALTERNATIVES = [
@@ -597,7 +594,6 @@ export const ALTERNATIVES = [
   { zone: 'eixample', cat: 'food', title: 'Kook (Pg. de Sant Joan)', short: 'Orez și tapas, deschis toată duminica', address: 'Passeig de Sant Joan 85', placeQuery: 'Kook Passeig de Sant Joan Barcelona', hours: 'Du 13:00 – 23:30', price: '€€', lat: 41.39780, lng: 2.17200, approx: true },
   { zone: 'eixample', cat: 'food', title: 'La Paradeta Sagrada Família', short: 'Pește la alegere de pe gheață, autoservire', address: 'Passatge de Simó 18', placeQuery: 'La Paradeta Sagrada Familia', hours: 'Du 13:00 – 16:00', price: '€€ (după cântar)', note: 'Coadă la deschidere; fără rezervare.', lat: 41.40500, lng: 2.17650, approx: true },
   { zone: 'poblenou', cat: 'food', title: 'ALAS by Hermanos Torres (T1)', short: 'Cel mai bun restaurant din aeroport, după securitate', address: 'Aeroport El Prat T1, după securitate', placeQuery: 'ALAS Hermanos Torres Barcelona airport', hours: 'Până seara', price: '€€€', lat: 41.2890, lng: 2.0735, approx: true },
-  { zone: 'gotic', cat: 'art', title: 'El Born CCM', short: 'Orașul din 1714, sub piața veche · gratis duminica de la 15:00', address: 'Plaça Comercial 12', placeQuery: 'El Born Centre de Cultura i Memòria', hours: 'Du 10:00 – 20:00 · gratis de la 15:00', price: 'Gratis duminica după 15:00', free: true, lat: 41.38560, lng: 2.18350, approx: true },
   { zone: 'gotic', cat: 'sweet', title: 'Granja Dulcinea', short: 'Xocolata desfeta și churros, din 1941', address: 'Carrer de Petritxol 2', placeQuery: 'Granja Dulcinea Barcelona', hours: 'Du 9:00 – 13:00 & 16:30 – 20:30', price: '€', lat: 41.38270, lng: 2.17310, approx: true },
   { zone: 'gotic', cat: 'sweet', title: 'Xurreria dels Banys Nous', short: 'Churros clasici, deschis duminica', address: 'Carrer dels Banys Nous 8', placeQuery: 'Xurreria Banys Nous Barcelona', hours: 'Du 7:00 – 14:30 & 16:30 – 20:30', price: '€', lat: 41.38250, lng: 2.17460, approx: true },
   { zone: 'eixample', cat: 'sweet', title: 'Delacrem', short: 'Gelato artizanal, deschis duminica', address: 'Carrer d\'Enric Granados 15', placeQuery: 'Delacrem Barcelona', hours: 'Duminica deschis (orele diferă după sursă)', price: '€', lat: 41.38680, lng: 2.16080, approx: true },
@@ -817,7 +813,7 @@ export const MEAL_SLOTS = {
   sat: { lunch: ['barjoan', 'bardelpla', 'alt:Bar Super (Santa Caterina)', 'alt:Lady Dumpling (Born)', 'alt:Cuines de Santa Caterina', 'alt:El Xampanyet'],
          dinner: ['blai', 'alt:La Tasqueta de Blai', 'alt:Bar Calders', 'alt:Bar Cañete'] },
   sun: { lunch: ['vietnamhouse', 'catalana', 'alt:Kook (Pg. de Sant Joan)', 'alt:La Paradeta Sagrada Família'],
-         dinner: ['casaamalia', 'alt:Lady Dumpling (Gràcia)', 'gracia-dinner', 'catalana'] },
+         dinner: ['casaamalia', 'alt:Lady Dumpling (Born)', 'catalana', 'gracia-dinner'] },
   mon: { lunch: ['quimet', 'alt:Bar Pinotxo (Mercat de Sant Antoni)', 'alt:Bar Cañete', 'alt:Pho Viet'],
          dinner: ['airport-dinner', 'alt:ALAS by Hermanos Torres (T1)'] },
 };

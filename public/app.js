@@ -1446,7 +1446,7 @@ function renderMap() {
 // Tabla cu cele 5 zile pe ore, harta care urmărește ziua la care vă uitați
 // și ce mai e de făcut înainte de plecare. Totul deschide foile existente.
 // =====================================================================
-const hq = { day: null, hoverDay: null, timer: null, pins: {}, layers: [] };
+const hq = { day: null, hoverDay: null, timer: null, pins: {}, layers: [], meal: null };
 const HQ_SCALE = 1.25; // px pe minut în tabla zilelor
 const roN = (n, one, many) => (n === 1 ? `1 ${one}` : `${n}${n > 0 && (n % 100 >= 20 || n % 100 === 0) ? ' de' : ''} ${many}`);
 const eurN = (n) => `${Math.round(n).toLocaleString('ro-RO')} €`;
@@ -1582,10 +1582,11 @@ function hqPanelsHTML(s) {
       <span class="hq-bar-v tabular">${x.e ? '≈ ' + eurN(x.e) : '—'}</span></button>`).join('')}</div>
     <button data-action="hq-open-budget" class="btn btn-sm btn-outline press mt-4">${icon('payments', 'i-18')} Cheltuieli și împărțeala</button>
   </section>`;
+  const mealCell = (d, m) => { const k = `${d}-${m}`, rows = mealRows(k); if (!rows.length) return '<span class="hq-meal cap">—</span>'; const c = rows[0], lead = rows.slice(1).find((o) => o.score > c.score), open = hq.meal === k;
+    return `<button data-action="hq-meal" data-key="${k}" class="hq-meal ${open ? 'on' : ''}" aria-expanded="${open}"><b>${esc(shortTitle(c.loc.title))}</b><span>${rows.length > 1 ? `${rows.length} variante` : 'o singură variantă'}${c.score ? ` · ${c.score > 0 ? '+' : ''}${c.score} voturi` : ''}${lead ? ` · favorit: ${esc(shortTitle(lead.loc.title))}` : ''}</span>${rows.length > 1 ? `<i class="hq-meal-sw">${icon(open ? 'expand_less' : 'expand_more', 'i-18')}</i>` : ''}</button>`; };
   const meals = `<section class="hq-panel hq-meals"><h2 class="hq-h">Prânz și cină</h2><div class="hq-meal-grid"><span></span><span class="cap">Prânz</span><span class="cap">Cină</span>
-    ${DAYS.map((d) => `<span class="hq-meal-d"><i style="background:${DAY_THEMES[d].color}"></i>${DAY_SHORT[d][0]} ${DAY_SHORT[d][1]}</span>${['lunch', 'dinner'].map((m) => { const rows = mealRows(`${d}-${m}`); if (!rows.length) return '<span class="hq-meal cap">—</span>'; const c = rows[0], lead = rows.slice(1).find((o) => o.score > c.score);
-      return `<button data-action="open-detail" data-id="${esc(optId(c.ref))}" class="hq-meal"><b>${esc(shortTitle(c.loc.title))}</b><span>${rows.length > 1 ? `${rows.length} variante` : 'o singură variantă'}${c.score ? ` · ${c.score > 0 ? '+' : ''}${c.score} voturi` : ''}${lead ? ` · favorit: ${esc(shortTitle(lead.loc.title))}` : ''}</span></button>`; }).join('')}`).join('')}
-  </div><p class="cap mt-3">Deschideți o masă ca să votați 👍 / 👎 variantele și să alegeți.</p></section>`;
+    ${DAYS.map((d) => `<span class="hq-meal-d"><i style="background:${DAY_THEMES[d].color}"></i>${DAY_SHORT[d][0]} ${DAY_SHORT[d][1]}</span>${mealCell(d, 'lunch')}${mealCell(d, 'dinner')}${hq.meal && hq.meal.startsWith(d + '-') ? `<div class="hq-meal-edit"><div class="cap mb-1">${MEAL_LABEL[hq.meal.split('-')[1]]} · ${DAY_LABEL[d]}</div>${mealOptsHTML(hq.meal)}</div>` : ''}`).join('')}
+  </div><p class="cap mt-3">Atingeți o masă ca să vedeți variantele: votați 👍 / 👎 și alegeți direct de aici.</p></section>`;
   return ready + people + meals + voices + budget;
 }
 function renderHQMapBar() {
@@ -1699,6 +1700,7 @@ document.addEventListener('click', (e) => {
     'react': () => toggleReaction(el.dataset.id, el.dataset.k), 'open-comments': () => openComments(el.dataset.id),
     'vote': () => castVote(el.dataset.key, el.dataset.ref, Number(el.dataset.v)), 'meal-pick': () => pickMeal(el.dataset.key, el.dataset.ref), 'remove-loc': () => removeLoc(id), 'restore-loc': () => restoreLoc(id),
     'whoami': () => openWhoAmI(false), 'who-set': () => setMe(el.dataset.person),
+    'hq-meal': () => { const k = el.dataset.key; hq.meal = hq.meal === k ? null : (mealRows(k).length > 1 ? k : null); renderHQ(); },
     'hq-day': () => hqSetDay(el.dataset.day), 'hq-open-day': () => { switchDay(el.dataset.day); setView('plan'); }, 'hq-route': () => { switchDay(el.dataset.day); dayRoute(); },
     'hq-open-plan': () => setView('plan'), 'hq-open-map': () => setView('explore'), 'hq-open-budget': () => setView('budget'),
     'hq-goto-ready': () => $('#hqReady')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
