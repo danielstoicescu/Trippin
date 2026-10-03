@@ -42,7 +42,50 @@
     </div></div>
   </div>
 
+  <!-- ============ Desktop: bara laterală (apare doar pe ecrane late) ============ -->
+  <aside class="side" id="side" aria-label="Navigare">
+    <div class="side-brand">
+      <div class="logo" aria-label="trip·in — Barcelona"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 512 512" width="26" height="26"><path d="M256 396 C198 318 166 277 166 214 a90 90 0 1 1 180 0 C346 277 314 318 256 396 Z" fill="#E8467C"/><circle cx="256" cy="205" r="41" fill="#fff"/><circle cx="372" cy="150" r="24" fill="#FBBC04"/></svg></span><span class="logo-word side-lbl" aria-hidden="true">trip<i class="logo-dot"></i>in</span></div>
+      <div class="side-trip side-lbl">Barcelona & PortAventura<br>5–9 noiembrie 2026</div>
+    </div>
+    <button data-action="open-add" class="side-add press" title="Adaugă un loc"><span class="material-symbols-rounded i-22">add_location_alt</span><span class="side-lbl">Adaugă un loc</span></button>
+    <nav class="side-nav">
+      <button data-action="view" data-view="hq" class="side-btn press" title="Centru de comandă"><span class="material-symbols-rounded">space_dashboard</span><span class="side-lbl">Centru de comandă</span></button>
+      <button data-action="view" data-view="plan" class="side-btn press" title="Plan pe zile"><span class="material-symbols-rounded">calendar_month</span><span class="side-lbl">Plan pe zile</span></button>
+      <button data-action="view" data-view="explore" class="side-btn press" title="Hartă"><span class="material-symbols-rounded">map</span><span class="side-lbl">Hartă</span></button>
+      <button data-action="view" data-view="us" class="side-btn press" title="Noi"><span class="material-symbols-rounded">group</span><span class="side-lbl">Noi</span></button>
+      <button data-action="view" data-view="budget" class="side-btn press" title="Buget"><span class="material-symbols-rounded">payments</span><span class="side-lbl">Buget</span></button>
+      <button data-action="view" data-view="translate" class="side-btn press" title="Traducere"><span class="material-symbols-rounded">translate</span><span class="side-lbl">Traducere</span></button>
+      <button data-action="view" data-view="info" class="side-btn press" title="Info"><span class="material-symbols-rounded">info</span><span class="side-lbl">Info</span></button>
+      <button data-action="open-home" class="side-btn press" title="Cazarea"><span class="material-symbols-rounded">hotel</span><span class="side-lbl">Cazarea</span></button>
+    </nav>
+    <div class="side-foot">
+      <button id="sideMe" data-action="whoami" class="me-chip unset press" aria-label="Alege cine ești"></button>
+      <div class="side-row">
+        <button id="sideWx" data-action="open-weather" class="wx press" aria-label="Vremea în Barcelona"></button>
+        <button data-action="toggle-theme" class="icon-btn press" aria-label="Schimbă tema"><span id="sideThemeIcon" class="inline-flex"></span></button>
+      </div>
+      <div class="side-sync side-lbl"><span id="sideSync" class="sync-dot" data-mode="connecting"></span><span id="sideSyncText">Se conectează…</span></div>
+    </div>
+  </aside>
+
   <main class="wrap">
+    <!-- ============ CENTRU DE COMANDĂ (doar desktop) ============ -->
+    <section id="view-hq" data-view="hq" class="hidden hq">
+      <div id="hqHero" class="hq-hero"></div>
+      <div class="hq-grid">
+        <div class="hq-board-panel" id="hqBoard"></div>
+        <div class="hq-map-col">
+          <div class="hq-map-panel">
+            <div id="hqMap" role="application" aria-label="Harta tripului"></div>
+            <div id="hqMapBar" class="hq-map-bar"></div>
+          </div>
+          <div id="hqMapNote" class="hq-map-note"></div>
+        </div>
+      </div>
+      <div id="hqPanels" class="hq-panels"></div>
+    </section>
+
     <!-- ============ PLAN ============ -->
     <section id="view-plan" data-view="plan">
       <header class="page-head">
@@ -52,15 +95,21 @@
         <div id="tripProgress"></div>
       </header>
       <div class="dates mt-5" id="dates" role="tablist" aria-label="Zilele excursiei"></div>
-      <div id="daySummary" class="mt-3"></div>
-      <div id="nextStop" class="mt-3"></div>
-      <div class="chips mt-5" id="filters"></div>
-      <div id="dayTip"></div>
-      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Programul zilei</h2><span class="cap">bulina = am fost</span></div></div>
-      <div id="itinerary"></div>
-      <div id="opps"></div>
-      <div id="pool"></div>
-      <div id="zones"></div>
+      <div class="d-cols plan-cols">
+        <div class="d-main">
+          <div id="daySummary" class="mt-3"></div>
+          <div id="nextStop" class="mt-3"></div>
+          <div class="chips mt-5" id="filters"></div>
+          <div id="dayTip"></div>
+          <div class="sec"><div class="sec-h"><h2 class="ttl-2">Programul zilei</h2><span class="cap">bulina = am fost</span></div></div>
+          <div id="itinerary"></div>
+        </div>
+        <div class="d-side">
+          <div id="opps"></div>
+          <div id="pool"></div>
+          <div id="zones"></div>
+        </div>
+      </div>
       <footer class="sec pb-6 flex items-center gap-3">
         <button data-action="refresh" class="btn btn-sm btn-outline press"><span class="material-symbols-rounded i-18">sync</span> Actualizează</button>
         <div class="cap min-w-0">Versiunea <span id="buildStamp" class="tabular">…</span>. Dacă ceva arată ciudat, apasă Actualizează.</div>
@@ -74,6 +123,8 @@
         <h1 class="h-display">Explorează</h1>
         <p class="page-sub">Locurile zilei pe hartă, ce e lângă voi și colecțiile</p>
       </header>
+      <div class="d-cols exp-cols">
+      <div class="d-main">
       <div class="map-wrap mt-4">
         <div id="map" role="application" aria-label="Harta zilei"></div>
         <div class="map-top">
@@ -92,11 +143,15 @@
         <div id="crosshair" class="crosshair hidden"><span class="material-symbols-rounded ms-fill i-48">location_on</span></div>
       </div>
       <p id="radarStatus" class="cap mt-3 flex gap-2"><span class="material-symbols-rounded i-16">info</span><span>Ține apăsat pe hartă ca să adaugi locul de acolo. Radarul te anunță la ~150 m de un loc din program.</span></p>
+      </div>
+      <div class="d-side">
       <div id="nextStopExplore" class="mt-4"></div>
       <div class="sec"><div class="sec-h"><h2 class="ttl-2">Lângă tine</h2></div></div>
       <div id="nearbyList" class="card list"></div>
       <div class="sec"><div class="sec-h"><h2 class="ttl-2">Colecții</h2><span class="cap">de făcut / făcute</span></div></div>
       <div id="collections"></div>
+      </div>
+      </div>
     </section>
 
     <!-- ============ NOI ============ -->
@@ -117,6 +172,8 @@
         <h1 class="h-display">Tot ce e util</h1>
         <p class="page-sub">Rezervări, cazare, notițe și numere de urgență</p>
       </header>
+      <div class="d-cols info-cols">
+      <div class="d-main">
       <div id="bookings"></div>
       <div id="packing"></div>
       <div id="homeInfo" class="mt-4"></div>
@@ -124,6 +181,8 @@
         <label class="field"><span>Adresă, cod ușă, wifi, rezervări</span><textarea id="sharedNotes" rows="5" maxlength="2000" placeholder="Ex: Carrer de Pellaires 35, et. …, cod ușă …. Wifi: … Rezervare Bar del Pla sâmbătă 14:00."></textarea></label>
         <div id="notesStatus" class="cap mt-1">&nbsp;</div>
       </div>
+      </div>
+      <div class="d-side">
       <div id="nearHome"></div>
       <div class="sec"><div class="sec-h"><h2 class="ttl-2">Utile</h2></div>
         <div class="card list">
@@ -144,6 +203,8 @@
       </div>
       <div class="sec pb-6"><div class="sec-h"><h2 class="ttl-2">Cum adaugi locuri</h2></div>
         <p class="t-2">Apasă <b>Adaugă</b> și scrie 2–3 litere din nume: caută direct pe hartă și îl pune singur în ziua în care sunteți prin zonă. Pe <b>Hartă</b>, ține apăsat pe orice punct. Din Instagram: apasă pe locația de sub numele contului (sau pe profilul localului) → Share → Trippin; numele vine singur. Din TikTok și Google Maps: Share → Trippin sau lipește linkul în căutare.</p>
+      </div>
+      </div>
       </div>
     </section>
 
