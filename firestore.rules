@@ -27,7 +27,7 @@ service cloud.firestore {
     }
 
     function validState(d) {
-      return d.keys().hasOnly(['coffeeCount', 'coffeeLog', 'counters', 'bucket', 'quests', 'visited', 'pins', 'skipped', 'notes', 'times', 'days', 'comments', 'reactions', 'booked', 'expenses', 'packing', 'packAdd', 'updatedAt'])
+      return d.keys().hasOnly(['coffeeCount', 'coffeeLog', 'counters', 'bucket', 'quests', 'visited', 'pins', 'skipped', 'notes', 'times', 'days', 'comments', 'reactions', 'booked', 'expenses', 'packing', 'packAdd', 'removed', 'mealPick', 'votes', 'updatedAt'])
         && (!('coffeeCount' in d) || (d.coffeeCount is int && d.coffeeCount >= 0 && d.coffeeCount <= 999))
         && (!('quests' in d) || d.quests is map)
         && (!('visited' in d) || d.visited is map)
@@ -40,6 +40,9 @@ service cloud.firestore {
         && (!('booked' in d) || d.booked is map)
         && (!('expenses' in d) || (d.expenses is list && d.expenses.size() <= 500))
         && (!('packing' in d) || d.packing is map)
+        && (!('removed' in d) || d.removed is map)
+        && (!('mealPick' in d) || d.mealPick is map)
+        && (!('votes' in d) || d.votes is map)
         && (!('packAdd' in d) || (d.packAdd is list && d.packAdd.size() <= 200))
         && (!('bucket' in d) || d.bucket is map)
         && (!('counters' in d) || d.counters is map)

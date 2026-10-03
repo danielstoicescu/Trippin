@@ -1,5 +1,5 @@
 // Trippin · Barcelona – Mara (13), Anne & Daniel. Offline-first, mobil, stil Google Flights.
-import { TRIP, ZONES, DAY_ZONES, DAY_TIPS, DAY_THEMES, NEAR_HOME, PACK_DEFAULTS, PHRASES, SUN, WEATHER_NOTE, DAY_OPPS, ITINERARY, ALTERNATIVES, CURATED, PEOPLE_META, BUCKET_DEFAULTS, COFFEE_TYPES } from './data.js';
+import { TRIP, ZONES, DAY_ZONES, DAY_TIPS, DAY_THEMES, NEAR_HOME, PACK_DEFAULTS, PHRASES, SUN, WEATHER_NOTE, DAY_OPPS, ITINERARY, ALTERNATIVES, CURATED, PEOPLE_META, BUCKET_DEFAULTS, COFFEE_TYPES, MEAL_SLOTS } from './data.js';
 import { ICONS } from './icons.js';
 
 const TRIP_ID = TRIP.id;
@@ -10,7 +10,7 @@ const DAY_SHORT = { thu: ['Joi', 5], fri: ['Vin', 6], sat: ['Sâm', 7], sun: ['D
 const DAY_SUB = Object.fromEntries(Object.entries(DAY_THEMES).map(([d, t]) => [d, t.sub]));
 const PEOPLE = ['Daniel', 'Mara', 'Anne'];
 const PERSONS = ['mara', 'anne', 'daniel'];
-const LS = { locations: 'bcn_locations', shared: 'bcn_shared', photos: 'bcn_photos', theme: 'bcn_theme', alerted: 'bcn_alerted', view: 'bcn_view', viewDesk: 'bcn_view_desk', me: 'bcn_me', install: 'bcn_install_seen', weather: 'bcn_weather', img: 'bcn_img' };
+const LS = { locations: 'bcn_locations', shared: 'bcn_shared', photos: 'bcn_photos', theme: 'bcn_theme', alerted: 'bcn_alerted', view: 'bcn_view', viewDesk: 'bcn_view_desk', me: 'bcn_me', install: 'bcn_install_seen', weather: 'bcn_weather', img: 'bcn_img2' };
 // Desktop (laptop, monitor): bară laterală + Centru de comandă. Pe telefon nu se schimbă nimic.
 const DESK = window.matchMedia('(min-width: 1100px)');
 const isDesk = () => DESK.matches;
@@ -25,7 +25,7 @@ const SUMMARY_TEXT = `Trippin · Barcelona (Mara 13, Anne & Daniel), 5–9 nov:
 const state = {
   view: 'plan', day: 'thu', filter: 'all', person: 'mara',
   custom: [], photos: {},
-  shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, times: {}, days: {}, comments: {}, reactions: {}, booked: {}, expenses: [], packing: {}, packAdd: [], notes: '' },
+  shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, times: {}, days: {}, comments: {}, reactions: {}, booked: {}, expenses: [], packing: {}, packAdd: [], removed: {}, mealPick: {}, votes: {}, notes: '' },
   online: false, radarOn: false, pos: null, watchId: null, alerted: {},
   installPrompt: null, map: null, markers: [], meMarker: null, homeMarker: null, newMarker: null, detailId: null, photoTarget: null, picking: false,
 };
@@ -43,7 +43,26 @@ const mapsSearch = (q) => `https://www.google.com/maps/search/?api=1&query=${enc
 const placeQuery = (loc) => loc.placeQuery || (loc.address ? `${loc.title}, ${loc.address}` : loc.title);
 // Mutările făcute din aplicație la locurile din program: altă oră (`times`) sau altă zi (`days`)
 const withTime = (l) => { const t = state.shared.times?.[l.id], d = state.shared.days?.[l.id]; return t || d ? { ...l, ...(d ? { day: d } : {}), ...(t ? { time: t, movedTime: true } : {}) } : l; };
-const allLocs = () => [...ITINERARY.map(withTime), ...state.custom];
+// Locurile șterse din program (oricare, și cele puse de noi) se pot pune înapoi din „Șterse”
+const isRemoved = (id) => !!state.shared.removed?.[id];
+const allLocs = () => applyMeals([...ITINERARY.map(withTime), ...state.custom]).filter((l) => !isRemoved(l.id));
+// Sloturile de prânz și cină: prima variantă e cea din program; alegerea familiei o înlocuiește, la aceeași oră
+const MEAL_LABEL = { lunch: 'Prânzul', dinner: 'Cina' };
+const altIndexByTitle = (t) => ALTERNATIVES.findIndex((a) => a.title === t);
+function mealOptionLoc(ref) {
+  if (String(ref).startsWith('alt:')) { const i = altIndexByTitle(ref.slice(4)); return i >= 0 ? { ...ALTERNATIVES[i], id: 'alt-' + i, isAlt: false, altIndex: i, radius: 150 } : null; }
+  const it = ITINERARY.find((l) => l.id === ref); return it ? withTime(it) : state.custom.find((l) => l.id === ref) || null;
+}
+const optId = (ref) => (String(ref).startsWith('alt:') ? 'alt-' + altIndexByTitle(ref.slice(4)) : ref);
+function applyMeals(list) {
+  const picks = state.shared.mealPick || {}; let out = list;
+  for (const [key, ref] of Object.entries(picks)) {
+    const [day, meal] = key.split('-'), opts = MEAL_SLOTS?.[day]?.[meal]; if (!opts || !ref || ref === opts[0] || !opts.includes(ref)) continue;
+    const def = out.find((l) => l.id === opts[0]); const opt = mealOptionLoc(ref); if (!def || !opt) continue;
+    out = out.filter((l) => l.id !== opt.id).map((l) => (l.id === def.id ? { ...opt, day, time: def.time, meal, mealSlot: key, legIn: undefined, fixed: false } : l));
+  }
+  return out;
+}
 function altAsLoc(i) { const a = ALTERNATIVES[i]; return a ? { ...a, id: 'alt-' + i, isAlt: true, altIndex: i, radius: 150 } : null; }
 const findLoc = (id) => (id === 'home' ? baseLoc() : null) || allLocs().find((l) => l.id === id) || (String(id).startsWith('alt-') ? altAsLoc(Number(String(id).slice(4))) : null);
 function enriched(loc) { const c = loc.isCustom ? CURATED[(loc.title || '').trim().toLowerCase()] : null; return c ? { ...c, ...loc, rating: loc.rating ?? c.rating, review: loc.review ?? c.review, popular: loc.popular ?? c.popular, tips: loc.tips ?? c.tips, hours: loc.hours && !/^(sunday closed|shop)$/i.test(loc.hours) ? loc.hours : c.hours || loc.hours, price: loc.price || c.price, address: loc.address || c.address, minStay: loc.minStay || c.minStay, placeQuery: loc.placeQuery || c.placeQuery, site: loc.site || c.site, img: loc.img || c.img, variants: c.variants, cat: loc.cat === 'mara' ? (c.cat || 'fun') : loc.cat } : loc; }
@@ -127,19 +146,59 @@ function stockOf(loc) {
   if (loc.img?.file && !(c && c.failed)) return { url: COMMONS_FILE(loc.img.file), page: COMMONS_PAGE(loc.img.file), credit: 'Wikimedia Commons' };
   ensureStock(loc); return null;
 }
+// Pozele potrivite: întâi cele făcute chiar la locul respectiv (geosearch pe Commons), apoi căutarea după nume.
+// Fiecare candidată primește un scor: numele locului în titlu, cât de aproape e, mărimea; hărțile, logourile și stemele ies.
+const COMMONS_API = 'https://commons.wikimedia.org/w/api.php?format=json&origin=*';
+const IMG_BAD = /\b(map|mapa|mapa_|plano|plan|logo|diagram|locator|location map|escut|coat of arms|bandera|flag|icon|signature|firma|poster|cartell|ticket|menu card|screenshot|interior plan)\b/i;
+const IMG_STOP = new Set(['barcelona', 'carrer', 'calle', 'plaça', 'placa', 'restaurant', 'restaurante', 'bar', 'cafe', 'coffee', 'the', 'del', 'dels', 'de', 'la', 'les', 'el', 'los', 'las', 'and', 'sau', 'pentru', 'mercat', 'mercado']);
+const imgWords = (s) => fold(s).split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !IMG_STOP.has(w));
+function scoreImg(c, words) {
+  const t = fold(c.title.replace(/^File:/, '').replace(/\.[a-z0-9]+$/i, '')).replace(/[_-]/g, ' ');
+  let s = 0; for (const w of words) if (t.includes(w)) s += 3;
+  if (IMG_BAD.test(t)) s -= 12; if (c.dist != null) s += Math.max(0, 3 - c.dist / 50); if (c.rank != null) s += Math.max(0, 2 - c.rank * 0.4);
+  if (c.w < 600) s -= 2; const ar = c.w / Math.max(1, c.h); if (ar < 0.65 || ar > 2.4) s -= 2;
+  return s;
+}
+const imgQueue = []; let imgActive = 0;
+function imgFetch(url) { return new Promise((res) => { imgQueue.push({ url, res }); pumpImg(); }); }
+function pumpImg() { while (imgActive < 3 && imgQueue.length) { const { url, res } = imgQueue.shift(); imgActive++; fetch(url).then((r) => r.json()).then(res, () => res(null)).finally(() => { imgActive--; pumpImg(); }); } }
+const candCache = new Map(), badImg = new Set();
+async function commonsCandidates(loc) {
+  if (candCache.has(loc.id)) return candCache.get(loc.id);
+  const e = loc.isCustom ? enriched(loc) : loc, p = coordsOf(loc), name = shortTitle(e.title || ''), words = imgWords(name + ' ' + (e.img?.q || ''));
+  const q = e.img?.q || e.placeQuery || (loc.isCustom ? `${loc.title} Barcelona` : loc.title);
+  const info = (pages, extra) => Object.values(pages || {}).map((pg) => { const ii = pg.imageinfo?.[0]; if (!ii || !/image\/(jpeg|png|webp)/.test(ii.mime || '')) return null; const artist = (ii.extmetadata?.Artist?.value || '').replace(/<[^>]+>/g, '').trim();
+    return { title: pg.title, url: ii.thumburl || ii.url, page: ii.descriptionurl, credit: artist ? artist.slice(0, 40) : 'Wikimedia Commons', w: ii.width || 0, h: ii.height || 1, ...extra(pg) }; }).filter(Boolean);
+  const II = '&prop=imageinfo&iiprop=url|extmetadata|size|mime&iiurlwidth=1000';
+  const near = p ? imgFetch(`${COMMONS_API}&list=geosearch&gscoord=${p.lat}|${p.lng}&gsradius=${Math.min(400, Math.max(60, loc.radius || 120))}&gsnamespace=6&gslimit=25`).then(async (j) => {
+    const hits = j?.query?.geosearch || []; if (!hits.length) return []; const dist = Object.fromEntries(hits.map((h) => [h.title, h.dist]));
+    const j2 = await imgFetch(`${COMMONS_API}${II}&titles=${encodeURIComponent(hits.slice(0, 25).map((h) => h.title).join('|'))}`); return info(j2?.query?.pages, (pg) => ({ dist: dist[pg.title] ?? null }));
+  }) : Promise.resolve([]);
+  const text = imgFetch(`${COMMONS_API}${II}&generator=search&gsrsearch=${encodeURIComponent(q + ' filetype:bitmap')}&gsrnamespace=6&gsrlimit=8`).then((j) => info(j?.query?.pages, (pg) => ({ rank: (pg.index || 1) - 1 })));
+  const all = [...(await near), ...(await text)], seen = new Set();
+  const list = all.filter((c) => !seen.has(c.title) && seen.add(c.title)).map((c) => ({ ...c, score: scoreImg(c, words) })).sort((a, b) => b.score - a.score);
+  candCache.set(loc.id, list); return list;
+}
 async function ensureStock(loc) {
   if (inflight.has(loc.id) || !navigator.onLine) return; inflight.add(loc.id);
-  const e = loc.isCustom ? enriched(loc) : loc; const q = e.img?.q || e.placeQuery || (loc.isCustom ? `${loc.title} Barcelona` : loc.title);
   try {
-    const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(q + ' filetype:bitmap')}&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=1000&format=json&origin=*`);
-    const j = await r.json(); const pg = Object.values(j.query?.pages || {})[0]; const ii = pg?.imageinfo?.[0]; if (!ii) throw new Error('no image');
-    const artist = (ii.extmetadata?.Artist?.value || '').replace(/<[^>]+>/g, '').trim();
-    imgCache[loc.id] = { url: ii.thumburl || ii.url, page: ii.descriptionurl, credit: artist ? artist.slice(0, 40) : 'Wikimedia Commons' };
+    const best = (await commonsCandidates(loc)).find((c) => !badImg.has(c.url));
+    // doar dacă se potrivește cu numele sau e făcută chiar acolo; altfel rămâne iconița categoriei
+    if (!best || best.score < 2.5) throw new Error('no good image');
+    imgCache[loc.id] = { url: best.url, page: best.page, credit: best.credit };
   } catch { imgCache[loc.id] = { none: true, at: Date.now() }; }
   lsSet(LS.img, imgCache); inflight.delete(loc.id);
   clearTimeout(rerenderTimer); rerenderTimer = setTimeout(() => { renderAll(); refreshDetail(); }, 500);
 }
-window.__imgFail = (el, id) => { el.remove(); const loc = findLoc(id); if (!loc) return; imgCache[id] = { failed: true }; lsSet(LS.img, imgCache); ensureStock(loc); };
+// Alege poza: candidatele de pe Commons, cea aleasă se vede la toți
+async function loadPhotoPicks(id) {
+  const box = $('#photoPicks'); if (!box) return; const loc = findLoc(id) || rawLoc(id); if (!loc) return;
+  if (!navigator.onLine) { box.innerHTML = '<p class="cap">Fără semnal: încercați când reveniți online.</p>'; return; }
+  const list = (await commonsCandidates(loc)).filter((c) => c.score > -5).slice(0, 12); if (!$('#photoPicks')) return;
+  box.innerHTML = list.length ? `<div class="pick-grid">${list.map((c) => `<button data-action="photo-pick" data-id="${esc(id)}" data-url="${esc(c.url)}" class="pick-img press" title="${esc(c.title.replace(/^File:/, ''))}"><img src="${esc(c.url)}" alt="" loading="lazy">${c.dist != null ? `<span class="pill ink">${Math.round(c.dist)} m</span>` : ''}</button>`).join('')}</div><p class="cap mt-2">Poze cu licență liberă de pe Wikimedia Commons; „m” = făcută la atâția metri de loc.</p>`
+    : '<p class="cap">Nu am găsit poze potrivite pe Commons. Puneți una din telefon sau un link.</p>';
+}
+window.__imgFail = (el, id) => { badImg.add(el.getAttribute('src')); el.remove(); const loc = findLoc(id); if (!loc || imgCache[id]?.failed > 2) return; imgCache[id] = { failed: (imgCache[id]?.failed || 0) + 1 }; lsSet(LS.img, imgCache); ensureStock(loc); };
 window.__imgOk = (el) => el.removeAttribute('data-loading');
 const photoOf = (id) => state.photos[id]?.data || state.photos[id]?.url || null;
 function imgTag(loc, eager = false) {
@@ -171,7 +230,7 @@ function legOf(a, b, day) {
   const lin = b.legIn || (b.isCustom ? enriched(b).legIn : null); if (lin) return { d, ...lin };
   if (d > 20000) return { d, min: Math.round((d / 1000) * 0.8 + 15), mode: 'transit', icon: 'train', label: 'cu trenul sau mașina' };
   if (day === 'thu' && d > 4000) return { d, min: Math.round((d / 1000) * 1.5 + 6), mode: 'driving', icon: 'directions_car', label: 'cu mașina' };
-  if (d > 2200) return { d, min: transitMin(d), mode: 'transit', icon: 'subway', label: 'metrou sau taxi' };
+  if (d > 2200) return { d, min: transitMin(d), mode: 'transit', icon: 'subway', label: 'metrou sau bus' };
   return { d, min: walkMin(d), mode: 'walking', icon: 'directions_walk', label: 'pe jos' };
 }
 
@@ -271,12 +330,13 @@ function renderFilters() {
 }
 function whoHTML(locId) { const w = whoHas(locId); return w.length ? `<span class="who" title="Pe bucketlist: ${w.map((p) => PEOPLE_META[p].name).join(', ')}">${w.map((p) => `<i class="p-${p}">${PEOPLE_META[p].name[0]}</i>`).join('')}</span>` : ''; }
 function stopHTML(loc, slot = null, amCoffee = false) {
-  const visited = !!state.shared.visited[loc.id], skipped = !!state.shared.skipped[loc.id], now = isNow(loc), e = enriched(loc), ck = catKey(e.cat), c = cat(e.cat);
+  const visited = !!state.shared.visited[loc.id], skipped = !!state.shared.skipped[loc.id], now = isNow(loc), e = enriched(loc), ck = catKey(e.cat), c = cat(e.cat), mealKey = DAYS.includes(loc.day) ? mealSlotOf(loc) : null;
   const r = slot ? { from: slot.start, to: slot.end } : parseRange(loc.time); const p = coordsOf(loc), dist = state.pos && p ? distanceM(state.pos, p) : null;
   const pills = [`<span class="pill ink">${esc(loc.catLabel || c.label)}</span>`, now ? '<span class="pill blue">ACUM</span>' : '', e.free ? '<span class="pill green">Gratis</span>' : '', loc.verify ? '<span class="pill amber">verifică orele</span>' : '', slot?.auto ? '<span class="pill ink">oră propusă</span>' : '', needsBooking(bookOf(loc)) && !isBooked(loc.id) ? '<span class="pill amber">de rezervat</span>' : ''].filter(Boolean).join('');
   const overlay = `<span class="corner">${icon(e.icon || c.icon, 'i-18')}</span><div class="ph-tl">${pills}</div>${whoHas(loc.id).length ? `<div class="ph-bl">${whoHTML(loc.id)}</div>` : ''}`;
   const meta = [e.rating ? `<span><span class="star">★</span> ${Number(e.rating).toFixed(1).replace('.', ',')}${e.ratingCount ? ` <span class="t-3">(${fmtCount(e.ratingCount)})</span>` : ''}</span>` : '', e.price && !e.free ? `<span class="dotsep">${esc(e.price.split('·')[0].split('(')[0].trim())}</span>` : '', slot ? `<span class="dotsep">${fmtMin(slot.end - slot.start)} acolo</span>` : '', dist != null ? `<span class="dotsep t-blue">${fmtDist(dist)} de tine</span>` : '', e.variants?.length ? `<span class="dotsep">${e.variants.length} locații</span>` : '', commentsOf(loc.id).length ? `<span class="dotsep">${icon('forum', 'i-16', 'vertical-align: -3px; color: var(--brand)')} ${commentsOf(loc.id).length}</span>` : '', loc.isCustom ? `<span class="dotsep">de ${esc(loc.addedBy || 'noi')}</span>` : ''].filter(Boolean).join('');
-  return `<li class="stop reveal k-${ck} ${amCoffee ? 'am-coffee' : ''} ${visited ? 'done' : ''} ${skipped ? 'skipped' : ''}" id="loc-${esc(loc.id)}">
+  return `<li class="stop reveal k-${ck} ${amCoffee ? 'am-coffee' : ''} ${mealKey ? 'meal-stop' : ''} ${visited ? 'done' : ''} ${skipped ? 'skipped' : ''}" id="loc-${esc(loc.id)}">
+    ${mealKey ? `<div class="meal-flag">${icon(mealKey.endsWith('lunch') ? 'lunch_dining' : 'restaurant', 'i-18 ms-fill')}<b>${MEAL_LABEL[mealKey.split('-')[1]]}</b><span class="cap">${mealRows(mealKey).length > 1 ? `${mealRows(mealKey).length} variante` : ''}</span></div>` : ''}
     ${amCoffee ? `<div class="cup-flag"><span class="steam"><i></i><i></i><i></i></span>${icon('coffee', 'i-18 ms-fill')}<b>Cafeaua zilei</b><span class="cap">${slot ? hhmm(slot.start) : ''}</span></div>` : ''}
     <div class="tm">${r ? `${slot?.auto ? '~' : ''}${hhmm(r.from)}<span class="end">${hhmm(r.to)}</span>` : ''}</div>
     <div class="rail"><button class="dot ${visited ? 'done' : skipped ? 'skip' : now ? 'now' : ''}" data-action="toggle-visited" data-id="${esc(loc.id)}" aria-label="${visited ? 'Anulează: am fost' : 'Bifează: am fost'} la ${esc(loc.title)}"></button></div>
@@ -291,6 +351,7 @@ function stopHTML(loc, slot = null, amCoffee = false) {
         ${meta ? `<div class="stop-meta">${meta}</div>` : ''}
       </button>
       ${skipped ? '' : `<div class="feed-social">${feedSocialHTML(loc)}</div>`}
+      ${mealKey && !skipped ? mealOptsHTML(mealKey, 3) : ''}
       ${bookOf(loc) && !skipped && bookOf(loc).need !== 'verificare' ? `<button data-action="book" data-id="${esc(loc.id)}" class="btn btn-sm ${isBooked(loc.id) ? 'btn-booked' : needsBooking(bookOf(loc)) ? 'btn-book' : 'btn-outline'} press mt-3">${icon(isBooked(loc.id) ? 'event_available' : 'event', 'i-18')} ${isBooked(loc.id) ? 'Rezervat' : needsBooking(bookOf(loc)) ? (BOOK_NEED[bookOf(loc).need] || BOOK_NEED.recomandat)[0].replace('Rezervare obligatorie', 'Rezervă (obligatoriu)').replace('Rezervare recomandată', 'Rezervă').replace('Doar cu programare', 'Fă programarea').replace('Bilet online', 'Ia biletul') : 'Bilet (opțional)'}</button>` : ''}
       ${amCoffee && !skipped ? `<button data-action="coffee-here" data-place="${esc(loc.title)}" class="btn btn-sm btn-coffee press mt-3">${icon('add', 'i-18')} Am băut espresso-ul aici</button>` : ''}
       ${skipped ? `<button data-action="toggle-skip" data-id="${esc(loc.id)}" class="btn btn-sm btn-outline press mt-2">${icon('undo', 'i-18')} Pune înapoi în program</button>` : ''}
@@ -362,9 +423,9 @@ function renderDay() {
   renderPool(); renderZones(); observeReveal();
 }
 function renderPool() {
-  const el = $('#pool'); if (!el) return; const pool = allLocs().filter((l) => isPool(l)); if (!pool.length) { el.innerHTML = ''; return; }
+  const el = $('#pool'); if (!el) return; const pool = allLocs().filter((l) => isPool(l)); if (!pool.length) { el.innerHTML = removedHTML(); return; }
   const sug = (l) => { const e = enriched(l); return suggestFor(coordsOf(l), l.id, e.cat, e.closed || []); };
-  el.innerHTML = `<div class="sec"><div class="sec-h"><h2 class="ttl-2">Locuri dorite</h2><span class="cap">încă fără zi</span></div><div class="card list">${pool.map((l) => { const s = sug(l); return `<div class="li" id="loc-${esc(l.id)}"><button data-action="open-detail" data-id="${esc(l.id)}" class="flex items-center gap-3 flex-1 min-w-0 text-left">${thumbHTML(l, 48)}<div class="min-w-0"><div class="font-medium truncate">${esc(l.title)} ${whoHTML(l.id)}</div><div class="cap truncate">${l.poolNote ? esc(l.poolNote) : s.day !== 'pool' ? `Potrivit ${DAY_LABEL[s.day]}, lângă ${esc(shortTitle(s.afterTitle))}` : esc(cat(l.cat).label)}</div></div></button><button data-action="schedule" data-id="${esc(l.id)}" class="btn btn-sm btn-tonal press">${s.day !== 'pool' ? DAY_SHORT[s.day][0] + ' ' + DAY_SHORT[s.day][1] : 'Pune în zi'}</button></div>`; }).join('')}</div></div>`;
+  el.innerHTML = `<div class="sec"><div class="sec-h"><h2 class="ttl-2">Locuri dorite</h2><span class="cap">încă fără zi</span></div><div class="card list">${pool.map((l) => { const s = sug(l); return `<div class="li" id="loc-${esc(l.id)}"><button data-action="open-detail" data-id="${esc(l.id)}" class="flex items-center gap-3 flex-1 min-w-0 text-left">${thumbHTML(l, 48)}<div class="min-w-0"><div class="font-medium truncate">${esc(l.title)} ${whoHTML(l.id)}</div><div class="cap truncate">${l.poolNote ? esc(l.poolNote) : s.day !== 'pool' ? `Potrivit ${DAY_LABEL[s.day]}, lângă ${esc(shortTitle(s.afterTitle))}` : esc(cat(l.cat).label)}</div></div></button><button data-action="schedule" data-id="${esc(l.id)}" class="btn btn-sm btn-tonal press">${s.day !== 'pool' ? DAY_SHORT[s.day][0] + ' ' + DAY_SHORT[s.day][1] : 'Pune în zi'}</button></div>`; }).join('')}</div></div>${removedHTML()}`;
 }
 function renderZones() {
   const z = $('#zones'); if (!z) return;
@@ -411,7 +472,7 @@ function routeSheetHTML() {
     <p class="t-2 pb-3">Google Maps primește puține opriri într-un link, așa că ziua e împărțită în bucăți. Deschideți-le pe rând.</p>
     ${state.pos && fp ? `<a href="${esc(mapsNav(first))}" target="_blank" rel="noopener" class="card li press mb-3">${icon('my_location', '', 'color: var(--blue)')}<div class="flex-1 min-w-0"><div class="font-medium">De unde sunteți până la prima oprire</div><div class="cap truncate">${esc(first.title)} · ${fmtDist(distanceM(state.pos, fp))}</div></div>${icon('gmaps', 'i-22')}</a>` : ''}
     <div class="card list">${parts.map((pt) => pt.transit
-      ? `<a href="${esc(mapsLeg(pt.from, pt.to, 'transit'))}" target="_blank" rel="noopener" class="li press">${icon('subway', '', 'color: var(--amber)')}<div class="flex-1 min-w-0"><div class="font-medium">Metrou sau taxi · ~${fmtMin(pt.g.min)}</div><div class="cap truncate">${esc(shortTitle(pt.from.title))} → ${esc(shortTitle(pt.to.title))}</div></div>${icon('gmaps', 'i-22')}</a>`
+      ? `<a href="${esc(mapsLeg(pt.from, pt.to, 'transit'))}" target="_blank" rel="noopener" class="li press">${icon('subway', '', 'color: var(--amber)')}<div class="flex-1 min-w-0"><div class="font-medium">Metrou sau bus · ~${fmtMin(pt.g.min)}</div><div class="cap truncate">${esc(shortTitle(pt.from.title))} → ${esc(shortTitle(pt.to.title))}</div></div>${icon('gmaps', 'i-22')}</a>`
       : `<a href="${esc(pt.url)}" target="_blank" rel="noopener" class="li press"><span class="cat-ic c-art" style="width: 32px; height: 32px; font-weight: 500">${pt.n}</span><div class="flex-1 min-w-0"><div class="font-medium">${pt.mode === 'driving' ? 'Cu mașina' : 'Pe jos'} · ${pt.list.length} opriri</div><div class="cap">${pt.list.map((l) => esc(shortTitle(l.title))).join(' → ')}</div></div>${icon('gmaps', 'i-22')}</a>`).join('')}</div>
     <p class="cap mt-3 pb-3">În Google Maps apăsați „Start”. Opririle bifate cu „Am fost” ies din traseu.</p>`;
 }
@@ -424,7 +485,7 @@ function detailHTML(raw) {
   const p = coordsOf(loc), d = state.pos && p ? distanceM(state.pos, p) : null;
   const own = state.photos[id], st = own ? null : stockOf(loc);
   const credit = own ? `<span class="pill ink">${icon('photo_camera', 'i-16')} ${esc(own.by || 'noi')}</span>` : st ? `<a href="${esc(st.page)}" target="_blank" rel="noopener" class="pill ink">${icon('image', 'i-16')} ${esc(st.credit)}</a>` : '';
-  const hero = `<div class="relative" style="margin: 0 -16px">${photoHTML(loc, { cls: 'hero-photo', eager: true, overlay: `<div class="ph-bl">${credit}</div>` })}<div class="handle absolute" style="top: 2px; left: 50%; margin-left: -16px; background: rgba(255,255,255,.85)"></div><button data-action="close-modal" class="icon-btn solid press absolute" style="top: 12px; right: 12px" aria-label="Închide">${icon('close')}</button></div>`;
+  const hero = `<div class="relative" style="margin: 0 -16px">${photoHTML(loc, { cls: 'hero-photo', eager: true, overlay: `<div class="ph-bl">${credit}</div><div class="ph-br"><button data-action="add-photo" data-id="${esc(id)}" class="pill ink press" style="height: 30px; padding: 0 10px">${icon('image_search', 'i-16')} Altă poză</button></div>` })}<div class="handle absolute" style="top: 2px; left: 50%; margin-left: -16px; background: rgba(255,255,255,.85)"></div><button data-action="close-modal" class="icon-btn solid press absolute" style="top: 12px; right: 12px" aria-label="Închide">${icon('close')}</button></div>`;
   const metaLine = [loc.rating ? `<span><b style="font-weight: 500; color: var(--text)">${Number(loc.rating).toFixed(1).replace('.', ',')}</b> <span class="star">${'★'.repeat(Math.round(loc.rating))}</span>${loc.ratingCount ? ` (${fmtCount(loc.ratingCount)})` : ''}</span>` : '', `<span>${esc(loc.catLabel || c.label)}</span>`, loc.price && !loc.free ? `<span>${esc(loc.price.split('·')[0].split('(')[0].trim())}</span>` : '', loc.free ? '<span class="t-green">Gratis</span>' : ''].filter(Boolean).join('<span class="t-3">·</span>');
   const when = isPool(loc) ? 'Loc dorit, încă fără zi' : loc.isAlt ? 'Recomandare, nu e în program' : `${DAY_LABEL[loc.day]}${loc.time ? ' · ' + loc.time : ''}`;
   const actions = loc.isAlt
@@ -434,7 +495,8 @@ function detailHTML(raw) {
        <button data-action="toggle-visited" data-id="${esc(id)}" class="act press ${visited ? 'on' : ''}">${icon(visited ? 'check_circle' : 'check', 'i-20')} ${visited ? 'Am fost' : 'Am fost aici'}</button>
        ${loc.isCustom ? `<button data-action="schedule" data-id="${esc(id)}" class="act press">${icon('edit_calendar', 'i-20')} ${isPool(loc) ? 'Pune în zi' : 'Mută'}</button><button data-action="edit-loc" data-id="${esc(id)}" class="act press">${icon('edit', 'i-20')} Editează</button>` : loc.fixed ? '' : `${isPool(loc) || id.startsWith('alt-') ? '' : `<button data-action="toggle-skip" data-id="${esc(id)}" class="act press">${icon(skipped ? 'undo' : 'skip_next', 'i-20')} ${skipped ? 'Pune înapoi' : 'Sari peste'}</button>`}${id.startsWith('alt-') ? '' : `<button data-action="schedule" data-id="${esc(id)}" class="act press">${icon('edit_calendar', 'i-20')} ${isPool(loc) ? 'Pune în zi' : 'Mută'}</button>`}`}
        <button data-action="add-photo" data-id="${esc(id)}" class="act press">${icon('add_a_photo', 'i-20')} Poză</button>
-       <button data-action="pin-here" data-id="${esc(id)}" class="act press" ${state.pos ? '' : 'disabled style="opacity:.4"'}>${icon('push_pin', 'i-20')} Fixează aici</button>`;
+       <button data-action="pin-here" data-id="${esc(id)}" class="act press" ${state.pos ? '' : 'disabled style="opacity:.4"'}>${icon('push_pin', 'i-20')} Fixează aici</button>
+       ${id === 'home' ? '' : `<button data-action="remove-loc" data-id="${esc(id)}" class="act act-del press">${icon('delete', 'i-20')} Șterge</button>`}`;
   const row = (ic, body, href, trail = '') => href ? `<a href="${esc(href)}" target="_blank" rel="noopener" class="li press">${icon(ic, '', 'color: var(--text-2)')}<div class="flex-1 min-w-0">${body}</div>${trail || icon('chevron_right', 't-3 i-20')}</a>` : `<div class="li">${icon(ic, '', 'color: var(--text-2)')}<div class="flex-1 min-w-0">${body}</div></div>`;
   const info = [loc.hours ? row('schedule', esc(loc.hours)) : '', loc.price ? row('euro', esc(loc.price)) : '', loc.budget ? row('payments', `${esc(loc.budget)}<div class="cap">buget estimat pentru trei</div>`) : '', loc.address ? row('location_on', `${esc(loc.address)}${p && !p.exact ? '<div class="cap">poziție aproximativă · „Fixează aici” o corectează</div>' : ''}`, mapsSearch(placeQuery(loc)), icon('gmaps', 'i-20')) : '', loc.link ? row('link', `<span class="t-blue">Deschide ${esc(SOURCE[loc.source] || 'linkul')}</span>`, loc.link, icon('open_in_new', 't-3 i-20')) : ''].filter(Boolean).join('');
   const sec = (title, body) => `<div class="hair pt-5 mt-5"><h3 class="ttl-3 mb-3">${title}</h3>${body}</div>`;
@@ -451,6 +513,7 @@ function detailHTML(raw) {
     </div>
     <div class="actions mt-4">${actions}</div>
     ${loc.isAlt && !loc.pick ? '' : `<div class="react-card mt-4"><div class="cap mb-2">Cum vi se pare?</div>${reactionRowHTML(id, true)}</div>`}
+    ${mealSlotOf(loc) && DAYS.includes(loc.day) ? `<div class="mt-4">${mealOptsHTML(mealSlotOf(loc))}</div>` : ''}
     ${recLineHTML(loc) ? `<div class="rec-line rec-big mt-4">${icon('lightbulb', 'i-18 ms-fill', 'color: var(--star)')}<span><b>${recOf(loc).verb}:</b> ${esc(recOf(loc).rec)}</span></div>` : ''}
     ${loc.desc || loc.note ? `<p class="mt-5" style="font-size: 15px; line-height: 23px">${esc(loc.desc || loc.note)}</p>` : ''}
     ${info ? `<div class="card list mt-5">${info}</div>` : ''}
@@ -581,7 +644,7 @@ function phrasesHTML() {
     </div>`;
 }
 function renderPhrases() { const el = $('#phrases'); if (el) el.innerHTML = phrasesHTML(); }
-async function packToggleItem(key) { const p = { ...(state.shared.packing || {}) }; if (p[key]) delete p[key]; else { p[key] = true; buzz(8); } state.shared.packing = p; renderPacking(); await saveShared({ packing: p }); }
+async function packToggleItem(key) { const p = { ...(state.shared.packing || {}) }; if (p[key]) p[key] = false; else { p[key] = true; buzz(8); } state.shared.packing = p; renderPacking(); await saveShared({ packing: p }); }
 async function packAddItem(cat) { const text = (prompt('Ce mai adăugăm?') || '').trim(); if (!text) return; const item = { key: 'pc' + Date.now(), cat, text: text.slice(0, 60) }; const list = [...(state.shared.packAdd || []), item].slice(-200); state.shared.packAdd = list; renderPacking(); await saveShared({ packAdd: list }); }
 async function packDelItem(key) { const list = (state.shared.packAdd || []).filter((c) => c.key !== key); const p = { ...(state.shared.packing || {}) }; delete p[key]; state.shared.packAdd = list; state.shared.packing = p; renderPacking(); await saveShared({ packAdd: list, packing: p }); }
 let expenseDraft = null;
@@ -602,6 +665,73 @@ async function expenseSave() {
   toast(`+${eur(e.amount)} adăugat în buget.`, 'payments', 3500); renderAll(); await saveShared({ expenses: list });
 }
 async function expenseDel(id) { const list = expenses().filter((e) => e.id !== id); state.shared.expenses = list; renderAll(); await saveShared({ expenses: list }); }
+
+
+// ---------- Sloturile de masă: variante, voturi 👍/👎 și alegerea familiei ----------
+function mealSlotOf(loc) {
+  if (!loc) return null; if (loc.mealSlot) return loc.mealSlot;
+  for (const d of DAYS) for (const m of ['lunch', 'dinner']) { const o = MEAL_SLOTS?.[d]?.[m], k = `${d}-${m}`, p = state.shared.mealPick?.[k]; if (o && o[0] === loc.id && loc.day === d && (!p || p === o[0])) return k; }
+  return null;
+}
+const votesOf = (key, ref) => state.shared.votes?.[key]?.[optId(ref)] || {};
+const voteScore = (key, ref) => Object.values(votesOf(key, ref)).reduce((a, v) => a + (+v || 0), 0);
+const mealChosen = (key) => { const [d, m] = key.split('-'); return state.shared.mealPick?.[key] || MEAL_SLOTS?.[d]?.[m]?.[0]; };
+function mealRows(key) {
+  const [d, m] = key.split('-'), opts = MEAL_SLOTS?.[d]?.[m] || [], chosen = mealChosen(key);
+  return opts.map((ref) => ({ ref, loc: mealOptionLoc(ref), score: voteScore(key, ref) })).filter((o) => o.loc && (o.ref === chosen || !isRemoved(optId(o.ref))))
+    .sort((a, b) => (b.ref === chosen) - (a.ref === chosen) || b.score - a.score || opts.indexOf(a.ref) - opts.indexOf(b.ref));
+}
+async function castVote(key, ref, v) {
+  const id = optId(ref), cur = votesOf(key, ref), mine = +cur[me()] || 0, next = { ...cur, [me()]: mine === v ? 0 : v };
+  const slot = { ...(state.shared.votes?.[key] || {}), [id]: next }; state.shared.votes = { ...(state.shared.votes || {}), [key]: slot };
+  buzz(8); renderAll(); refreshDetail(); await saveShared({ votes: { [key]: slot } });
+}
+async function pickMeal(key, ref) {
+  const [d, m] = key.split('-'), def = MEAL_SLOTS?.[d]?.[m]?.[0]; const val = ref === def ? null : ref;
+  state.shared.mealPick = { ...(state.shared.mealPick || {}), [key]: val }; buzz(14); closeModals(); renderAll();
+  const l = mealOptionLoc(ref); toast(`${MEAL_LABEL[m]} de ${DAY_LABEL[d].toLowerCase()}: ${shortTitle(l?.title || '')}.`, m === 'lunch' ? 'lunch_dining' : 'restaurant', 3500);
+  await saveShared({ mealPick: { [key]: val } });
+}
+function mealRowHTML(key, o, chosen) {
+  const d = key.split('-')[0], e = enriched(o.loc), v = votesOf(key, o.ref), mine = +v[me()] || 0, id = optId(o.ref), isC = o.ref === chosen, closed = e.closed?.includes(d);
+  const who = (s) => PERSONS.filter((p) => Math.sign(+v[PEOPLE_META[p].name] || 0) === s).map((p) => PEOPLE_META[p].name);
+  const ups = who(1), downs = who(-1);
+  const sub = [e.short || e.catLabel || cat(e.cat).label, e.price ? e.price.split('(')[0].split('·')[0].trim() : '', closed ? 'închis în ziua asta' : ''].filter(Boolean).join(' · ');
+  const vb = (val, ic, list, lbl) => `<button data-action="vote" data-key="${key}" data-ref="${esc(o.ref)}" data-v="${val}" class="vote-btn press ${mine === val ? (val > 0 ? 'on up' : 'on down') : ''}" aria-pressed="${mine === val}" aria-label="${lbl} ${esc(shortTitle(e.title))}" title="${list.length ? esc(list.join(', ')) : lbl}">${icon(ic, 'i-18' + (mine === val ? ' ms-fill' : ''))}<span>${list.length || ''}</span></button>`;
+  return `<div class="meal-row ${isC ? 'on' : ''} ${closed ? 'closed' : ''}">
+    <button data-action="open-detail" data-id="${esc(id)}" class="meal-row-main">${thumbHTML(e, 44)}<span class="min-w-0"><span class="meal-row-t">${esc(shortTitle(e.title))}${isC ? ' <span class="pill green">ales</span>' : ''}</span><span class="meal-row-s">${esc(sub)}</span></span></button>
+    <div class="meal-votes">${vb(1, 'thumb_up', ups, 'Votează pentru')}${vb(-1, 'thumb_down', downs, 'Votează împotrivă')}</div>
+    ${isC ? '' : `<button data-action="meal-pick" data-key="${key}" data-ref="${esc(o.ref)}" class="btn btn-sm btn-tonal press meal-pick" ${closed ? 'disabled' : ''}>Alegem</button>`}
+  </div>`;
+}
+function mealOptsHTML(key, max = 99) {
+  const [, m] = key.split('-'), rows = mealRows(key), chosen = mealChosen(key); if (rows.length < 2) return '';
+  const lead = rows.slice(1).find((o) => o.score > rows[0].score);
+  return `<div class="meal-opts">
+    <div class="meal-opts-h">${icon(m === 'lunch' ? 'lunch_dining' : 'restaurant', 'i-18 ms-fill')}<span>Variante pentru ${m === 'lunch' ? 'prânz' : 'cină'}</span><span class="cap">votați 👍 👎</span></div>
+    ${lead ? `<div class="meal-lead">${icon('ballot', 'i-16')} Favoritul voturilor: <b>${esc(shortTitle(lead.loc.title))}</b></div>` : ''}
+    ${rows.slice(0, max).map((o) => mealRowHTML(key, o, chosen)).join('')}
+    ${rows.length > max ? `<button data-action="open-detail" data-id="${esc(optId(chosen))}" class="meal-more press">Toate cele ${rows.length} variante ${icon('chevron_right', 'i-18')}</button>` : ''}
+  </div>`;
+}
+// ---------- Șterge orice loc din program (se poate pune înapoi) ----------
+const rawLoc = (id) => ITINERARY.find((l) => l.id === id) || state.custom.find((l) => l.id === id) || (String(id).startsWith('alt-') ? altAsLoc(Number(String(id).slice(4))) : null);
+async function removeLoc(id) {
+  const loc = findLoc(id) || rawLoc(id); if (!loc || id === 'home') return;
+  if (!confirm(`Ștergi „${loc.title}” din program? Îl puteți pune înapoi din „Șterse”.`)) return;
+  const r = { ...(state.shared.removed || {}), [id]: { by: me(), at: Date.now() } }; state.shared.removed = r;
+  const patch = { removed: { [id]: r[id] } };
+  if (loc.mealSlot) { state.shared.mealPick = { ...(state.shared.mealPick || {}), [loc.mealSlot]: null }; patch.mealPick = { [loc.mealSlot]: null }; }
+  buzz(14); closeModals(); renderAll();
+  toast(`Șters: ${shortTitle(loc.title)}`, 'delete', 5000, { label: 'Anulează', run: () => restoreLoc(id) });
+  await saveShared(patch);
+}
+async function restoreLoc(id) { state.shared.removed = { ...(state.shared.removed || {}), [id]: null }; renderAll(); toast(`Pus înapoi: ${shortTitle(rawLoc(id)?.title || '')}`, 'restore_from_trash'); await saveShared({ removed: { [id]: null } }); }
+function removedHTML() {
+  const ids = Object.entries(state.shared.removed || {}).filter(([, v]) => v).sort((a, b) => (b[1].at || 0) - (a[1].at || 0)).map(([id]) => id).filter(rawLoc);
+  if (!ids.length) return '';
+  return `<div class="sec"><div class="sec-h"><h2 class="ttl-2">Șterse</h2><span class="cap">${ids.length} · se pot pune înapoi</span></div><div class="card list">${ids.map((id) => { const l = rawLoc(id), r = state.shared.removed[id]; return `<div class="li tight">${thumbHTML(l, 40)}<div class="min-w-0 flex-1"><div class="font-medium truncate">${esc(l.title)}</div><div class="cap truncate">${DAYS.includes(l.day) ? DAY_LABEL[l.day] + ' · ' : ''}șters de ${esc(r.by || 'noi')}</div></div><button data-action="restore-loc" data-id="${esc(id)}" class="btn btn-sm btn-outline press">${icon('undo', 'i-18')} Pune înapoi</button></div>`; }).join('')}</div></div>`;
+}
 
 // ---------- Păreri de la noi, pe fiecare loc ----------
 const commentsOf = (id) => (Array.isArray(state.shared.comments?.[id]) ? state.shared.comments[id] : []);
@@ -702,9 +832,11 @@ function photoSheetHTML(id) {
         <div class="flex gap-2"><input type="url" id="photoUrl" inputmode="url" placeholder="https://…" value="${esc(cur?.url || '')}" class="input flex-1 min-w-0" aria-label="Link poză"><button type="submit" class="btn btn-tonal press">Salvează</button></div>
       </form>
     </div>
+    <h3 class="ttl-3 mt-5 mb-2 flex items-center gap-2">${icon('image_search', 'i-20', 'color: var(--brand)')} Alege o poză potrivită</h3>
+    <div id="photoPicks"><p class="cap">Caut poze făcute chiar acolo…</p></div>
     ${cur ? `<button data-action="photo-remove" data-id="${esc(id)}" class="btn btn-text btn-danger press mt-3">${icon('delete', 'i-20')} Scoate poza noastră</button>` : ''}<div style="height:12px"></div>`;
 }
-function openPhotoSheet(id) { openSheet(photoSheetHTML(id)); }
+function openPhotoSheet(id) { openSheet(photoSheetHTML(id)); loadPhotoPicks(id); }
 async function savePhotoDoc(id, doc) { state.photos[id] = doc; if (fb && state.online && !String(id).startsWith('local-')) { const { db, fs } = fb; await fs.setDoc(fs.doc(db, 'trips', TRIP_ID, 'photos', id), { ...doc, at: fs.serverTimestamp() }); } else lsSet(LS.photos, state.photos); }
 async function savePhotoUrl(id, url, quiet = false) {
   url = (url || '').trim(); if (!/^https:\/\/\S+$/i.test(url) || url.length > 600) return toast('Linkul trebuie să înceapă cu https://', 'link');
@@ -888,7 +1020,7 @@ async function coffeeAdd() {
 async function coffeeUndo() { const log = (state.shared.coffeeLog || []).slice(0, -1); state.shared.coffeeLog = log; state.shared.coffeeCount = counterOf('coffee'); await saveShared({ coffeeLog: log, coffeeCount: state.shared.coffeeCount }); $('#coffeeBody').innerHTML = coffeeSheetHTML(); renderUs(); }
 async function bumpCounter(key, delta) { const counters = { ...(state.shared.counters || {}) }; counters[key] = Math.max(0, (counters[key] || 0) + delta); state.shared.counters = counters; renderUs(); await saveShared({ counters }); }
 async function bucketSet(person, id, patch) { const b = { ...(state.shared.bucket || {}) }; const p = { ...(b[person] || {}) }; p[id] = { ...(p[id] || {}), ...patch }; b[person] = p; state.shared.bucket = b; renderUs(); await saveShared({ bucket: b }); }
-async function bucketDel(person, id) { const b = { ...(state.shared.bucket || {}) }; const p = { ...(b[person] || {}) }; delete p[id]; b[person] = p; state.shared.bucket = b; renderUs(); await saveShared({ bucket: b }); }
+async function bucketDel(person, id) { const b = { ...(state.shared.bucket || {}) }; const p = { ...(b[person] || {}) }; p[id] = { hidden: true }; b[person] = p; state.shared.bucket = b; renderUs(); await saveShared({ bucket: b }); }
 
 // ---------- Programare (mută un loc în altă zi) ----------
 let scheduleId = null;
@@ -964,7 +1096,7 @@ async function connectFirebase() {
       state.custom = snap.docs.map((d) => ({ id: d.id, isCustom: true, ...d.data() })); lsSet(LS.locations, state.custom); renderAll(); refreshDetail();
       if (first) { first = false; state.online = true; setSyncStatus('online'); syncLocalLocations(local); }
     }, (err) => { console.error(err); state.online = false; setSyncStatus('local', err.message); toast('Nu m-am putut conecta la baza de date. Salvez local.', 'info'); });
-    fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters', 'times', 'days', 'comments', 'booked']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.expenses)) state.shared.expenses = d.expenses; if (d.reactions && typeof d.reactions === 'object') state.shared.reactions = d.reactions; if (d.packing && typeof d.packing === 'object') state.shared.packing = d.packing; if (Array.isArray(d.packAdd)) state.shared.packAdd = d.packAdd; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
+    fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters', 'times', 'days', 'comments', 'booked', 'removed', 'mealPick', 'votes']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.expenses)) state.shared.expenses = d.expenses; if (d.reactions && typeof d.reactions === 'object') state.shared.reactions = d.reactions; if (d.packing && typeof d.packing === 'object') state.shared.packing = d.packing; if (Array.isArray(d.packAdd)) state.shared.packAdd = d.packAdd; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
     fs.onSnapshot(fs.collection(db, 'trips', TRIP_ID, 'photos'), (snap) => { state.photos = {}; snap.forEach((d) => { state.photos[d.id] = d.data(); }); renderAll(); refreshDetail(); }, (err) => console.error(err));
   } catch (err) { console.error(err); setSyncStatus('local', err.message); }
 }
@@ -973,7 +1105,7 @@ async function syncLocalLocations(local) {
   for (const l of local) { const { id, isCustom, createdAt, ...data } = l; try { await fb.fs.addDoc(fb.fs.collection(fb.db, 'trips', TRIP_ID, 'locations'), { ...data, createdAt: fb.fs.serverTimestamp() }); n++; } catch (e) { console.warn('sync', e); } }
   if (n) toast(`${n} ${n > 1 ? 'locuri salvate' : 'loc salvat'} fără semnal ${n > 1 ? 'au' : 'a'} ajuns în programul comun.`, 'cloud_done');
 }
-async function saveShared(patch) { Object.assign(state.shared, patch); if (fb && state.online) { const { db, fs } = fb; await fs.setDoc(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), { ...patch, updatedAt: fs.serverTimestamp() }, { merge: true }); } else persistLocal(); }
+async function saveShared(patch) { for (const [k, v] of Object.entries(patch)) { const cur = state.shared[k]; state.shared[k] = v && cur && typeof v === 'object' && typeof cur === 'object' && !Array.isArray(v) && !Array.isArray(cur) ? { ...cur, ...v } : v; } if (fb && state.online) { const { db, fs } = fb; await fs.setDoc(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), { ...patch, updatedAt: fs.serverTimestamp() }, { merge: true }); } else persistLocal(); }
 async function saveLocation(data, editingId) {
   if (fb && state.online && !(editingId && String(editingId).startsWith('local-'))) { const { db, fs } = fb; if (editingId) { await fs.updateDoc(fs.doc(db, 'trips', TRIP_ID, 'locations', editingId), data); return editingId; } const ref = await fs.addDoc(fs.collection(db, 'trips', TRIP_ID, 'locations'), { ...data, createdAt: fs.serverTimestamp() }); return ref.id; }
   if (editingId) { state.custom = state.custom.map((l) => (l.id === editingId ? { ...l, ...data } : l)); persistLocal(); renderAll(); return editingId; }
@@ -1380,7 +1512,7 @@ function hqBoardHTML() {
       let leg = '';
       if (prev && sl.leg && sl.start > prev.end) { const gTop = y(prev.end), gH = y(sl.start) - gTop; if (gH >= 13) leg = `<div class="hq-leg-gap" style="top:${gTop}px;height:${gH}px">${icon(sl.leg.icon, 'i-16')}${gH >= 20 ? `<span>${fmtMin(sl.leg.min)}</span>` : ''}</div>`; }
       prev = sl; const v = !!state.shared.visited[loc.id], b = bookOf(loc), needB = needsBooking(b) && !isBooked(loc.id), rx = reactionsOf(loc.id), rxs = Object.values(rx), who = whoHas(loc.id);
-      const flags = [bad.has(loc.id) ? icon('warning', 'i-16 ms-fill', 'color: var(--red)') : '', v ? icon('check_circle', 'i-16 ms-fill', 'color: var(--green)') : '', needB ? icon('event_upcoming', 'i-16', 'color: var(--amber)') : isBooked(loc.id) ? icon('event_available', 'i-16 ms-fill', 'color: var(--green)') : '', loc.id === p.coffeeId ? icon('coffee', 'i-16 ms-fill', 'color: #8D5524') : ''].filter(Boolean).join('');
+      const flags = [bad.has(loc.id) ? icon('warning', 'i-16 ms-fill', 'color: var(--red)') : '', v ? icon('check_circle', 'i-16 ms-fill', 'color: var(--green)') : '', needB ? icon('event_upcoming', 'i-16', 'color: var(--amber)') : isBooked(loc.id) ? icon('event_available', 'i-16 ms-fill', 'color: var(--green)') : '', loc.id === p.coffeeId ? icon('coffee', 'i-16 ms-fill', 'color: #8D5524') : '', mealSlotOf(loc) && mealRows(mealSlotOf(loc)).length > 1 ? icon('ballot', 'i-16', 'color: var(--green)') : ''].filter(Boolean).join('');
       const label = `${DAY_LABEL[d]}, ${hhmm(sl.start)}–${hhmm(sl.end)}: ${loc.title}, ${c.label}${v ? ', am fost' : ''}${needB ? ', de rezervat' : isBooked(loc.id) ? ', rezervat' : ''}${bad.has(loc.id) ? ', are o problemă' : ''}`;
       return `${leg}<button data-action="open-detail" data-id="${esc(loc.id)}" data-hq-id="${esc(loc.id)}" class="hq-blk k-${ck} ${v ? 'done' : ''} ${bad.has(loc.id) ? 'bad' : ''} ${h < 34 ? 'tiny' : ''} ${loc.id === p.coffeeId ? 'am-coffee' : ''} ${lane[si]}" style="top:${top}px;height:${h}px;--lines:${Math.max(1, Math.min(3, Math.floor((h - 22 - (h >= 52 && (rxs.length || who.length) ? 16 : 0)) / 16)))}" aria-label="${esc(label)}" title="${esc(label)}">
         <span class="hq-blk-h">${icon(en.icon || c.icon, 'i-16')}<span class="hq-blk-t">${esc(shortTitle(loc.title))}</span>${flags ? `<span class="hq-blk-f">${flags}</span>` : ''}</span>
@@ -1450,7 +1582,11 @@ function hqPanelsHTML(s) {
       <span class="hq-bar-v tabular">${x.e ? '≈ ' + eurN(x.e) : '—'}</span></button>`).join('')}</div>
     <button data-action="hq-open-budget" class="btn btn-sm btn-outline press mt-4">${icon('payments', 'i-18')} Cheltuieli și împărțeala</button>
   </section>`;
-  return ready + people + voices + budget;
+  const meals = `<section class="hq-panel hq-meals"><h2 class="hq-h">Prânz și cină</h2><div class="hq-meal-grid"><span></span><span class="cap">Prânz</span><span class="cap">Cină</span>
+    ${DAYS.map((d) => `<span class="hq-meal-d"><i style="background:${DAY_THEMES[d].color}"></i>${DAY_SHORT[d][0]} ${DAY_SHORT[d][1]}</span>${['lunch', 'dinner'].map((m) => { const rows = mealRows(`${d}-${m}`); if (!rows.length) return '<span class="hq-meal cap">—</span>'; const c = rows[0], lead = rows.slice(1).find((o) => o.score > c.score);
+      return `<button data-action="open-detail" data-id="${esc(optId(c.ref))}" class="hq-meal"><b>${esc(shortTitle(c.loc.title))}</b><span>${rows.length > 1 ? `${rows.length} variante` : 'o singură variantă'}${c.score ? ` · ${c.score > 0 ? '+' : ''}${c.score} voturi` : ''}${lead ? ` · favorit: ${esc(shortTitle(lead.loc.title))}` : ''}</span></button>`; }).join('')}`).join('')}
+  </div><p class="cap mt-3">Deschideți o masă ca să votați 👍 / 👎 variantele și să alegeți.</p></section>`;
+  return ready + people + meals + voices + budget;
 }
 function renderHQMapBar() {
   const bar = $('#hqMapBar'), note = $('#hqMapNote'); if (!bar) return; const d = hqDay(), p = planDay(d), th = DAY_THEMES[d];
@@ -1553,7 +1689,7 @@ document.addEventListener('click', (e) => {
     'toggle-theme': toggleTheme, 'close-modal': () => { addState = null; closeModals(); }, 'open-add': () => openAdd(),
     'copy-link': () => copyText($('#shareUrl').value, 'Linkul a fost copiat.'), 'copy-summary': () => copyText(`${SUMMARY_TEXT}\n\n${location.href.split('#')[0].split('?')[0]}`, 'Programul a fost copiat.'),
     'open-detail': () => { if (addState) { addState = null; $('#addSheet').classList.add('hidden'); clearNewMarker(); } $('#coffeeSheet').classList.add('hidden'); openDetail(id); }, 'delete-loc': () => deleteLocation(id), 'edit-loc': () => { const l = state.custom.find((x) => x.id === id); if (l) openAdd({ editing: l }); },
-    'toggle-visited': () => toggleVisited(id, el), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => { homeOpen = false; openPhotoSheet(id); }, 'photo-file': () => { $('#coffeeSheet').classList.add('hidden'); state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); }, 'photo-remove': () => removePhoto(id),
+    'toggle-visited': () => toggleVisited(id, el), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => { homeOpen = false; openPhotoSheet(id); }, 'photo-file': () => { $('#coffeeSheet').classList.add('hidden'); state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); }, 'photo-remove': () => removePhoto(id), 'photo-pick': () => savePhotoUrl(id, el.dataset.url),
     'day-route': dayRoute, 'locate': locate, 'open-link': () => window.open(el.dataset.href, '_blank', 'noopener'), 'close-banner': () => $('#radarBanner').classList.add('hidden'), 'install': installApp, 'open-install': openInstallSheet, 'refresh': hardRefresh,
     'speak': () => { $$('.phr-say.speaking').forEach((x) => x.classList.remove('speaking')); el.classList.add('speaking'); speak(el.dataset.text, el.dataset.lang || 'es-ES'); const done = () => el.classList.remove('speaking'); setTimeout(done, 2200); if (canSpeak()) window.speechSynthesis.addEventListener('end', done, { once: true }); },
     'pack-toggle': () => { packingOpen = !packingOpen; renderPacking(); }, 'pack-item': () => packToggleItem(el.dataset.key), 'pack-add': () => packAddItem(el.dataset.cat), 'pack-del': () => packDelItem(el.dataset.key),
@@ -1561,6 +1697,7 @@ document.addEventListener('click', (e) => {
     'exp-day': () => { expenseDraft.day = el.dataset.day; $$('#expDays .chip').forEach((c) => c.classList.toggle('on', c === el)); },
     'exp-who': () => { expenseDraft.by = PEOPLE_META[el.dataset.person].name; $$('[data-action="exp-who"]').forEach((c) => c.classList.toggle('on', c === el)); },
     'react': () => toggleReaction(el.dataset.id, el.dataset.k), 'open-comments': () => openComments(el.dataset.id),
+    'vote': () => castVote(el.dataset.key, el.dataset.ref, Number(el.dataset.v)), 'meal-pick': () => pickMeal(el.dataset.key, el.dataset.ref), 'remove-loc': () => removeLoc(id), 'restore-loc': () => restoreLoc(id),
     'whoami': () => openWhoAmI(false), 'who-set': () => setMe(el.dataset.person),
     'hq-day': () => hqSetDay(el.dataset.day), 'hq-open-day': () => { switchDay(el.dataset.day); setView('plan'); }, 'hq-route': () => { switchDay(el.dataset.day); dayRoute(); },
     'hq-open-plan': () => setView('plan'), 'hq-open-map': () => setView('explore'), 'hq-open-budget': () => setView('budget'),
