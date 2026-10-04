@@ -215,7 +215,7 @@ function ripple(e) { const el = e.target.closest('.press'); if (!el) return; con
 // ---------- Timp ----------
 function todayKey() { const t = new Date(), iso = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; return DAYS.find((d) => TRIP.days[d] === iso) || null; }
 function isNow(loc) { if (todayKey() !== loc.day) return false; const r = parseRange(loc.time); if (!r) return false; const m = new Date().getHours() * 60 + new Date().getMinutes(); return m >= r.from - 15 && m <= r.to; }
-function countdownText() { const start = new Date(TRIP.days.thu + 'T00:00:00'), end = new Date(TRIP.days.mon + 'T23:59:59'), now = new Date(); const days = Math.ceil((start - now) / 86400000); if (now > end) return 'A fost o excursie frumoasă'; if (days > 1) return `Barcelona · peste ${days} zile`; if (days === 1) return 'Mâine plecăm!'; return 'Suntem în Barcelona'; }
+function countdownText() { const start = new Date(TRIP.days.thu + 'T00:00:00'), end = new Date(TRIP.days.mon + 'T23:59:59'), now = new Date(); const mid = new Date(now); mid.setHours(0, 0, 0, 0); const cal = Math.round((start - mid) / 86400000), days = Math.floor((new Date(TRIP.days.thu + 'T08:45:00') - now) / 86400000); if (now > end) return 'A fost o excursie frumoasă'; if (cal > 1) return `Barcelona · peste ${roN(Math.max(days, 1), 'zi', 'zile')}`; if (cal === 1) return 'Mâine plecăm!'; return 'Suntem în Barcelona'; }
 
 // ---------- Categorii ----------
 const CAT = { coffee: { cls: 'c-coffee', icon: 'local_cafe', label: 'Cafea & bere' }, food: { cls: 'c-food', icon: 'restaurant', label: 'Mâncare' }, sweet: { cls: 'c-sweet', icon: 'icecream', label: 'Dulciuri' }, shop: { cls: 'c-shop', icon: 'local_mall', label: 'Shopping' }, fun: { cls: 'c-fun', icon: 'attractions', label: 'Distracție' }, art: { cls: 'c-art', icon: 'palette', label: 'Artă & vederi' } };
@@ -334,7 +334,7 @@ function renderDates() {
 }
 function essHTML(e) {
   const it = (ok, ic, txt) => `<span class="ess ${ok ? 'ok' : 'miss'}">${icon(ic, 'i-18 ms-fill')}${txt}</span>`;
-  return `<div class="ess-row mt-3" aria-label="Esențialele zilei">${it(e.coffee >= 2, 'coffee', `${e.coffee} cafenele`)}${it(e.lunch, 'lunch_dining', 'prânz')}${it(e.dinner, 'restaurant', 'cină')}${it(e.sweet >= 2, 'icecream', `${e.sweet} dulciuri`)}</div>`;
+  return `<div class="ess-row mt-3" aria-label="Esențialele zilei">${it(e.coffee >= 2, 'coffee', (e.coffee >= 2 ? `${e.coffee} cafenele` : `${e.coffee}/2 cafenele`))}${it(e.lunch, 'lunch_dining', 'prânz')}${it(e.dinner, 'restaurant', 'cină')}${it(e.sweet >= 2, 'icecream', (e.sweet >= 2 ? `${e.sweet} dulciuri` : `${e.sweet}/2 dulciuri`))}</div>`;
 }
 function renderSummary() {
   const s = daySummary(state.day), el = $('#daySummary'); if (!el) return; const lv = s.plan.level, iss = s.plan.issues;
@@ -385,7 +385,7 @@ function stopHTML(loc, slot = null, amCoffee = false) {
 }
 function legHTML(a, b, day) {
   const g = legOf(a, b, day); if (!g) return '';
-  return `<li class="leg"><div class="tm"></div><div class="rail"><span class="walker">${icon(g.icon, 'i-18')}</span></div><div class="body"><span><b style="color: var(--text); font-weight: 500">${fmtMin(g.min)}</b> ${g.label} · ${fmtDist(g.d * (g.mode === 'walking' ? 1.3 : 1))}</span><a href="${esc(mapsLeg(a, b, g.mode))}" target="_blank" rel="noopener">Traseu</a></div></li>`;
+  return `<li class="leg"><div class="tm"></div><div class="rail"><span class="walker">${icon(g.icon, 'i-18')}</span></div><div class="body"><span><b style="color: var(--text); font-weight: 500">${fmtMin(g.min)}</b> ${g.label} · ${fmtDist(g.d * (g.mode === 'walking' ? 1.3 : 1))}</span><a href="${esc(mapsLeg(a, b, g.mode))}" target="_blank" rel="noopener" aria-label="Traseu spre ${esc(shortTitle(b.title || ''))}">Traseu</a></div></li>`;
 }
 function shortName(l) { const t = shortTitle(l.title); return esc(t.length > 20 ? t.split(' ').slice(0, 2).join(' ') : t); }
 function warnHTML(is) {
@@ -1304,7 +1304,7 @@ function openAdd({ shared = null, editing = null, place = null, nearby = null } 
 }
 function placeRowHTML(pl, i, from) {
   const s = suggestFor(pl.lat != null ? pl : null, null, pl.cat); const c = cat(pl.cat);
-  const hint = s.day !== 'pool' ? `<span class="t-blue">${DAY_SHORT[s.day][0]} ${DAY_SHORT[s.day][1]}, ${s.time.split(' ')[0]}</span> · lângă ${esc(shortTitle(s.afterTitle))}${s.noFit ? ' · <span style="color: #B06000">nu încape</span>' : ''}` : pl.lat != null ? 'departe de program · la dorite' : '';
+  const hint = s.day !== 'pool' ? `<span class="t-blue">${DAY_SHORT[s.day][0]} ${DAY_SHORT[s.day][1]}, ${s.time.split(' ')[0]}</span> · lângă ${esc(shortTitle(s.afterTitle))}${s.noFit ? ' · <span style="color: var(--amber)">nu încape</span>' : ''}` : pl.lat != null ? 'departe de program · la dorite' : '';
   return `<button class="li press" data-action="add-choose" data-from="${from}" data-i="${i}"><span class="cat-ic ${c.cls}">${icon(c.icon, 'i-20')}</span><div class="min-w-0 flex-1 text-left"><div class="font-medium truncate">${esc(pl.title)}</div><div class="cap truncate">${esc(pl.address || c.label)}</div>${hint ? `<div class="cap truncate mt-0.5">${hint}</div>` : ''}</div>${icon('add', 't-3 i-20')}</button>`;
 }
 function localMatches(q) {
@@ -1329,7 +1329,7 @@ function renderAdd() {
       </div>` : ''}
       ${a.link ? `<div class="card-flat p-3 mt-3 flex gap-3">${icon(a.link.source === 'gmaps' ? 'gmaps' : 'link', 'i-20', 'color: var(--blue)')}<div class="min-w-0 flex-1"><div class="font-medium">${esc(SOURCE[a.link.source] || 'Link')} atașat</div><div class="cap">${esc(a.linkHint)}</div></div><button data-action="add-unlink" class="icon-btn sm press" aria-label="Scoate linkul">${icon('close', 'i-18')}</button></div>` : ''}
       ${existing.length ? `<h3 class="cap mt-5 mb-2">Deja în program</h3><div class="card list">${existing.map((l) => `<button class="li press" data-action="open-detail" data-id="${esc(l.id)}">${thumbHTML(l, 40)}<div class="min-w-0 flex-1 text-left"><div class="font-medium truncate">${esc(l.title)}</div><div class="cap">${esc(pickSub(l))}</div></div>${icon('chevron_right', 't-3 i-20')}</button>`).join('')}</div>` : ''}
-      ${a.local.length ? `<h3 class="cap mt-5 mb-2">${a.q ? 'Din recomandările noastre' : `Recomandări pentru ${DAY_LABEL[state.day]}`}</h3><div class="card list">${a.local.map((pl, i) => placeRowHTML(pl, i, 'local')).join('')}</div>` : ''}
+      ${a.local.length ? `<h3 class="cap mt-5 mb-2">${a.q ? 'Din recomandările noastre' : 'Recomandări, fiecare în ziua în care sunteți prin zonă'}</h3><div class="card list">${a.local.map((pl, i) => placeRowHTML(pl, i, 'local')).join('')}</div>` : ''}
       ${a.loading ? `<div class="cap mt-5 flex items-center gap-2">${icon('hourglass_top', 'i-18')} Caut pe hartă…</div>` : ''}
       ${a.results === null ? `<div class="card-flat p-3 mt-5 t-2">Căutarea pe hartă nu merge acum (fără semnal?). Poți adăuga doar cu numele.</div>` : a.results.length ? `<h3 class="cap mt-5 mb-2">${a.nearby ? 'Locuri în jurul pinului' : 'Pe hartă'}</h3><div class="card list">${a.results.map((pl, i) => placeRowHTML(pl, i, 'geo')).join('')}</div>` : (a.q.trim().length > 2 && !a.loading ? `<div class="cap mt-5">Nimic pe hartă pentru „${esc(a.q)}”. Încearcă alt cuvânt sau adaugă doar cu numele.</div>` : '')}
       ${a.q.trim() || a.nearby ? `<button data-action="add-nameonly" class="btn btn-text press mt-3" style="padding: 0">${icon('edit', 'i-20')} ${a.nearby ? 'Folosește doar punctul de pe hartă' : `Adaugă „${esc(a.q.trim().slice(0, 28))}” fără căutare`}</button>` : `<p class="cap mt-4">Scrie 2–3 litere din nume: caut pe hartă, în jurul Barcelonei, și îl pun în ziua în care sunteți prin zonă.</p>`}
@@ -1497,6 +1497,11 @@ function ensureMap() {
 }
 function homeMarker() { if (!state.map || state.homeMarker) return; const b = TRIP.base; state.homeMarker = L.marker([b.lat, b.lng], { icon: L.divIcon({ className: '', html: `<div class="pin home">${icon('hotel', 'i-16 ms-fill')}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] }), zIndexOffset: 500 }).addTo(state.map); state.homeMarker.on('click', () => openHome()); }
 function updateMeMarker() { if (!state.map || !state.pos) return; const ll = [state.pos.lat, state.pos.lng]; if (!state.meMarker) state.meMarker = L.marker(ll, { icon: L.divIcon({ className: '', html: '<div class="me"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }), zIndexOffset: 1000 }).addTo(state.map); else state.meMarker.setLatLng(ll); }
+// Încadrează harta pe locurile din oraș; un singur punct departe (aeroportul) nu mai micșorează totul
+function coreBounds(pts) {
+  if (pts.length < 4) return pts; const med = (i) => pts.map((p) => p[i]).sort((a, b) => a - b)[pts.length >> 1], c = { lat: med(0), lng: med(1) };
+  const near = pts.filter((p) => distanceM(c, { lat: p[0], lng: p[1] }) < 6000); return near.length >= pts.length * 0.7 ? near : pts;
+}
 function renderMap() {
   renderDates(); if (!state.map) return; state.markers.forEach((m) => m.remove()); state.markers = []; state.markerById = {}; state.focusMarker?.remove(); state.focusMarker = null; const bounds = []; let n = 0; const list = dayItems(state.day);
   const label = (m, l) => m.bindTooltip(esc(shortTitle(l.title || '')), { permanent: true, direction: 'bottom', offset: [0, 10], className: 'pin-lbl' });
@@ -1505,7 +1510,7 @@ function renderMap() {
   for (const loc of list) (enriched(loc).variants || []).forEach((v, i) => { if (typeof v.lat !== 'number') return; const m = L.marker([v.lat, v.lng], { icon: L.divIcon({ className: '', html: `<div class="pin custom" style="width:22px;height:22px;font-size:10px">${i + 1}</div>`, iconSize: [22, 22], iconAnchor: [11, 11] }) }).addTo(state.map); m.on('click', () => openDetail(loc.id)); state.markers.push(m); });
   for (const z of DAY_ZONES[state.day] || []) ALTERNATIVES.forEach((a, i) => { if (a.zone !== z || typeof a.lat !== 'number') return; const m = L.marker([a.lat, a.lng], { icon: L.divIcon({ className: '', html: '<div class="pin alt">+</div>', iconSize: [20, 20], iconAnchor: [10, 10] }) }).addTo(state.map); m.on('click', () => openDetail('alt-' + i)); label(m, a); state.markers.push(m); state.markerById['alt-' + i] = m; });
   state.custom.filter(isPool).forEach((l) => { const p = coordsOf(l); if (!p) return; const m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: `<div class="pin alt" style="color: #E0457B">${icon('bookmark', 'i-16 ms-fill')}</div>`, iconSize: [20, 20], iconAnchor: [10, 10] }) }).addTo(state.map); m.on('click', () => openDetail(l.id)); label(m, l); state.markers.push(m); state.markerById[l.id] = m; });
-  homeMarker(); updateMeMarker(); const fid = state.focusId || (state.focusHold && Date.now() < state.focusHold.until ? state.focusHold.id : null); if (fid) { focusOnMap(fid); return; } if (bounds.length && !state.picking) state.map.fitBounds(bounds, { padding: [80, 40], maxZoom: 15 }); setTimeout(() => state.map.invalidateSize(), 60);
+  homeMarker(); updateMeMarker(); const fid = state.focusId || (state.focusHold && Date.now() < state.focusHold.until ? state.focusHold.id : null); if (fid) { focusOnMap(fid); return; } if (bounds.length && !state.picking) state.map.fitBounds(coreBounds(bounds), { padding: [80, 40], maxZoom: 15 }); setTimeout(() => state.map.invalidateSize(), 60);
 }
 
 // =====================================================================
@@ -1594,7 +1599,7 @@ function hqBoardHTML() {
           <span class="hq-col-n">${esc(th.name)}</span>
           <span class="hq-col-m">${roN(p.slots.length, 'oprire', 'opriri')}${p.walkT ? ` · ${fmtMin(p.walkT)} pe jos` : ''}</span>
           <span class="hq-col-w">${icon(w.ic, 'i-16 ms-fill', 'color: var(--star)')}${esc(w.txt)}${w.live && w.rain != null ? ` · ${w.rain}% ploaie` : w.live ? '' : ' de obicei'}</span>
-          <span class="hq-col-e">${ok(e.coffee >= 2, 'coffee', `${e.coffee} cafenele`)}${ok(e.lunch, 'lunch_dining', 'prânz')}${ok(e.dinner, 'restaurant', 'cină')}${ok(e.sweet >= 2, 'icecream', `${e.sweet} dulciuri`)}<span class="hq-col-in">${p.issues.length ? `${icon('warning', 'i-16 ms-fill', 'color: var(--red)')}${p.issues.length}` : ''}</span></span>
+          <span class="hq-col-e">${ok(e.coffee >= 2, 'coffee', (e.coffee >= 2 ? `${e.coffee} cafenele` : `${e.coffee}/2 cafenele`))}${ok(e.lunch, 'lunch_dining', 'prânz')}${ok(e.dinner, 'restaurant', 'cină')}${ok(e.sweet >= 2, 'icecream', (e.sweet >= 2 ? `${e.sweet} dulciuri` : `${e.sweet}/2 dulciuri`))}<span class="hq-col-in">${p.issues.length ? `${icon('warning', 'i-16 ms-fill', 'color: var(--red)')}${p.issues.length}` : ''}</span></span>
         </button>
         <button data-action="hq-open-day" data-day="${d}" class="icon-btn sm press hq-col-open" aria-label="Deschide ${DAY_LABEL[d]} în Plan" title="Deschide ziua">${icon('open_in_new', 'i-18')}</button>
       </div>
@@ -1680,7 +1685,7 @@ function ensureHQMap() {
   setTimeout(() => { state.hqMap?.invalidateSize(); hqFit(); }, 80);
 }
 let hqBounds = null;
-function hqFit() { if (state.hqMap && hqBounds?.length) state.hqMap.fitBounds(hqBounds, { padding: [44, 44], maxZoom: 15 }); }
+function hqFit() { if (state.hqMap && hqBounds?.length) state.hqMap.fitBounds(coreBounds(hqBounds), { padding: [44, 44], maxZoom: 15 }); }
 function renderHQMap() {
   const map = state.hqMap; if (!map) return; hq.layers.forEach((l) => l.remove()); hq.layers = []; hq.pins = {};
   const d = hqDay(), color = DAY_THEMES[d].color, surf = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#fff';

@@ -7,21 +7,21 @@
 :root {
   --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #F8F9FA; --surface-3: #F1F3F4; --surface-4: #E8EAED;
   --line: #DADCE0; --line-soft: #ECEDEF;
-  --text: #202124; --text-2: #5F6368; --text-3: #80868B;
+  --text: #202124; --text-2: #5F6368; --text-3: #6A6F74;
   --blue: #1A73E8; --blue-strong: #1967D2; --blue-soft: #E8F0FE; --on-blue: #FFFFFF;
-  --green: #188038; --green-soft: #E6F4EA; --red: #D93025; --red-soft: #FCE8E6;
-  --amber: #B06000; --amber-soft: #FEF7E0; --star: #F9AB00;
+  --green: #137333; --green-soft: #E6F4EA; --red: #D93025; --red-soft: #FCE8E6;
+  --amber: #9A5200; --amber-soft: #FEF7E0; --star: #F9AB00;
   --purple: #8430CE; --purple-soft: #F3E8FD; --pink: #C5157A; --pink-soft: #FDE7F3;
   --shadow-1: 0 1px 2px rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
   --shadow-2: 0 1px 3px rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15);
   --ease: cubic-bezier(.2, 0, 0, 1); --spring: cubic-bezier(.34, 1.4, .64, 1);
   --brand: #C8102E; --brand-soft: #FFF3B8; /* roșu și galben catalan (senyera) */
-  --p-mara: #E0457B; --p-mara-on: #FFFFFF; --p-anne: #0B4F3C; --p-anne-on: #A9DDFF; --p-daniel: #1A73E8; --p-daniel-on: #FFFFFF;
+  --p-mara: #C93468; --p-mara-on: #FFFFFF; --p-anne: #0B4F3C; --p-anne-on: #A9DDFF; --p-daniel: #1A73E8; --p-daniel-on: #FFFFFF;
 }
 .dark {
   --bg: #202124; --surface: #202124; --surface-2: #28292C; --surface-3: #303134; --surface-4: #3C4043;
   --line: #3C4043; --line-soft: #303134;
-  --text: #E8EAED; --text-2: #9AA0A6; --text-3: #80868B;
+  --text: #E8EAED; --text-2: #9AA0A6; --text-3: #8E9499;
   --blue: #8AB4F8; --blue-strong: #AECBFA; --blue-soft: #2D3A50; --on-blue: #202124;
   --green: #81C995; --green-soft: #1E3A29; --red: #F28B82; --red-soft: #4A2522;
   --amber: #FDD663; --amber-soft: #3F3620; --star: #FDD663;
@@ -42,7 +42,8 @@ body { background: var(--bg); color: var(--text); font-family: 'Google Sans', Ro
 .kicker .ov-date { color: var(--text-2); text-transform: none; letter-spacing: 0; font-size: 13px; }
 .kicker .ov-pill { margin-left: auto; padding: 3px 10px; border-radius: 99px; background: var(--brand-soft); color: var(--brand); text-transform: none; letter-spacing: 0; white-space: nowrap; }
 .kicker .ov-pill:empty { display: none; }
-.page-sub { margin-top: 6px; font-size: 15px; line-height: 22px; color: var(--text-2); }
+.page-sub { margin-top: 6px; font-size: 15px; line-height: 22px; color: var(--text-2); text-wrap: pretty; }
+.h-display, .ttl-2 { text-wrap: balance; } p, .t-2, .cap { text-wrap: pretty; }
 @media (max-width: 380px) { .h-display { font-size: 26px; line-height: 32px; } .theme-ic { width: 36px; height: 36px; } }
 .cap { font-size: 12px; line-height: 16px; color: var(--text-2); } .tabular { font-variant-numeric: tabular-nums; }
 .wrap { max-width: 640px; margin: 0 auto; padding: 0 16px; }
@@ -286,7 +287,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .lvl { display: inline-block; width: 8px; height: 8px; border-radius: 99px; background: var(--lv); vertical-align: 2px; margin-left: 4px; }
 /* Buton mare „Traseul zilei” */
 .route-cta { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 16px 16px 16px 4px; background: var(--blue); color: #fff; box-shadow: 0 4px 12px color-mix(in srgb, var(--blue) 30%, transparent); }
-.route-cta b { font-weight: 500; font-size: 16px; } .route-cta .block { font-size: 12px; opacity: .85; }
+.route-cta b { font-weight: 500; font-size: 16px; } .route-cta .block { font-size: 12px; }
 .route-cta .gm { width: 40px; height: 40px; border-radius: 99px; background: #fff; display: grid; place-items: center; flex-shrink: 0; }
 .dark .route-cta { color: #202124; }
 /* Avertismente: nu încape */
@@ -787,9 +788,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .hq-legend-row .sep { width: 1px; height: 14px; background: var(--line); }
 .hq-legend-row + .hq-board .hq-col:last-child .hq-col-h, .hq-legend-row + .hq-board .hq-axis-h { border-radius: 0; }
 
-/* Butoanele principale „Adaugă”: în stil senyera, galben cu roșu */
-.fab, .side-add { background: var(--cat-yellow); color: #9B0D14; box-shadow: inset 0 -4px 0 var(--cat-red), 0 4px 14px rgba(218,18,26,.22), var(--shadow-1); }
-.fab:active, .side-add:active { box-shadow: inset 0 -2px 0 var(--cat-red), var(--shadow-1); }
+/* Butoanele principale „Adaugă”: crem cald cu roșu catalan, calm dar ușor de găsit */
+.fab, .side-add { --add-bg: color-mix(in srgb, var(--cat-yellow) 20%, var(--surface)); background: var(--add-bg); color: #B00E1F; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cat-red) 16%, transparent), 0 3px 10px rgba(120, 40, 0, .14), var(--shadow-1); }
+.fab > :first-child, .side-add > :first-child { color: var(--cat-red); }
+.fab:hover, .side-add:hover { --add-bg: color-mix(in srgb, var(--cat-yellow) 30%, var(--surface)); }
+.fab:active, .side-add:active { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cat-red) 24%, transparent), var(--shadow-1); }
+.dark .fab, .dark .side-add { --add-bg: color-mix(in srgb, var(--cat-yellow) 12%, var(--surface)); color: #FFB4A9; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cat-yellow) 22%, transparent), 0 3px 10px rgba(0,0,0,.4); }
+.dark .fab > :first-child, .dark .side-add > :first-child { color: var(--cat-yellow); }
 
 /* Etichete pe hartă: numele locului sub pin, doar când e destul de aproape */
 .leaflet-tooltip.pin-lbl { display: none; padding: 1px 6px; border: 0; border-radius: 6px; background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--text); font: 600 11px/1.35 var(--font, inherit); box-shadow: 0 1px 3px rgba(0,0,0,.25); white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
@@ -826,3 +831,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .srch-row { gap: 10px; border-left: 3px solid var(--cat); }
 .srch-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 99px; background: var(--cat); vertical-align: 1px; }
 @media (max-width: 1279px) { .side-srch .kbd { display: none; } }
+
+/* Ținte de atingere mai generoase pe telefon (fără să schimbe aspectul pe laptop) */
+.tl .dot::before { content: ""; position: absolute; inset: -14px; border-radius: 99px; }
+.tl .leg a { padding: 8px 10px; margin: -8px -6px; border-radius: 99px; }
+.tl .leg a:hover { background: var(--blue-soft); }
+@media (pointer: coarse) {
+  .chip { height: 36px; }
+  .icon-btn.sm { width: 36px; height: 36px; }
+  .appbar .me-chip, .appbar .wx { height: 36px; border-radius: 18px; }
+  .appbar .me-chip { min-width: 36px; justify-content: center; }
+  input[type="checkbox"].cb { width: 24px; height: 24px; }
+  button.sec-h { min-height: 44px; }
+}
+/* Rândul de acțiuni din fișă se derulează lateral: o estompare la margine arată că mai e ceva */
+@media (max-width: 767px) { .actions { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); padding-right: 32px; } }

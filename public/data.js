@@ -412,7 +412,7 @@ export const ITINERARY = [
     book: { need: 'recomandat', url: 'https://www.thefork.es/restaurante/casa-amalia-1950-mercat-de-la-concepcio-r617923', mail: 'reservas@casaamalia.com', tel: '+34934589458', note: 'Pe TheFork rezervați în 1 minut, cu confirmare pe loc. Cereți o masă înăuntru.' },
     img: {q: 'Mercat de la Concepció Barcelona'}, site: 'https://casaamalia.com', budget: '≈ 105–135 € pentru trei', day: 'sun', zone: 'eixample', cat: 'food', time: '19:15 – 20:45', catLabel: 'Cina: paella ca la carte',
     title: 'Casa Amàlia', short: 'Orez de top, lângă Mercat de la Concepció',
-    desc: 'Metrou L4 Jaume I → Passeig de Gràcia, apoi 10 minute pe jos (sau taxi ≈ 10 €). În topul Guía Repsol cu „50 de locuri unde să mănânci orez”; din 2020 are proprietari noi, iar fiecare ingredient din meniu are trecută taraba din piața de alături de unde vine. Bucătăria e deschisă non-stop, 13:00 – 23:00.',
+    desc: 'Metrou L4 Jaume I → Girona, apoi 5 minute pe jos. În topul Guía Repsol cu „50 de locuri unde să mănânci orez”; din 2020 are proprietari noi, iar fiecare ingredient din meniu are trecută taraba din piața de alături de unde vine. Bucătăria e deschisă non-stop, 13:00 – 23:00.',
     address: 'Passatge del Mercat 14, Eixample', placeQuery: 'Casa Amàlia 1950 Mercat de la Concepció', hours: 'Zilnic 13:00 – 23:00, bucătărie non-stop (surse vechi spun că duminica e închis: rezervarea confirmă)', price: '€€ (≈ 35–45 €/pers)',
     popular: ['Paella Catavents cu gamba roșie și langustine', 'Orez cu rață și foie', 'Scoici (berberechos)', 'Paella de fructe de mare'],
     tips: ['Paella se face pentru minim 2 persoane: una de fructe de mare + un fel pentru Mara.', 'Are și o filială în Port Vell: rezervați la cea din Eixample (Mercat de la Concepció).', 'Bar Cañete ar fi fost varianta de tapas, dar duminica e închis.'],
@@ -657,9 +657,9 @@ export const CURATED = {
 
 // Bucketlist-uri: fiecare are lista lui, bifabilă; `loc` leagă task-ul de un loc din program (detalii, navigare).
 export const PEOPLE_META = {
-  mara:   { name: 'Mara',   tag: 'turns 13 🎂', color: 'p-mara',   counter: { key: 'sweets', label: 'Dulciuri gustate', icon: 'cake', goal: 10, unit: 'dulciuri' } },
+  mara:   { name: 'Mara',   tag: 'împlinește 13 ani 🎂', color: 'p-mara',   counter: { key: 'sweets', label: 'Dulciuri gustate', icon: 'cake', goal: 10, unit: 'dulciuri' } },
   anne:   { name: 'Anne',   tag: 'design & matcha', color: 'p-anne', counter: { key: 'photos', label: 'Locuri fotografiate', icon: 'photo_camera', goal: 15, unit: 'poze' } },
-  daniel: { name: 'Daniel', tag: 'specialty coffee', color: 'p-daniel', counter: { key: 'coffee', label: 'Espresso pe trip', icon: 'coffee', goal: 20, unit: 'espresso' } },
+  daniel: { name: 'Daniel', tag: 'cafea de specialitate', color: 'p-daniel', counter: { key: 'coffee', label: 'Espresso pe trip', icon: 'coffee', goal: 20, unit: 'espresso' } },
 };
 export const BUCKET_DEFAULTS = {
   mara: [
