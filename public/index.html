@@ -49,6 +49,7 @@
       <div class="side-trip side-lbl"><span class="senyera"></span> Barcelona & PortAventura<br>5–9 noiembrie 2026</div>
     </div>
     <button data-action="open-add" class="side-add press" title="Adaugă un loc"><span class="material-symbols-rounded i-22">add_location_alt</span><span class="side-lbl">Adaugă un loc</span></button>
+    <button data-action="open-search" class="side-btn side-srch press" title="Caută (⌘K sau /)"><span class="material-symbols-rounded">search</span><span class="side-lbl">Caută</span><kbd class="kbd side-lbl">⌘K</kbd></button>
     <nav class="side-nav">
       <button data-action="view" data-view="hq" class="side-btn press" title="Centru de comandă"><span class="material-symbols-rounded">space_dashboard</span><span class="side-lbl">Centru de comandă</span></button>
       <button data-action="view" data-view="plan" class="side-btn press" title="Plan pe zile"><span class="material-symbols-rounded">calendar_month</span><span class="side-lbl">Plan pe zile</span></button>
@@ -94,6 +95,7 @@
         <p class="page-sub" id="planSub"></p>
         <div id="tripProgress"></div>
       </header>
+      <button data-action="open-search" class="search plan-search press w-full mt-4" aria-label="Caută în tot tripul"><span class="material-symbols-rounded">search</span><span class="flex-1 text-left t-2">Caută un loc, o zi, „tapas”, „duminică”…</span><kbd class="kbd">⌘K</kbd></button>
       <div class="dates mt-5" id="dates" role="tablist" aria-label="Zilele excursiei"></div>
       <div class="d-cols plan-cols">
         <div class="d-main">
@@ -128,7 +130,7 @@
       <div class="map-wrap mt-4">
         <div id="map" role="application" aria-label="Harta zilei"></div>
         <div class="map-top">
-          <button data-action="open-add" class="search float press w-full" aria-label="Caută un loc de adăugat"><span class="material-symbols-rounded">search</span><span class="flex-1 text-left t-2" style="font-size: 16px">Caută sau adaugă un loc</span><span class="icon-btn sm"><span class="material-symbols-rounded i-20">add_location_alt</span></span></button>
+          <div class="search float w-full srch-pill"><button data-action="open-search" class="srch-go press" aria-label="Caută un loc pe hartă"><span class="material-symbols-rounded">search</span><span class="flex-1 text-left t-2" style="font-size: 16px">Caută un loc pe hartă</span></button><button data-action="open-add" class="icon-btn sm press" aria-label="Adaugă un loc nou" title="Adaugă un loc nou"><span class="material-symbols-rounded i-20">add_location_alt</span></button></div>
           <div class="chips mt-2" id="mapDays" style="margin: 8px 0 0; padding: 0"></div>
         </div>
         <button data-action="locate" class="map-fab icon-btn solid press" style="bottom: 76px; width: 48px; height: 48px" aria-label="Unde sunt"><span class="material-symbols-rounded">my_location</span></button>

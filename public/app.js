@@ -27,7 +27,7 @@ const state = {
   custom: [], photos: {},
   shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, times: {}, days: {}, comments: {}, reactions: {}, booked: {}, expenses: [], packing: {}, packAdd: [], removed: {}, mealPick: {}, votes: {}, notes: '' },
   online: false, radarOn: false, pos: null, watchId: null, alerted: {},
-  installPrompt: null, map: null, markers: [], meMarker: null, homeMarker: null, newMarker: null, detailId: null, photoTarget: null, picking: false,
+  installPrompt: null, map: null, markers: [], markerById: {}, focusId: null, focusMarker: null, focusHold: null, meMarker: null, homeMarker: null, newMarker: null, detailId: null, photoTarget: null, picking: false,
 };
 let fb = null;
 
@@ -514,8 +514,9 @@ function detailHTML(raw) {
   const metaLine = [loc.rating ? `<span><b style="font-weight: 500; color: var(--text)">${Number(loc.rating).toFixed(1).replace('.', ',')}</b> <span class="star">${'★'.repeat(Math.round(loc.rating))}</span>${loc.ratingCount ? ` (${fmtCount(loc.ratingCount)})` : ''}</span>` : '', `<span>${esc(loc.catLabel || c.label)}</span>`, loc.price && !loc.free ? `<span>${esc(loc.price.split('·')[0].split('(')[0].trim())}</span>` : '', loc.free ? '<span class="t-green">Gratis</span>' : ''].filter(Boolean).join('<span class="t-3">·</span>');
   const when = isPool(loc) ? 'Loc dorit, încă fără zi' : loc.isAlt ? 'Recomandare, nu e în program' : `${DAY_LABEL[loc.day]}${loc.time ? ' · ' + loc.time : ''}`;
   const actions = loc.isAlt
-    ? `<button data-action="add-alt" data-index="${loc.altIndex}" class="act primary press">${icon('add', 'i-20')} Pune în program</button><a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="act press">${icon('directions', 'i-20')} Traseu</a>`
+    ? `<button data-action="add-alt" data-index="${loc.altIndex}" class="act primary press">${icon('add', 'i-20')} Pune în program</button>${coordsOf(loc) ? `<button data-action="show-on-map" data-id="${esc(id)}" class="act press">${icon('map', 'i-20')} Pe hartă</button>` : ''}<a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="act press">${icon('directions', 'i-20')} Traseu</a>`
     : `<a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="act primary press">${icon('directions', 'i-20')} Traseu</a>
+       ${coordsOf(loc) ? `<button data-action="show-on-map" data-id="${esc(id)}" class="act press">${icon('map', 'i-20')} Pe hartă</button>` : ''}
        ${bookOf(loc) && bookOf(loc).need !== 'verificare' ? `<button data-action="book" data-id="${esc(id)}" class="act press ${isBooked(id) ? 'on' : ''}">${icon(isBooked(id) ? 'event_available' : 'event', 'i-20')} ${isBooked(id) ? 'Rezervat' : 'Rezervă'}</button>` : ''}
        <button data-action="toggle-visited" data-id="${esc(id)}" class="act press ${visited ? 'on' : ''}">${icon(visited ? 'check_circle' : 'check', 'i-20')} ${visited ? 'Am fost' : 'Am fost aici'}</button>
        ${loc.isCustom ? `<button data-action="schedule" data-id="${esc(id)}" class="act press">${icon('edit_calendar', 'i-20')} ${isPool(loc) ? 'Pune în zi' : 'Mută'}</button><button data-action="edit-loc" data-id="${esc(id)}" class="act press">${icon('edit', 'i-20')} Editează</button>` : loc.fixed ? '' : `${isPool(loc) || id.startsWith('alt-') ? '' : `<button data-action="toggle-skip" data-id="${esc(id)}" class="act press">${icon(skipped ? 'undo' : 'skip_next', 'i-20')} ${skipped ? 'Pune înapoi' : 'Sari peste'}</button>`}${id.startsWith('alt-') ? '' : `<button data-action="schedule" data-id="${esc(id)}" class="act press">${icon('edit_calendar', 'i-20')} ${isPool(loc) ? 'Pune în zi' : 'Mută'}</button>`}`}
@@ -1106,7 +1107,7 @@ async function scheduleSave(day) {
 function goToLoc(id, day) { setView('plan'); state.filter = 'all'; if (day && DAYS.includes(day)) switchDay(day); else renderDay(); setTimeout(() => { const el = $('#loc-' + CSS.escape(id)); if (el) { el.classList.add('in'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.querySelector('.stop-card, button')?.classList.add('flash'); } }, 400); }
 
 // ---------- Ecrane ----------
-function switchDay(day, dir) { if (!DAYS.includes(day)) return; const from = DAYS.indexOf(state.day); state.day = day; state.filter = 'all'; renderDay(); renderMap(); renderNextStop();
+function switchDay(day, dir) { if (!DAYS.includes(day)) return; state.focusHold = null; const from = DAYS.indexOf(state.day); state.day = day; state.filter = 'all'; renderDay(); renderMap(); renderNextStop();
   const d = dir || (DAYS.indexOf(day) > from ? 'left' : DAYS.indexOf(day) < from ? 'right' : ''); const it = $('#itinerary'); if (it && d && !RM()) { it.classList.remove('day-in-left', 'day-in-right'); void it.offsetWidth; it.classList.add('day-in-' + d); } }
 function setFilter(c) { state.filter = c; renderDay(); }
 function renderNotes() { const ta = $('#sharedNotes'); if (ta && document.activeElement !== ta) ta.value = state.shared.notes || ''; }
@@ -1489,19 +1490,22 @@ function ensureMap() {
   if (state.map || !window.L || !$('#map')) return;
   const map = L.map('map', { zoomControl: false }).setView([41.39, 2.17], 13);
   const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map); let tileFails = 0; tiles.on('tileerror', () => { if (++tileFails === 6) tiles.setUrl('https://tile.openstreetmap.de/{z}/{x}/{y}.png'); });
+  const lbl = () => map.getContainer().classList.toggle('labels-on', map.getZoom() >= 15); map.on('zoomend', lbl); lbl();
+  map.on('dragstart', () => { state.focusHold = null; });
   map.on('contextmenu', (e) => { if (state.picking) return; buzz(20); addAt({ lat: e.latlng.lat, lng: e.latlng.lng }); });
   state.map = map; setTimeout(() => map.invalidateSize(), 60);
 }
 function homeMarker() { if (!state.map || state.homeMarker) return; const b = TRIP.base; state.homeMarker = L.marker([b.lat, b.lng], { icon: L.divIcon({ className: '', html: `<div class="pin home">${icon('hotel', 'i-16 ms-fill')}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] }), zIndexOffset: 500 }).addTo(state.map); state.homeMarker.on('click', () => openHome()); }
 function updateMeMarker() { if (!state.map || !state.pos) return; const ll = [state.pos.lat, state.pos.lng]; if (!state.meMarker) state.meMarker = L.marker(ll, { icon: L.divIcon({ className: '', html: '<div class="me"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }), zIndexOffset: 1000 }).addTo(state.map); else state.meMarker.setLatLng(ll); }
 function renderMap() {
-  renderDates(); if (!state.map) return; state.markers.forEach((m) => m.remove()); state.markers = []; const bounds = []; let n = 0; const list = dayItems(state.day);
+  renderDates(); if (!state.map) return; state.markers.forEach((m) => m.remove()); state.markers = []; state.markerById = {}; state.focusMarker?.remove(); state.focusMarker = null; const bounds = []; let n = 0; const list = dayItems(state.day);
+  const label = (m, l) => m.bindTooltip(esc(shortTitle(l.title || '')), { permanent: true, direction: 'bottom', offset: [0, 10], className: 'pin-lbl' });
   const line = list.map(coordsOf).filter(Boolean).map((p) => [p.lat, p.lng]); if (line.length > 1) state.markers.push(L.polyline(line, { color: '#1A73E8', weight: 3, opacity: 0.55, dashArray: '2 8', lineCap: 'round' }).addTo(state.map));
-  for (const loc of list) { const p = coordsOf(loc); n++; if (!p) continue; const ck = catKey(enriched(loc).cat), cls = state.shared.visited[loc.id] ? 'pin done' : `pin k-${ck}`, badge = ck === 'coffee' || ck === 'sweet' ? `<i class="pin-b">${icon(ck === 'coffee' ? 'coffee' : 'icecream', 'ms-fill', 'width:11px;height:11px')}</i>` : ''; const m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: `<div class="${cls}">${n}${badge}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] }) }).addTo(state.map); m.on('click', () => openDetail(loc.id)); state.markers.push(m); bounds.push([p.lat, p.lng]); }
+  for (const loc of list) { const p = coordsOf(loc); n++; if (!p) continue; const ck = catKey(enriched(loc).cat), cls = state.shared.visited[loc.id] ? 'pin done' : `pin k-${ck}`, badge = ck === 'coffee' || ck === 'sweet' ? `<i class="pin-b">${icon(ck === 'coffee' ? 'coffee' : 'icecream', 'ms-fill', 'width:11px;height:11px')}</i>` : ''; const m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: `<div class="${cls}">${n}${badge}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] }) }).addTo(state.map); m.on('click', () => openDetail(loc.id)); label(m, loc); state.markers.push(m); state.markerById[loc.id] = m; bounds.push([p.lat, p.lng]); }
   for (const loc of list) (enriched(loc).variants || []).forEach((v, i) => { if (typeof v.lat !== 'number') return; const m = L.marker([v.lat, v.lng], { icon: L.divIcon({ className: '', html: `<div class="pin custom" style="width:22px;height:22px;font-size:10px">${i + 1}</div>`, iconSize: [22, 22], iconAnchor: [11, 11] }) }).addTo(state.map); m.on('click', () => openDetail(loc.id)); state.markers.push(m); });
-  for (const z of DAY_ZONES[state.day] || []) ALTERNATIVES.forEach((a, i) => { if (a.zone !== z || typeof a.lat !== 'number') return; const m = L.marker([a.lat, a.lng], { icon: L.divIcon({ className: '', html: '<div class="pin alt">+</div>', iconSize: [20, 20], iconAnchor: [10, 10] }) }).addTo(state.map); m.on('click', () => openDetail('alt-' + i)); state.markers.push(m); });
-  state.custom.filter(isPool).forEach((l) => { const p = coordsOf(l); if (!p) return; const m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: `<div class="pin alt" style="color: #E0457B">${icon('bookmark', 'i-16 ms-fill')}</div>`, iconSize: [20, 20], iconAnchor: [10, 10] }) }).addTo(state.map); m.on('click', () => openDetail(l.id)); state.markers.push(m); });
-  homeMarker(); updateMeMarker(); if (bounds.length && !state.picking) state.map.fitBounds(bounds, { padding: [80, 40], maxZoom: 15 }); setTimeout(() => state.map.invalidateSize(), 60);
+  for (const z of DAY_ZONES[state.day] || []) ALTERNATIVES.forEach((a, i) => { if (a.zone !== z || typeof a.lat !== 'number') return; const m = L.marker([a.lat, a.lng], { icon: L.divIcon({ className: '', html: '<div class="pin alt">+</div>', iconSize: [20, 20], iconAnchor: [10, 10] }) }).addTo(state.map); m.on('click', () => openDetail('alt-' + i)); label(m, a); state.markers.push(m); state.markerById['alt-' + i] = m; });
+  state.custom.filter(isPool).forEach((l) => { const p = coordsOf(l); if (!p) return; const m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: `<div class="pin alt" style="color: #E0457B">${icon('bookmark', 'i-16 ms-fill')}</div>`, iconSize: [20, 20], iconAnchor: [10, 10] }) }).addTo(state.map); m.on('click', () => openDetail(l.id)); label(m, l); state.markers.push(m); state.markerById[l.id] = m; });
+  homeMarker(); updateMeMarker(); const fid = state.focusId || (state.focusHold && Date.now() < state.focusHold.until ? state.focusHold.id : null); if (fid) { focusOnMap(fid); return; } if (bounds.length && !state.picking) state.map.fitBounds(bounds, { padding: [80, 40], maxZoom: 15 }); setTimeout(() => state.map.invalidateSize(), 60);
 }
 
 // =====================================================================
@@ -1714,6 +1718,67 @@ function hqBoardEvents() {
   b.addEventListener('focusout', (e) => { const blk = e.target.closest('.hq-blk'); if (blk) hqHighlight(blk.dataset.hqId, false); });
 }
 
+
+// ---------- Arată un loc pe hartă: zbor până acolo, pin care pulsează și o fișă mică ----------
+function focusOnMap(id) {
+  const map = state.map, loc = findLoc(id), p = loc && coordsOf(loc); state.focusId = null; if (!map || !p) return;
+  const again = state.focusHold?.id === id, stale = map.getSize().x !== map.getContainer().clientWidth; state.focusHold = { id, until: Date.now() + 6000 }; map.invalidateSize();
+  let m = state.markerById[id];
+  if (!m) { m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: `<div class="pin new">${icon(smartIcon(enriched(loc)), 'i-18')}</div>`, iconSize: [34, 34], iconAnchor: [17, 17] }), zIndexOffset: 2500 }).addTo(map); m.on('click', () => openDetail(id)); m.bindTooltip(esc(shortTitle(loc.title || '')), { permanent: true, direction: 'bottom', offset: [0, 14], className: 'pin-lbl' }); state.focusMarker = m; }
+  const z = Math.max(map.getZoom(), 17);
+  const done = () => {
+    $$('.pin.focus').forEach((x) => x.classList.remove('focus')); $$('.pin-lbl.is-focus').forEach((x) => x.classList.remove('is-focus'));
+    m.setZIndexOffset(3000); m.getTooltip()?.getElement()?.classList.add('is-focus');
+    const el = m.getElement()?.firstElementChild; if (el) { void el.offsetWidth; el.classList.add('focus'); }
+    const e = enriched(loc), when = DAYS.includes(loc.day) ? `${DAY_LABEL[loc.day]}${parseRange(loc.time) ? ' · ' + hhmm(parseRange(loc.time).from) : ''}` : isPool(loc) ? 'dorit, fără zi' : 'recomandare';
+    L.popup({ offset: [0, -14], closeButton: false, className: 'focus-pop', autoPan: true }).setLatLng([p.lat, p.lng]).setContent(`<div class="fp"><div class="fp-t">${esc(loc.title)}</div><div class="fp-s">${esc(when)} · ${esc(cat(e.cat).label)}</div><div class="fp-a"><button data-action="open-detail" data-id="${esc(id)}" class="btn btn-sm btn-tonal press">Detalii</button><a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="btn btn-sm btn-primary press">${icon('directions', 'i-18')} Traseu</a></div></div>`).openOn(map);
+  };
+  // Prima dată zboară până acolo; dacă harta abia s-a deschis sau se redesenează, sare direct
+  if (again || stale || RM()) { map.setView([p.lat, p.lng], z, { animate: false }); setTimeout(done, 30); }
+  else { map.once('moveend', done); map.flyTo([p.lat, p.lng], z, { duration: 0.8 }); }
+}
+function showOnMap(id) {
+  const loc = findLoc(id); if (!loc) return; if (!coordsOf(loc)) return toast('Nu știu încă unde e exact. Deschideți-l în Google Maps sau „Fixează aici” când sunteți acolo.', 'wrong_location', 4500);
+  closeModals(); state.focusId = id;
+  if (DAYS.includes(loc.day) && loc.day !== state.day) { state.day = loc.day; state.filter = 'all'; renderDay(); renderNextStop(); }
+  if (state.view !== 'explore') setView('explore'); else { ensureMap(); renderMap(); }
+}
+// ---------- Căutare în tot tripul: locuri, zile, categorii, zone ----------
+const DAY_WORDS = { thu: 'joi 5 joia', fri: 'vineri 6', sat: 'sambata 7 sambata', sun: 'duminica 8', mon: 'luni 9' };
+const CAT_WORDS = { coffee: 'cafea cafenea espresso bere', food: 'mancare restaurant pranz cina masa tapas', sweet: 'dulce dulciuri desert gelato inghetata prajitura churros', shop: 'shopping magazin cumparaturi haine', fun: 'distractie parc atractii', art: 'arta muzeu vedere gaudi monument plimbare' };
+function searchIndex() {
+  const seen = new Set(), rows = [];
+  const add = (loc, kind) => { if (!loc || seen.has(loc.id)) return; seen.add(loc.id); const e = enriched(loc), k = catKey(e.cat);
+    const own = fold([loc.title, e.short, e.address, e.catLabel, e.rec, (e.popular || []).join(' ')].filter(Boolean).join(' '));
+    rows.push({ loc, kind, title: fold(loc.title), own, hay: own + ' ' + fold([ZONES[e.zone]?.label, CAT_WORDS[k], DAY_WORDS[loc.day], cat(e.cat).label].filter(Boolean).join(' ')) }); };
+  for (const l of allLocs()) add(l, DAYS.includes(l.day) ? 'plan' : 'pool');
+  ALTERNATIVES.forEach((a, i) => add(altAsLoc(i), 'alt'));
+  return rows;
+}
+function searchResults(q) {
+  const f = fold(q).trim(); if (!f) return [];
+  const words = f.split(/\s+/).filter(Boolean), K = { plan: 0, pool: 1, alt: 2 };
+  return searchIndex().filter((r) => words.every((w) => r.hay.includes(w)))
+    .map((r) => ({ ...r, score: (r.title.startsWith(f) ? 0 : r.title.includes(f) ? 1 : words.every((w) => r.title.includes(w)) ? 2 : words.every((w) => r.own.includes(w)) ? 3 : 4) * 10 + K[r.kind] }))
+    .sort((a, b) => a.score - b.score || dayOrder(a.loc) - dayOrder(b.loc) || startMin(a.loc) - startMin(b.loc)).slice(0, 30);
+}
+function searchRowHTML(r) {
+  const l = r.loc, e = enriched(l), when = r.kind === 'plan' ? `${DAY_LABEL[l.day]}${parseRange(l.time) ? ' · ' + hhmm(parseRange(l.time).from) : ''}` : r.kind === 'pool' ? 'dorit, fără zi' : `recomandare${e.zone && ZONES[e.zone] ? ' · ' + ZONES[e.zone].label : ''}`;
+  return `<div class="li tight srch-row k-${catKey(e.cat)}"><button data-action="open-detail" data-id="${esc(l.id)}" class="flex items-center gap-3 flex-1 min-w-0 text-left">${thumbHTML(e, 44)}<span class="min-w-0"><span class="block font-medium truncate">${esc(l.title)}</span><span class="block cap truncate"><i class="srch-dot"></i>${esc(cat(e.cat).label)} · ${esc(when)}</span></span></button>
+    <button data-action="show-on-map" data-id="${esc(l.id)}" class="icon-btn ol press" aria-label="Arată ${esc(l.title)} pe hartă" title="Pe hartă">${icon('map', 'i-20', 'color: var(--blue)')}</button></div>`;
+}
+function renderSearch(q) {
+  const box = $('#srchResults'); if (!box) return; const f = fold(q).trim();
+  if (!f) { box.innerHTML = `<div class="srch-hints">${['cafea', 'tapas', 'dulciuri', 'sâmbătă', 'Gràcia', 'gratis', 'Gaudí'].map((w) => `<button data-action="srch-hint" data-q="${esc(w)}" class="chip press">${esc(w)}</button>`).join('')}</div><p class="cap mt-3">Caută după nume, zi, categorie sau zonă. Butonul ${icon('map', 'i-16')} arată locul pe hartă.</p>`; return; }
+  const res = searchResults(q), groups = [['plan', 'În program'], ['pool', 'Dorite, fără zi'], ['alt', 'Recomandări']];
+  box.innerHTML = (res.length ? groups.map(([k, t]) => { const g = res.filter((r) => r.kind === k); return g.length ? `<h3 class="cap srch-g">${t} · ${g.length}</h3><div class="card list">${g.map(searchRowHTML).join('')}</div>` : ''; }).join('') : `<p class="t-2 py-3">Nimic în trip cu „${esc(q)}”.</p>`)
+    + `<button data-action="srch-add" data-q="${esc(q)}" class="card li press mt-3 w-full">${icon('add_location_alt', '', 'color: var(--brand)')}<span class="flex-1 text-left"><span class="block font-medium">Nu e aici? Caută „${esc(q)}” pe hartă și adaugă-l</span><span class="block cap">în OpenStreetMap, lângă Barcelona</span></span>${icon('chevron_right', 't-3 i-20')}</button>`;
+}
+function openSearch(q = '') {
+  openSheet(`${sheetHead('Caută în tot tripul', 'Unde e…?')}<div class="search">${icon('search', 'i-20')}<input type="search" id="srchQ" placeholder="Nume, zi, categorie, zonă…" autocomplete="off" enterkeyhint="search" aria-label="Caută un loc" value="${esc(q)}"></div><div id="srchResults" class="mt-3 pb-3"></div>`);
+  renderSearch(q); setTimeout(() => $('#srchQ')?.focus(), 200);
+}
+
 // ---------- PWA ----------
 function setupPWA() {
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); state.installPrompt = e; $('#installBtn')?.classList.remove('hidden'); });
@@ -1808,6 +1873,7 @@ document.addEventListener('click', (e) => {
     'exp-who': () => { expenseDraft.by = PEOPLE_META[el.dataset.person].name; $$('[data-action="exp-who"]').forEach((c) => c.classList.toggle('on', c === el)); },
     'react': () => { if (myReaction(el.dataset.id) !== el.dataset.k) emojiBurst(el, reactEmoji(el.dataset.k)); toggleReaction(el.dataset.id, el.dataset.k).then(() => {}); popAfterRender(`[data-action="react"][data-id="${CSS.escape(el.dataset.id)}"][data-k="${el.dataset.k}"]`); }, 'open-comments': () => openComments(el.dataset.id),
     'vote': () => castVote(el.dataset.key, el.dataset.ref, Number(el.dataset.v)), 'meal-pick': () => pickMeal(el.dataset.key, el.dataset.ref), 'remove-loc': () => removeLoc(id), 'restore-loc': () => restoreLoc(id),
+    'show-on-map': () => showOnMap(id), 'open-search': () => openSearch(), 'srch-hint': () => { const i = $('#srchQ'); if (i) { i.value = el.dataset.q; renderSearch(i.value); i.focus(); } }, 'srch-add': () => { closeModals(); openAdd(); setTimeout(() => { const i = $('#addQ'); if (i) { i.value = el.dataset.q; onAddQuery(el.dataset.q); } }, 150); },
     'whoami': () => openWhoAmI(false), 'who-set': () => setMe(el.dataset.person),
     'hq-meal': () => { const k = el.dataset.key; hq.meal = hq.meal === k ? null : (mealRows(k).length > 1 ? k : null); renderHQ(); },
     'hq-day': () => hqSetDay(el.dataset.day), 'hq-open-day': () => { switchDay(el.dataset.day); setView('plan'); }, 'hq-route': () => { switchDay(el.dataset.day); dayRoute(); },
@@ -1848,8 +1914,12 @@ document.addEventListener('change', async (e) => {
   if (e.target.matches('.bucket-check')) { if (e.target.checked) { buzz(); const r = e.target.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + r.height / 2); } bucketSet(e.target.dataset.person, e.target.dataset.id, { done: e.target.checked }); }
   if (e.target.id === 'photoInput' && e.target.files?.[0] && state.photoTarget) { try { await savePhoto(state.photoTarget, e.target.files[0]); } catch (err) { console.error(err); toast('Nu am putut salva poza: ' + (err.message || err), 'image'); } }
 });
-document.addEventListener('input', (e) => { if (e.target.id === 'sharedNotes') onNotesInput(); if (e.target.id === 'bucketSearch') $('#bucketPickList').innerHTML = pickListHTML(e.target.value); if (e.target.id === 'addQ') onAddQuery(e.target.value); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (state.picking) stopPick(); addState = null; closeModals(); } if (e.key === 'Enter' && e.target.id === 'addQ') { e.preventDefault(); const first = $('#addBody [data-action="add-choose"]'); if (first) first.click(); } });
+if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) $$('.kbd').forEach((k) => { k.textContent = 'Ctrl K'; });
+document.addEventListener('input', (e) => { if (e.target.id === 'sharedNotes') onNotesInput(); if (e.target.id === 'bucketSearch') $('#bucketPickList').innerHTML = pickListHTML(e.target.value); if (e.target.id === 'addQ') onAddQuery(e.target.value); if (e.target.id === 'srchQ') renderSearch(e.target.value); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.id === 'srchQ') { e.preventDefault(); const first = $('#srchResults [data-action="show-on-map"]'); if (first) first.click(); return; }
+  if (((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) || (e.key === '/' && !/input|textarea/i.test(e.target.tagName))) { e.preventDefault(); openSearch(); return; }
+  if (e.key === 'Escape') { if (state.picking) stopPick(); addState = null; closeModals(); } if (e.key === 'Enter' && e.target.id === 'addQ') { e.preventDefault(); const first = $('#addBody [data-action="add-choose"]'); if (first) first.click(); } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderDay(); renderNextStop(); loadWeather(); if (state.radarOn) startRadar(); } });
 
 window.__plan = (d) => { const p = planDay(d); return { check: `prânz ${p.ess.lunch ? '✓' : '✗'} cină ${p.ess.dinner ? '✓' : '✗'} cafele ${p.ess.coffee} dulciuri ${p.ess.sweet}`, level: p.level, free: p.free, slots: p.slots.map((x) => `${hhmm(x.start)}-${hhmm(x.end)}${x.auto ? '*' : ''} ${x.loc.title}${x.travel ? ' (+' + x.travel + ')' : ''}`), issues: p.issues.map((i) => `${i.type} ${i.a.loc.title} → ${i.b.loc.title} ${i.late || i.over || ''}`) }; };

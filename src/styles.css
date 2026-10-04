@@ -790,3 +790,39 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* Butoanele principale „Adaugă”: în stil senyera, galben cu roșu */
 .fab, .side-add { background: var(--cat-yellow); color: #9B0D14; box-shadow: inset 0 -4px 0 var(--cat-red), 0 4px 14px rgba(218,18,26,.22), var(--shadow-1); }
 .fab:active, .side-add:active { box-shadow: inset 0 -2px 0 var(--cat-red), var(--shadow-1); }
+
+/* Etichete pe hartă: numele locului sub pin, doar când e destul de aproape */
+.leaflet-tooltip.pin-lbl { display: none; padding: 1px 6px; border: 0; border-radius: 6px; background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--text); font: 600 11px/1.35 var(--font, inherit); box-shadow: 0 1px 3px rgba(0,0,0,.25); white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.leaflet-tooltip.pin-lbl::before { display: none; }
+.labels-on .leaflet-tooltip.pin-lbl { display: block; }
+.leaflet-tooltip.pin-lbl.is-focus { display: block; background: var(--cat-yellow); color: #7A0A10; box-shadow: 0 0 0 1.5px var(--cat-red), 0 2px 6px rgba(0,0,0,.3); }
+/* Locul căutat: pin care sare și pulsează în roșu-galben */
+.pin.focus { position: relative; z-index: 2; animation: pinjump .7s var(--spring) 1; box-shadow: 0 0 0 3px var(--cat-yellow), 0 0 0 5px var(--cat-red), 0 4px 12px rgba(0,0,0,.35); }
+.pin.focus::after { content: ""; position: absolute; inset: -6px; border-radius: 99px; border: 2px solid var(--cat-red); animation: pinring 1.8s ease-out 3; pointer-events: none; }
+@keyframes pinjump { 0% { transform: translateY(0) scale(1); } 35% { transform: translateY(-14px) scale(1.15); } 70% { transform: translateY(0) scale(1.05); } 100% { transform: translateY(0) scale(1.1); } }
+@keyframes pinring { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(2.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pin.focus, .pin.focus::after { animation: none; } }
+.focus-pop .leaflet-popup-content-wrapper { border-radius: 16px; background: var(--surface); color: var(--text); box-shadow: var(--shadow-2); }
+.focus-pop .leaflet-popup-tip { background: var(--surface); }
+.focus-pop .leaflet-popup-content { margin: 12px 14px; }
+.fp { min-width: 190px; max-width: 240px; }
+.fp-t { font-weight: 700; font-size: 15px; line-height: 1.25; }
+.fp-s { margin-top: 2px; font-size: 12px; color: var(--text-2); }
+.fp-a { display: flex; gap: 6px; margin-top: 10px; }
+.fp-a .btn { flex: 1; justify-content: center; }
+.fp-a a.btn { color: #fff; }
+/* Căutarea */
+.srch-pill { padding: 0 6px 0 0; gap: 4px; }
+.srch-go { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; height: 100%; padding-left: 16px; color: var(--text-2); }
+.plan-search { height: 46px; color: var(--text-2); font-size: 15px; box-shadow: inset 0 0 0 1px var(--line); background: var(--surface); }
+.plan-search:hover { box-shadow: inset 0 0 0 1px var(--cat-red), 0 2px 8px rgba(218,18,26,.08); }
+.plan-search > .material-symbols-rounded, .plan-search > svg { color: var(--cat-red); }
+.kbd { display: none; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface-2, var(--surface-3)); font: 600 11px/1.5 ui-monospace, monospace; color: var(--text-3, var(--text-2)); }
+@media (hover: hover) and (pointer: fine) { .kbd { display: inline-block; } }
+.side-srch { margin-bottom: 6px; }
+.side-srch .kbd { margin-left: auto; }
+.srch-hints { display: flex; flex-wrap: wrap; gap: 8px; }
+.srch-g { margin: 14px 4px 6px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+.srch-row { gap: 10px; border-left: 3px solid var(--cat); }
+.srch-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 99px; background: var(--cat); vertical-align: 1px; }
+@media (max-width: 1279px) { .side-srch .kbd { display: none; } }
