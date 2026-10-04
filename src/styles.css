@@ -403,6 +403,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .feed-comment .fc-n { flex-shrink: 0; }
 .react-card { background: var(--surface-2); border-radius: 14px; padding: 12px 14px; }
 
+/* Cazarea: adresa, cu hartă și copiere */
+.addr-card { padding: 16px; border-radius: 16px; background: var(--brand-soft); }
+.addr-v { font-size: 18px; line-height: 24px; font-weight: 500; color: var(--text); }
+.addr-card .btn-outline { background: var(--surface); }
+
 /* Alege poza */
 .pick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .pick-img { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--surface-3); }

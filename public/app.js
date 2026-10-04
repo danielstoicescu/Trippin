@@ -629,18 +629,44 @@ function renderPacking() { const el = $('#packing'); if (el) el.innerHTML = pack
 
 // ---------- Mini-ghid de conversație ----------
 const canSpeak = () => typeof window !== 'undefined' && 'speechSynthesis' in window;
-function speak(text, lang = 'es-ES') {
-  if (!canSpeak()) return; try { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = lang; u.rate = 0.9;
-    const v = window.speechSynthesis.getVoices().find((x) => x.lang && x.lang.toLowerCase().startsWith(lang.slice(0, 2))); if (v) u.voice = v; window.speechSynthesis.speak(u); } catch {}
+// Vocile telefonului se încarcă târziu (mai ales pe Android): le reținem când apar.
+let ttsVoices = [];
+const loadVoices = () => { try { ttsVoices = window.speechSynthesis.getVoices() || []; } catch { ttsVoices = []; } return ttsVoices; };
+if (canSpeak()) { loadVoices(); try { window.speechSynthesis.addEventListener('voiceschanged', loadVoices); } catch {} }
+function pickVoice(lang) {
+  const v = ttsVoices.length ? ttsVoices : loadVoices(), want = lang.toLowerCase(), base = want.slice(0, 2), norm = (x) => (x.lang || '').toLowerCase().replace('_', '-');
+  return v.find((x) => norm(x) === want) || v.find((x) => norm(x).startsWith(base)) || null;
+}
+// Rezerva: pronunția Google Translate, ca fișier audio (merge și unde telefonul n-are voce de spaniolă / catalană)
+let ttsAudio = null, ttsBroken = false;
+function speakAudio(text, lang, onEnd) {
+  try { ttsAudio?.pause(); ttsAudio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang.slice(0, 2)}&q=${encodeURIComponent(text.slice(0, 190))}`);
+    ttsAudio.addEventListener('ended', onEnd); ttsAudio.addEventListener('error', () => { onEnd(); toast('Nu pot reda sunetul acum (fără semnal?). Pronunția e scrisă dedesubt.', 'volume_off', 4000); });
+    ttsAudio.play().catch(() => { onEnd(); toast('Telefonul a blocat sunetul. Verificați volumul și modul silențios.', 'volume_off', 4000); });
+  } catch { onEnd(); }
+}
+function speak(text, lang = 'es-ES', onEnd = () => {}) {
+  const voice = canSpeak() ? pickVoice(lang) : null;
+  // Fără voce potrivită (des pentru catalană) sau fără motor de voce: audio
+  if (ttsBroken || (!voice && (!canSpeak() || ttsVoices.length || lang.startsWith('ca')))) return speakAudio(text, lang, onEnd);
+  const s = window.speechSynthesis;
+  try {
+    if (s.speaking || s.pending) s.cancel(); s.resume?.();
+    const u = new SpeechSynthesisUtterance(text); u.lang = voice?.lang || lang; if (voice) u.voice = voice; u.rate = 0.9;
+    let started = false; u.onstart = () => { started = true; }; u.onend = onEnd;
+    u.onerror = (e) => { if (!started && e.error !== 'interrupted' && e.error !== 'canceled') { ttsBroken = true; speakAudio(text, lang, onEnd); } else onEnd(); };
+    s.speak(u);
+    // Unele telefoane tac fără nicio eroare: dacă n-a pornit în 1,5 s, trecem pe audio
+    setTimeout(() => { if (!started && !s.speaking) { ttsBroken = true; s.cancel(); speakAudio(text, lang, onEnd); } }, 1500);
+  } catch { speakAudio(text, lang, onEnd); }
 }
 function phrasesHTML() {
-  const sp = canSpeak();
+  const sp = true;
   return `<div class="pb-6">${PHRASES.map((g) => `<div class="sec"><div class="sec-h"><h2 class="ttl-2 flex items-center gap-2">${icon(g.icon, 'i-22', 'color: var(--brand)')} ${esc(g.cat)}</h2></div>
     <div class="phr-grid">${g.items.map(([ro, es, say], i) => { const cat = g.lang === 'ca'; return `<div class="phr-card k-art">
       <div class="phr-ro">${esc(ro)}</div>
       <div class="phr-main"><span class="phr-es">${esc(es)}</span>${sp ? `<button data-action="speak" data-text="${esc(es)}" data-lang="${cat ? 'ca-ES' : 'es-ES'}" class="phr-say press" aria-label="Ascultă: ${esc(es)}">${icon('volume_up', 'i-20')}</button>` : ''}</div>
       <div class="phr-say-txt">„${esc(say)}”</div></div>`; }).join('')}</div></div>`).join('')}
-    ${sp ? '' : '<p class="cap mt-3">Butonul de audio nu e disponibil pe acest telefon; pronunția scrisă rămâne.</p>'}
     </div>`;
 }
 function renderPhrases() { const el = $('#phrases'); if (el) el.innerHTML = phrasesHTML(); }
@@ -881,17 +907,24 @@ function homeSheetHTML() {
   const last = dow === 5 ? 'merge până la 02:00' : dow === 6 ? 'merge toată noaptea' : 'merge până la 24:00';
   const hero = `<div class="relative" style="margin: 0 -16px"><div class="photo hero-photo" style="background: linear-gradient(135deg, var(--brand-soft), var(--blue-soft)); color: var(--brand)">${icon('hotel', 'i-48 ms-fill')}${own ? `<img src="${esc(own.data || own.url)}" alt="">` : ''}<div class="ph-bl"><button data-action="add-photo" data-id="home" class="pill ink press" style="height: 32px; padding: 0 12px">${icon('add_a_photo', 'i-16')} ${own ? 'Altă poză' : 'Pune o poză din Airbnb'}</button></div></div><div class="handle absolute" style="top: 2px; left: 50%; margin-left: -16px; background: rgba(255,255,255,.85)"></div><button data-action="close-modal" class="icon-btn solid press absolute" style="top: 12px; right: 12px" aria-label="Închide">${icon('close')}</button></div>`;
   return `${hero}
-    <div class="pt-4"><div class="cap">Cazare · Airbnb · Poblenou</div><h2 class="ttl-1">${home ? 'Sunteți la cazare' : 'Cazarea noastră'}</h2><div class="t-2 mt-0.5">${esc(STAY.name)}</div><div class="t-2 mt-1 flex items-center gap-1.5">${icon('location_on', 'i-18')} Carrer de Pellaires 35, 08019 Barcelona</div></div>
-    <div class="summary mt-4"><div><div class="v tabular">${d != null ? fmtDist(d) : '—'}</div><div class="k">până acolo</div></div><div><div class="v tabular">${d != null ? fmtMin(walkMin(d)) : '—'}</div><div class="k">pe jos</div></div><div><div class="v tabular">${d != null ? '~' + fmtMin(transitMin(d)) : '—'}</div><div class="k">metrou / taxi</div></div></div>
+    <div class="pt-4"><div class="cap">Cazare · Airbnb · Poblenou</div><h2 class="ttl-1">${home ? 'Sunteți la cazare' : 'Cazarea noastră'}</h2><div class="t-2 mt-0.5">${esc(STAY.name)}</div></div>
+    <div class="addr-card mt-4">
+      <div class="flex items-start gap-3">${icon('location_on', 'i-28 ms-fill', 'color: var(--brand); margin-top: 2px')}<div class="min-w-0"><div class="cap">Adresa</div><div class="addr-v">Carrer de Pellaires 35<br>08019 Barcelona</div><div class="cap mt-1">Poblenou · metrou Selva de Mar (L4, galben), 5 min pe jos</div></div></div>
+      <div class="grid grid-cols-2 gap-2 mt-4">
+        <a href="${esc(mapsSearch(TRIP.base.placeQuery))}" target="_blank" rel="noopener" class="btn btn-primary press" style="padding: 0 10px">${icon('gmaps', 'i-20')} Vezi pe hartă</a>
+        <button data-action="copy-address" class="btn btn-outline press" style="padding: 0 10px">${icon('content_paste', 'i-20')} Copiază adresa</button>
+      </div>
+    </div>
+    <h3 class="ttl-3 mt-5 mb-2">Cum ajungeți acolo</h3>
+    <div class="summary"><div><div class="v tabular">${d != null ? fmtDist(d) : '—'}</div><div class="k">până acolo</div></div><div><div class="v tabular">${d != null ? fmtMin(walkMin(d)) : '—'}</div><div class="k">pe jos</div></div><div><div class="v tabular">${d != null ? '~' + fmtMin(transitMin(d)) : '—'}</div><div class="k">metrou / taxi</div></div></div>
     <div class="grid grid-cols-3 gap-2 mt-3">
       <a href="${esc(mapsNav(b, 'walking'))}" target="_blank" rel="noopener" class="btn btn-outline press" style="padding: 0 8px">${icon('directions_walk', 'i-20')} Pe jos</a>
-      <a href="${esc(mapsNav(b, 'transit'))}" target="_blank" rel="noopener" class="btn btn-primary press" style="padding: 0 8px">${icon('subway', 'i-20')} Metrou</a>
+      <a href="${esc(mapsNav(b, 'transit'))}" target="_blank" rel="noopener" class="btn btn-tonal press" style="padding: 0 8px">${icon('subway', 'i-20')} Metrou</a>
       <a href="${esc(mapsNav(b, 'driving'))}" target="_blank" rel="noopener" class="btn btn-outline press" style="padding: 0 8px">${icon('local_taxi', 'i-20')} Taxi</a>
     </div>
     <div class="hair pt-5 mt-5"><h3 class="ttl-3 mb-3">Important</h3><div class="card list">
       <div class="li">${icon('event', '', 'color: var(--brand)')}<div class="flex-1"><div class="font-medium">Sosim vineri 6 nov, ~14:30</div><div class="cap">după trenul din PortAventura și metroul de la Sants. Ora exactă de check-in și check-out e în aplicația Airbnb.</div></div></div>
       ${notes ? `<div class="li" style="align-items: flex-start">${icon('key', '', 'color: var(--amber)')}<div class="flex-1"><div class="font-medium">Din notițele noastre</div><div class="whitespace-pre-line t-2">${esc(notes.slice(0, 500))}</div></div></div>` : `<button data-action="view" data-view="info" class="li press">${icon('key', '', 'color: var(--amber)')}<div class="flex-1 text-left"><div class="font-medium">Cod ușă, etaj, wifi</div><div class="cap">Scrieți-le în Notițe ca să apară aici, la toți</div></div>${icon('chevron_right', 't-3 i-20')}</button>`}
-      <button data-action="copy-address" class="li press">${icon('content_paste', '', 'color: var(--blue)')}<div class="flex-1 text-left"><div class="font-medium">Copiază adresa pentru taxi</div><div class="cap">Carrer de Pellaires 35, 08019 Barcelona</div></div></button>
       <a href="${esc(STAY.url)}" target="_blank" rel="noopener" class="li press">${icon('open_in_new', '', 'color: var(--brand)')}<div class="flex-1"><div class="font-medium">Anunțul și mesajele din Airbnb</div><div class="cap">poze, reguli, instrucțiuni de check-in</div></div>${icon('chevron_right', 't-3 i-20')}</a>
     </div></div>
     <div class="hair pt-5 mt-5"><h3 class="ttl-3 mb-3">Despre loc</h3><ul class="space-y-3">${STAY.facts.map(([ic, t]) => `<li class="flex gap-3">${icon(ic, 'i-20', 'color: var(--brand); margin-top: 1px')}<span>${esc(t)}</span></li>`).join('')}</ul></div>
@@ -1692,7 +1725,7 @@ document.addEventListener('click', (e) => {
     'open-detail': () => { if (addState) { addState = null; $('#addSheet').classList.add('hidden'); clearNewMarker(); } $('#coffeeSheet').classList.add('hidden'); openDetail(id); }, 'delete-loc': () => deleteLocation(id), 'edit-loc': () => { const l = state.custom.find((x) => x.id === id); if (l) openAdd({ editing: l }); },
     'toggle-visited': () => toggleVisited(id, el), 'toggle-skip': () => toggleSkip(id), 'pin-here': () => pinHere(id), 'add-photo': () => { homeOpen = false; openPhotoSheet(id); }, 'photo-file': () => { $('#coffeeSheet').classList.add('hidden'); state.photoTarget = id; $('#photoInput').value = ''; $('#photoInput').click(); }, 'photo-remove': () => removePhoto(id), 'photo-pick': () => savePhotoUrl(id, el.dataset.url),
     'day-route': dayRoute, 'locate': locate, 'open-link': () => window.open(el.dataset.href, '_blank', 'noopener'), 'close-banner': () => $('#radarBanner').classList.add('hidden'), 'install': installApp, 'open-install': openInstallSheet, 'refresh': hardRefresh,
-    'speak': () => { $$('.phr-say.speaking').forEach((x) => x.classList.remove('speaking')); el.classList.add('speaking'); speak(el.dataset.text, el.dataset.lang || 'es-ES'); const done = () => el.classList.remove('speaking'); setTimeout(done, 2200); if (canSpeak()) window.speechSynthesis.addEventListener('end', done, { once: true }); },
+    'speak': () => { $$('.phr-say.speaking').forEach((x) => x.classList.remove('speaking')); el.classList.add('speaking'); buzz(8); speak(el.dataset.text, el.dataset.lang || 'es-ES', () => el.classList.remove('speaking')); },
     'pack-toggle': () => { packingOpen = !packingOpen; renderPacking(); }, 'pack-item': () => packToggleItem(el.dataset.key), 'pack-add': () => packAddItem(el.dataset.cat), 'pack-del': () => packDelItem(el.dataset.key),
     'add-expense': () => openExpense(el.dataset.day), 'del-expense': () => expenseDel(el.dataset.id), 'exp-save': () => expenseSave(),
     'exp-day': () => { expenseDraft.day = el.dataset.day; $$('#expDays .chip').forEach((c) => c.classList.toggle('on', c === el)); },
