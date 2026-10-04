@@ -15,7 +15,7 @@
   --shadow-1: 0 1px 2px rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
   --shadow-2: 0 1px 3px rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15);
   --ease: cubic-bezier(.2, 0, 0, 1); --spring: cubic-bezier(.34, 1.4, .64, 1);
-  --brand: #E8467C; --brand-soft: #FDE7EF;
+  --brand: #C8102E; --brand-soft: #FFF3B8; /* roșu și galben catalan (senyera) */
   --p-mara: #E0457B; --p-mara-on: #FFFFFF; --p-anne: #0B4F3C; --p-anne-on: #A9DDFF; --p-daniel: #1A73E8; --p-daniel-on: #FFFFFF;
 }
 .dark {
@@ -25,7 +25,7 @@
   --blue: #8AB4F8; --blue-strong: #AECBFA; --blue-soft: #2D3A50; --on-blue: #202124;
   --green: #81C995; --green-soft: #1E3A29; --red: #F28B82; --red-soft: #4A2522;
   --amber: #FDD663; --amber-soft: #3F3620; --star: #FDD663;
-  --purple: #D7AEFB; --purple-soft: #3A2C4A; --pink: #FF8BCB; --pink-soft: #4A2438; --brand-soft: #4A2438;
+  --purple: #D7AEFB; --purple-soft: #3A2C4A; --pink: #FF8BCB; --pink-soft: #4A2438; --brand: #FF7A70; --brand-soft: #3B3310;
   --shadow-1: 0 1px 2px rgba(0,0,0,.5), 0 1px 3px 1px rgba(0,0,0,.3);
   --shadow-2: 0 1px 3px rgba(0,0,0,.5), 0 4px 8px 3px rgba(0,0,0,.3);
 }
@@ -58,17 +58,16 @@ body { background: var(--bg); color: var(--text); font-family: 'Google Sans', Ro
 .appbar { position: sticky; top: 0; z-index: 800; background: var(--bg); padding-top: env(safe-area-inset-top); transition: box-shadow .2s; }
 .appbar.scrolled { box-shadow: 0 1px 0 var(--line), 0 2px 6px rgba(60,64,67,.08); }
 .appbar-in { height: 56px; display: flex; align-items: center; gap: 8px; }
-.logo { display: flex; align-items: center; gap: 7px; font-size: 20px; font-weight: 500; color: var(--text); letter-spacing: -.2px; }
-.logo-mark { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--brand) 38%, transparent)); }
+.logo { display: flex; align-items: center; gap: 3px; font-size: 20px; font-weight: 500; color: var(--text); letter-spacing: -.2px; }
+.logo-mark { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 24px; filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--brand) 38%, transparent)); }
 .logo-mark svg { display: block; }
 .logo-word { font-size: 21px; font-weight: 800; letter-spacing: -.6px; color: var(--text); line-height: 1; white-space: nowrap; }
 /* Punctele din trip·in·Barcelona: galbenul și roșul din senyera, cu unde mici care pornesc din ele */
 :root { --cat-yellow: #FCDD09; --cat-red: #DA121A; }
-.logo-dot { position: relative; display: inline-block; width: 6px; height: 6px; margin: 0 2.5px; border-radius: 99px; background: var(--cat-yellow); vertical-align: middle; box-shadow: 0 0 0 1px color-mix(in srgb, var(--cat-red) 35%, transparent); }
-.logo-dot::before, .logo-dot::after { content: ''; position: absolute; inset: 0; border-radius: 99px; border: 1.5px solid var(--cat-red); opacity: 0; animation: dotpulse 3.2s cubic-bezier(.2, .6, .3, 1) infinite; }
-.logo-dot::after { animation-delay: 1.6s; }
-.logo-dot + .logo-dot::before, .logo-dot ~ .logo-dot::before { animation-delay: .8s; } .logo-dot ~ .logo-dot::after { animation-delay: 2.4s; }
-@keyframes dotpulse { 0% { transform: scale(1); opacity: .75; } 70% { opacity: .1; } 100% { transform: scale(3.4); opacity: 0; } }
+.logo-dot { position: relative; display: inline-block; width: 6px; height: 6px; margin: 0 5px; border-radius: 99px; background: var(--cat-yellow); vertical-align: middle; box-shadow: 0 0 0 1px color-mix(in srgb, var(--cat-red) 35%, transparent); }
+.logo-dot::before { content: ''; position: absolute; inset: 0; border-radius: 99px; border: 1.5px solid var(--cat-red); opacity: 0; animation: dotpulse 6s cubic-bezier(.25, .6, .35, 1) infinite; }
+.logo-dot ~ .logo-dot::before { animation-delay: 3s; }
+@keyframes dotpulse { 0% { transform: scale(1); opacity: .45; } 45% { transform: scale(2.6); opacity: 0; } 100% { transform: scale(2.6); opacity: 0; } }
 .me-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 11px 0 3px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600; white-space: nowrap; }
 .me-chip .avatar { width: 26px; height: 26px; font-size: 12px; }
 .me-chip.unset { border-style: dashed; color: var(--text-2); font-weight: 500; }
@@ -787,3 +786,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .hq-legend-row i { width: 12px; height: 12px; border-radius: 3px; background: var(--cat); }
 .hq-legend-row .sep { width: 1px; height: 14px; background: var(--line); }
 .hq-legend-row + .hq-board .hq-col:last-child .hq-col-h, .hq-legend-row + .hq-board .hq-axis-h { border-radius: 0; }
+
+/* Butoanele principale „Adaugă”: în stil senyera, galben cu roșu */
+.fab, .side-add { background: var(--cat-yellow); color: #9B0D14; box-shadow: inset 0 -4px 0 var(--cat-red), 0 4px 14px rgba(218,18,26,.22), var(--shadow-1); }
+.fab:active, .side-add:active { box-shadow: inset 0 -2px 0 var(--cat-red), var(--shadow-1); }
