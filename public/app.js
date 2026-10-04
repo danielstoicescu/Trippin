@@ -663,27 +663,31 @@ function pickVoice(lang) {
   return v.find((x) => norm(x) === want) || v.find((x) => norm(x).startsWith(base)) || null;
 }
 // Rezerva: pronunția Google Translate, ca fișier audio (merge și unde telefonul n-are voce de spaniolă / catalană)
-let ttsAudio = null, ttsBroken = false;
+let ttsAudio = null;
 function speakAudio(text, lang, onEnd) {
   try { ttsAudio?.pause(); ttsAudio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang.slice(0, 2)}&q=${encodeURIComponent(text.slice(0, 190))}`);
     ttsAudio.addEventListener('ended', onEnd); ttsAudio.addEventListener('error', () => { onEnd(); toast('Nu pot reda sunetul acum (fără semnal?). Pronunția e scrisă dedesubt.', 'volume_off', 4000); });
     ttsAudio.play().catch(() => { onEnd(); toast('Telefonul a blocat sunetul. Verificați volumul și modul silențios.', 'volume_off', 4000); });
   } catch { onEnd(); }
 }
+function voiceHelp() { toast(isIOS() ? 'Nu se aude? Verificați volumul. Vocea spaniolă: Setări → Accesibilitate → Conținut vorbit → Voci → Spaniolă.' : 'Nu se aude? Verificați volumul și vocea spaniolă din setările de text-to-speech ale telefonului.', 'volume_up', 6000); }
 function speak(text, lang = 'es-ES', onEnd = () => {}) {
-  const voice = canSpeak() ? pickVoice(lang) : null;
-  // Fără voce potrivită (des pentru catalană) sau fără motor de voce: audio
-  if (ttsBroken || (!voice && (!canSpeak() || ttsVoices.length || lang.startsWith('ca')))) return speakAudio(text, lang, onEnd);
-  const s = window.speechSynthesis;
-  try {
-    if (s.speaking || s.pending) s.cancel(); s.resume?.();
-    const u = new SpeechSynthesisUtterance(text); u.lang = voice?.lang || lang; if (voice) u.voice = voice; u.rate = 0.9;
-    let started = false; u.onstart = () => { started = true; }; u.onend = onEnd;
-    u.onerror = (e) => { if (!started && e.error !== 'interrupted' && e.error !== 'canceled') { ttsBroken = true; speakAudio(text, lang, onEnd); } else onEnd(); };
-    s.speak(u);
-    // Unele telefoane tac fără nicio eroare: dacă n-a pornit în 1,5 s, trecem pe audio
-    setTimeout(() => { if (!started && !s.speaking) { ttsBroken = true; s.cancel(); speakAudio(text, lang, onEnd); } }, 1500);
-  } catch { speakAudio(text, lang, onEnd); }
+  if (!canSpeak()) return speakAudio(text, lang, onEnd);
+  const s = window.speechSynthesis; let voice = pickVoice(lang), useLang = lang;
+  // Catalana fără voce catalană pe telefon: o citește vocea spaniolă (pronunția e apropiată), nu tăcere
+  if (!voice && lang.startsWith('ca')) { voice = pickVoice('es-ES'); useLang = voice?.lang || 'es-ES'; }
+  let finished = false; const end = () => { if (!finished) { finished = true; onEnd(); } };
+  const say = (attempt) => {
+    let started = false, settled = false; const u = new SpeechSynthesisUtterance(text);
+    u.lang = voice?.lang || useLang; if (voice) u.voice = voice; u.rate = 0.9;
+    const retryOrHelp = () => { if (settled || started) return; settled = true; if (attempt < 2) say(attempt + 1); else { end(); voiceHelp(); } };
+    u.onstart = () => { started = true; }; u.onend = end;
+    u.onerror = (e) => { if (e.error === 'interrupted' || e.error === 'canceled') { settled = true; return end(); } retryOrHelp(); };
+    try { if (attempt > 1 || s.speaking || s.pending) s.cancel(); s.resume?.(); s.speak(u); } catch { return retryOrHelp(); }
+    // Safari poate rata prima frază: dacă nu pornește în 2,5 s, mai încercăm o dată cu vocea telefonului
+    setTimeout(() => { if (!started && !s.speaking) retryOrHelp(); }, 2500);
+  };
+  say(1);
 }
 function phrasesHTML() {
   const sp = true;
