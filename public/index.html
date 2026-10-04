@@ -25,7 +25,7 @@
 <body>
   <header class="appbar" id="appbar">
     <div class="wrap appbar-in">
-      <div class="logo" aria-label="trip·in — Barcelona"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 512 512" width="22" height="22"><path d="M256 396 C198 318 166 277 166 214 a90 90 0 1 1 180 0 C346 277 314 318 256 396 Z" fill="#E8467C"/><circle cx="256" cy="205" r="41" fill="#fff"/><circle cx="372" cy="150" r="24" fill="#FBBC04"/></svg></span><span class="logo-word" aria-hidden="true">trip<i class="logo-dot"></i>in</span><span id="syncDot" class="sync-dot" data-mode="connecting" role="status" aria-label="Se conectează"></span></div>
+      <div class="logo" aria-label="trip·in·Barcelona"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 512 512" width="22" height="22"><path d="M256 396 C198 318 166 277 166 214 a90 90 0 1 1 180 0 C346 277 314 318 256 396 Z" fill="#E8467C"/><circle cx="256" cy="205" r="41" fill="#fff"/><circle cx="372" cy="150" r="24" fill="#FBBC04"/></svg></span><span class="logo-word" aria-hidden="true">trip<i class="logo-dot"></i>in<i class="logo-dot"></i>Barcelona</span><span id="syncDot" class="sync-dot" data-mode="connecting" role="status" aria-label="Se conectează"></span></div>
       <div class="flex-1"></div>
       <button id="meChip" data-action="whoami" class="me-chip unset press" aria-label="Alege cine ești"></button>
       <button id="weather" data-action="open-weather" class="wx press" aria-label="Vremea în Barcelona"></button>
@@ -45,8 +45,8 @@
   <!-- ============ Desktop: bara laterală (apare doar pe ecrane late) ============ -->
   <aside class="side" id="side" aria-label="Navigare">
     <div class="side-brand">
-      <div class="logo" aria-label="trip·in — Barcelona"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 512 512" width="26" height="26"><path d="M256 396 C198 318 166 277 166 214 a90 90 0 1 1 180 0 C346 277 314 318 256 396 Z" fill="#E8467C"/><circle cx="256" cy="205" r="41" fill="#fff"/><circle cx="372" cy="150" r="24" fill="#FBBC04"/></svg></span><span class="logo-word side-lbl" aria-hidden="true">trip<i class="logo-dot"></i>in</span></div>
-      <div class="side-trip side-lbl">Barcelona & PortAventura<br>5–9 noiembrie 2026</div>
+      <div class="logo" aria-label="trip·in·Barcelona"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 512 512" width="26" height="26"><path d="M256 396 C198 318 166 277 166 214 a90 90 0 1 1 180 0 C346 277 314 318 256 396 Z" fill="#E8467C"/><circle cx="256" cy="205" r="41" fill="#fff"/><circle cx="372" cy="150" r="24" fill="#FBBC04"/></svg></span><span class="logo-word side-lbl" aria-hidden="true">trip<i class="logo-dot"></i>in<i class="logo-dot"></i>Barcelona</span></div>
+      <div class="side-trip side-lbl"><span class="senyera"></span> Barcelona & PortAventura<br>5–9 noiembrie 2026</div>
     </div>
     <button data-action="open-add" class="side-add press" title="Adaugă un loc"><span class="material-symbols-rounded i-22">add_location_alt</span><span class="side-lbl">Adaugă un loc</span></button>
     <nav class="side-nav">
@@ -190,6 +190,7 @@
           <a href="https://www.google.com/maps/search/?api=1&query=farmacia+Poblenou+Barcelona" target="_blank" rel="noopener" class="li press"><span class="material-symbols-rounded t-green">local_pharmacy</span><span class="flex-1">Farmacie aproape</span><span class="material-symbols-rounded t-3 i-20">chevron_right</span></a>
           <a href="https://www.tmb.cat/en/barcelona/metro" target="_blank" rel="noopener" class="li press"><span class="material-symbols-rounded t-blue">subway</span><span class="flex-1">Metrou (L4 galbenă spre Poblenou)</span><span class="material-symbols-rounded t-3 i-20">chevron_right</span></a>
           <div id="syncText" class="li"></div>
+          <button data-action="toggle-theme" class="li press theme-row"><span class="material-symbols-rounded t-blue">dark_mode</span><span class="flex-1 text-left">Temă întunecată / deschisă</span></button>
         </div>
       </div>
       <div class="sec"><div class="sec-h"><h2 class="ttl-2">Trimite aplicația</h2></div>
