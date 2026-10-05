@@ -53,7 +53,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Google Sans', Ro
 .ic { width: 1em; height: 1em; font-size: 24px; fill: currentColor; flex-shrink: 0; display: inline-block; vertical-align: -0.2em; }
 .ic .o { display: var(--ic-o, block); } .ic .f { display: var(--ic-f, none); } .ic .o.f { display: block; }
 .ms-fill, .nav-btn.on, .chip.on { --ic-o: none; --ic-f: block; }
-.i-16 { font-size: 16px; } .i-18 { font-size: 18px; } .i-20 { font-size: 20px; } .i-22 { font-size: 22px; } .i-28 { font-size: 28px; } .i-32 { font-size: 32px; } .i-40 { font-size: 40px; } .i-48 { font-size: 48px; }
+.i-14 { font-size: 14px; } .i-16 { font-size: 16px; } .i-18 { font-size: 18px; } .i-20 { font-size: 20px; } .i-22 { font-size: 22px; } .i-28 { font-size: 28px; } .i-32 { font-size: 32px; } .i-40 { font-size: 40px; } .i-48 { font-size: 48px; }
 
 /* Bara de sus */
 .appbar { position: sticky; top: 0; z-index: 800; background: var(--bg); padding-top: env(safe-area-inset-top); transition: box-shadow .2s; }
@@ -1008,3 +1008,90 @@ body.is-dragging { -webkit-user-select: none; user-select: none; }
   .side-level i::after { content: ""; display: block; height: 100%; width: var(--p); background: var(--cat-yellow); }
 }
 @media (prefers-reduced-motion: reduce) { .score-pop { animation-duration: .01s; } .ps-kick { animation: none; } .ps-dlg, .am-in { animation: none; } }
+
+/* =====================================================================
+   Un singur sistem: aplicația și jocul vorbesc aceeași limbă.
+   Ziua: „dulapul” arcade e crem cu margine roșie, ca butonul Adaugă și
+   ferestrele libere. Noaptea: tema întunecată e violetul aparatului.
+   Cifrele importante (zile, opriri, scor, bani) au font de tabelă de scor;
+   barele de progres sunt din pătrățele, ca viețile dintr-un joc.
+   ===================================================================== */
+:root {
+  --cab-bg: color-mix(in srgb, var(--cat-yellow) 14%, var(--surface)); --cab-row: var(--surface); --cab-rim: color-mix(in srgb, var(--cat-red) 24%, transparent);
+  --cab-ink: var(--text); --cab-dim: var(--text-2); --score: #B00E1F; --score-sh: color-mix(in srgb, var(--cat-yellow) 90%, transparent); --pip: var(--cat-red);
+  --pcl-mara: #C93468; --pcl-anne: #0B7A57; --pcl-daniel: #1A73E8;
+}
+.dark {
+  --bg: #1A1724; --surface: #1A1724; --surface-2: #221E2D; --surface-3: #2B2638; --surface-4: #383247; --line: #383247; --line-soft: #2B2638;
+  --text: #ECEAF2; --text-2: #A8A3B5; --text-3: #968FA6;
+  --cab-bg: #251E45; --cab-row: rgba(255,255,255,.06); --cab-rim: rgba(252,221,9,.26); --cab-ink: #fff; --cab-dim: #C9C0EA; --score: var(--cat-yellow); --score-sh: var(--cat-red); --pip: var(--cat-yellow);
+  --pcl-mara: #FF6FA5; --pcl-anne: #3DDC97; --pcl-daniel: #6AA8FF;
+}
+/* Cifre de tabelă de scor */
+.date .dd, .summary .num, .score-num, .ctr-n b { font-family: var(--px); font-weight: 700; letter-spacing: .01em; }
+.date .dd { font-size: 17px; }
+.summary .num { font-size: 17px; margin-right: 2px; }
+.summary .k .lvl { margin: 0 4px 0 0; }
+.score-num { color: var(--text); }
+@media (min-width: 768px) { .date .dd { font-size: 22px; } }
+/* Lumini pătrate, ca pe un aparat */
+.lights i, .lvl { border-radius: 2px; }
+/* Bare de progres din pătrățele, peste tot */
+.tp-bar, .prog-line, .budget-bar, .lb-bar, .hq-meter { height: 8px; border-radius: 2px; -webkit-mask: repeating-linear-gradient(90deg, #000 0 9px, transparent 9px 11px); mask: repeating-linear-gradient(90deg, #000 0 9px, transparent 9px 11px); }
+.tp-bar i, .prog-line i, .budget-bar i, .lb-bar i, .hq-meter i { border-radius: 0; }
+/* Rândul cu soare și vreme */
+.daylight { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-size: 13px; color: var(--text-2); }
+.daylight b { color: var(--text); font-weight: 600; }
+.daylight .dotsep { display: inline-flex; align-items: center; gap: 4px; }
+.daylight .dotsep::before { content: '·'; margin-right: 4px; color: var(--text-3); }
+/* Scorul în cip: aceeași pastilă crem ca butonul Adaugă */
+.hud-pts { display: inline-flex; align-items: center; gap: 3px; margin-left: 2px; padding: 2px 7px 2px 5px; border-radius: 8px; background: var(--cab-bg); color: var(--score); box-shadow: inset 0 0 0 1px var(--cab-rim); }
+.hud-pts b { font-size: 11px; line-height: 16px; }
+.hud-pts .ic { color: var(--cat-yellow); filter: drop-shadow(0 0 0 var(--score)) drop-shadow(1px 1px 0 color-mix(in srgb, var(--cat-red) 60%, transparent)); }
+/* Clasamentul și nivelul: dulapul tematic, nu o placă separată */
+.lb { background: var(--cab-bg); color: var(--cab-ink); box-shadow: inset 0 0 0 1.5px var(--cab-rim); }
+.lb::after { opacity: 0; } .dark .lb::after { opacity: 1; }
+.lb-lv, .lb-total b { color: var(--score); }
+.lb-total b { text-shadow: 2px 2px 0 var(--score-sh); }
+.lb .cap, .lb-total span { color: var(--cab-dim); }
+.lb-bar { background: color-mix(in srgb, var(--cab-ink) 12%, transparent); }
+.lb-bar i { background: var(--pip); }
+.lb-row { background: var(--cab-row); color: var(--cab-ink); box-shadow: 0 1px 0 color-mix(in srgb, var(--cab-ink) 6%, transparent); }
+.lb-row.lead { background: color-mix(in srgb, var(--cat-yellow) 28%, var(--cab-row)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cat-red) 30%, transparent); }
+.dark .lb-row.lead { background: rgba(252,221,9,.12); box-shadow: inset 0 0 0 1px rgba(252,221,9,.4); }
+.lb-row[data-person="mara"] { --pcl: var(--pcl-mara); } .lb-row[data-person="anne"] { --pcl: var(--pcl-anne); } .lb-row[data-person="daniel"] { --pcl: var(--pcl-daniel); }
+.ps-card[data-person="mara"] { --pcl: #FF6FA5; } .ps-card[data-person="anne"] { --pcl: #3DDC97; } .ps-card[data-person="daniel"] { --pcl: #6AA8FF; }
+.lb-pts { color: var(--score); }
+@media (min-width: 768px) {
+  .side-level { background: var(--cab-bg); color: var(--cab-ink); box-shadow: inset 0 0 0 1px var(--cab-rim); }
+  .side-level .px { color: var(--score); } .side-level .side-lbl { color: var(--cab-dim); }
+  .side-level i { background: color-mix(in srgb, var(--cab-ink) 12%, transparent); -webkit-mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px); mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px); }
+  .side-level i::after { background: var(--pip); }
+}
+.ps-pts { font-size: 12px; color: var(--arc-dim); } .ps-pts b { font-size: 13px; color: var(--cat-yellow); }
+.ps-ready { font-size: 11px; }
+/* Mânerul de redimensionare: doar când e nevoie, ca să nu taie orele */
+.hq-blk .drag-rs::after, .cal-blk.tiny .drag-rs::after { opacity: 0; transition: opacity .15s; }
+.hq-blk:hover .drag-rs::after, .hq-blk:focus-visible .drag-rs::after, .hq-blk.dragging .drag-rs::after, .cal-blk.tiny:hover .drag-rs::after, .cal-blk.dragging .drag-rs::after { opacity: 1; }
+@media (pointer: coarse) { .btn-sm.btn-text { min-height: 40px; } }
+/* Bara de jos: cinci file fixe, fără derulare; restul stă în „Mai mult” */
+.nav-in { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); overflow: visible; scroll-snap-type: none; }
+.nav-in > .nav-btn { width: auto; max-width: none; }
+.nav::after { display: none; }
+.nav-more.near .ind { background: var(--green-soft); color: var(--green); }
+.more-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.more-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-height: 124px; padding: 14px 12px; border-radius: 16px; background: var(--cab-bg); box-shadow: inset 0 0 0 1px var(--cab-rim); color: var(--text); text-align: left; }
+.more-tile .ic { color: var(--brand); }
+.more-t { font-size: 15px; font-weight: 700; }
+.more-s { font-size: 12px; line-height: 1.35; color: var(--text-2); }
+.more-dot { position: absolute; top: 12px; right: 12px; width: 8px; height: 8px; border-radius: 2px; background: var(--green); }
+@media (max-width: 359px) { .more-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 768px) { .hq-stat.hq-game { background: var(--cab-bg); border-color: var(--cab-rim); } .hq-stat.hq-game .ic, .hq-stat.hq-game b { color: var(--score); } .hq-stat.hq-game b { font-size: 12px; margin-right: 2px; } }
+/* Sfatul zilei: două rânduri, se deschide la atingere */
+.day-tip { display: flex; align-items: flex-start; gap: 12px; width: 100%; margin-top: 16px; padding: 12px; text-align: left; }
+.day-tip .t-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.day-tip.open .t-2 { -webkit-line-clamp: unset; display: block; }
+/* Bifa de „am fost”: pătrat, ca o căsuță — același limbaj cu pătrățelele de progres */
+.tl .dot { border-radius: 4px; }
+.tl .dot.done::after { content: ""; position: absolute; left: 3px; top: 0; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.tl .dot.now { border-radius: 4px; }

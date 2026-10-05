@@ -339,7 +339,7 @@ function essHTML(e) {
 function renderSummary() {
   const s = daySummary(state.day), el = $('#daySummary'); if (!el) return; const lv = s.plan.level, iss = s.plan.issues;
   el.innerHTML = `<div class="summary">
-    <div><div class="v tabular">${s.n} <span class="lvl" style="--lv: ${LOAD[lv][1]}"></span></div><div class="k">${LOAD[lv][0]}</div></div>
+    <div><div class="v"><b class="num">${s.n}</b> ${s.n === 1 ? 'oprire' : 'opriri'}</div><div class="k"><span class="lvl" style="--lv: ${LOAD[lv][1]}"></span> ${LOAD[lv][0]}</div></div>
     <div><div class="v tabular">${s.walkT ? fmtMin(s.walkT) : '—'}</div><div class="k">pe jos${s.walkM ? ' · ' + fmtDist(s.walkM) : ''}</div></div>
     <div><div class="v tabular">${s.from != null ? hhmm(s.from) : '—'}${s.to ? '–' + hhmm(s.to) : ''}</div><div class="k">${s.other ? `+${fmtMin(s.other)} ${s.plan.slots.some((x) => x.leg?.icon === 'train') ? 'tren' : 'metrou'}` : 'interval'}</div></div>
   </div>
@@ -445,7 +445,7 @@ function renderDay() {
   { const all = DAYS.flatMap((d) => dayItems(d)); const done = all.filter((l) => state.shared.visited[l.id]).length; const tp = $('#tripProgress'); if (tp) tp.innerHTML = done ? `<div class="trip-prog"><div class="tp-bar"><i style="width:${Math.round(done / all.length * 100)}%"></i></div><span class="cap">${done}/${all.length} locuri bifate în tot tripul</span></div>` : ''; }
   renderDates(); renderSummary(); renderFilters();
   const list = dayItems(state.day, true).filter((l) => state.filter === 'all' || catKey(enriched(l).cat) === state.filter);
-  $('#dayTip').innerHTML = DAY_TIPS[state.day] && state.filter === 'all' ? `<div class="card-flat p-3 mt-4 flex gap-3">${icon('lightbulb', 'i-20', 'color: var(--amber)')}<span class="t-2">${esc(DAY_TIPS[state.day])}</span></div>` : '';
+  $('#dayTip').innerHTML = DAY_TIPS[state.day] && state.filter === 'all' ? `<button data-action="tip-toggle" class="day-tip card-flat press ${state.tipOpen ? 'open' : ''}" aria-expanded="${!!state.tipOpen}">${icon('lightbulb', 'i-20', 'color: var(--amber)')}<span class="t-2 text-left flex-1">${esc(DAY_TIPS[state.day])}</span>${icon(state.tipOpen ? 'expand_less' : 'expand_more', 'i-20 t-3')}</button>` : '';
   const cal = planMode() === 'cal' && state.filter === 'all';
   const toggle = `<div class="plan-tools mt-4"><div class="seg" role="tablist" aria-label="Cum arată ziua">
     <button data-action="plan-mode" data-mode="list" class="seg-b press ${cal ? '' : 'on'}" role="tab" aria-selected="${!cal}">${icon('view_agenda', 'i-18')} Listă</button>
@@ -809,7 +809,7 @@ function renderMe() {
   for (const el of [$('#meChip'), $('#sideMe')]) {
     if (!el) continue;
     el.className = `me-chip press ${set ? 'p-' + k : 'unset'}`;
-    el.innerHTML = `<span class="avatar p-${k}">${set ? m.name[0] : '?'}</span><span class="me-name">${set ? m.name : 'Cine ești?'}</span>${set ? `<span class="hud-pts px" data-v="0" aria-label="puncte">0</span>` : ''}`;
+    el.innerHTML = `<span class="avatar p-${k}">${set ? m.name[0] : '?'}</span><span class="me-name">${set ? m.name : 'Cine ești?'}</span>${set ? `<span class="hud-pts" aria-label="puncte">${icon('star', 'i-14 ms-fill')}<b class="px" data-v="0">0</b></span>` : ''}`;
     el.setAttribute('aria-label', set ? `Ești ${m.name}. Atinge pentru a schimba jucătorul.` : 'Alege cine ești');
   }
   if (set) renderHud();
@@ -920,7 +920,7 @@ function homeCardHTML() {
 function renderHome() {
   const el = $('#homeInfo'); if (el) el.innerHTML = homeCardHTML();
   const b = baseLoc(), p = coordsOf(b), d = state.pos && p ? distanceM(state.pos, p) : null;
-  const lbl = $('#homeNavLabel'); if (lbl) lbl.textContent = d != null && d < 120 ? 'Cazare ✓' : 'Cazare'; $('.nav-home')?.classList.toggle('near', d != null && d < 120);
+  const lbl = $('#homeNavLabel'); if (lbl) lbl.textContent = d != null && d < 120 ? 'Cazare ✓' : 'Cazare'; $('.nav-more')?.classList.toggle('near', d != null && d < 120);
   if (homeOpen && !$('#coffeeSheet').classList.contains('hidden')) $('#coffeeBody').innerHTML = homeSheetHTML();
 }
 function homeSheetHTML() {
@@ -1095,8 +1095,8 @@ function setView(v) {
   $('#radarBanner').classList.add('hidden');
   $$('section[data-view]').forEach((s) => s.classList.toggle('hidden', s.dataset.view !== v));
   $$('.nav-btn[data-view], .side-btn[data-view]').forEach((b) => { b.classList.toggle('on', b.dataset.view === v); if (b.classList.contains('side-btn')) b.toggleAttribute('aria-current', b.dataset.view === v); });
+  $('.nav-more')?.classList.toggle('on', v === 'translate' || v === 'info');
   $('#fab').classList.toggle('hidden', v === 'info' || v === 'explore' || v === 'budget' || v === 'translate');
-  const act = $(`.nav-btn[data-view="${v}"]`); if (act && !isDesk()) act.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   window.scrollTo({ top: 0 });
   if (v === 'hq') { renderHQ(); ensureHQMap(); }
   if (v === 'explore') { ensureMap(); renderMap(); renderNextStop(); if (!state.radarOn) startRadar(); }
@@ -1529,6 +1529,7 @@ function renderHQHero() {
         ${stat('hq-goto-ready', bookOk ? 'event_available' : 'event_upcoming', `Rezervări ${s.book.done} din ${s.book.total}`, bookOk ? 'ok' : 'warn')}
         ${stat('hq-packing', 'luggage', `Bagaj ${packPct}%`, packPct >= 100 ? 'ok' : '')}
         ${stat('hq-goto-ready', s.issues.length ? 'warning' : 'check_circle', s.issues.length ? `${roN(s.issues.length, 'problemă', 'probleme')} în plan` : 'Toate zilele încap', s.issues.length ? 'bad' : 'ok')}
+        ${(() => { const sc = scores(), lv = levelOf(sc.total); return `<button data-action="view" data-view="us" class="hq-stat hq-game press">${icon('sports_esports', 'i-20')}<span><b class="px">Niv ${lv.n}</b> ${esc(lv.name)} · ${fmtPts(sc.total)} pct</span></button>`; })()}
       </div>
     </div>
     <div class="hq-pass" aria-label="Zborurile">
@@ -2073,7 +2074,7 @@ const meKeyNow = () => PERSONS.find((p) => PEOPLE_META[p].name === me()) || 'dan
 // Scorul jucătorului în cip, nivelul echipei în bara laterală; nivel nou = moment arcade
 function renderHud() {
   const s = scores(), lv = levelOf(s.total), mine = s.sc[meKeyNow()] || 0;
-  $$('.hud-pts').forEach((el) => { const old = +el.dataset.v || 0; el.dataset.v = mine; el.textContent = fmtPts(mine); if (mine > old && old) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } });
+  $$('.hud-pts b').forEach((el) => { const old = +el.dataset.v || 0; el.dataset.v = mine; el.textContent = fmtPts(mine); if (mine > old && old) { const pill = el.parentElement; pill.classList.remove('bump'); void pill.offsetWidth; pill.classList.add('bump'); } });
   const lb = $('#sideLevel'); if (lb) lb.innerHTML = `<span class="px">Niv ${lv.n}</span><span class="side-lbl">${esc(lv.name)}</span><i style="--p:${Math.round(lv.pct * 100)}%"></i>`;
   const seen = lsGet('bcn_lvl', 0); if (!seen) lsSet('bcn_lvl', lv.n); else if (lv.n > seen) { lsSet('bcn_lvl', lv.n); setTimeout(() => arcadeMoment(`Nivel ${lv.n}!`, lv.name), 450); }
 }
@@ -2082,7 +2083,7 @@ function leaderboardHTML() {
   return `<section class="lb" aria-label="Clasament">
     <div class="lb-team"><div><div class="lb-lv px">Nivel ${lv.n}</div><div class="lb-name">${esc(lv.name)}</div></div><div class="lb-total"><b class="px">${fmtPts(s.total)}</b><span>puncte echipă</span></div></div>
     <div class="lb-bar"><i style="width:${Math.round(lv.pct * 100)}%"></i></div>
-    <div class="cap mt-1">${lv.next ? `Încă ${fmtPts(lv.next - s.total)} puncte până la nivelul ${lv.n + 1}` : 'Nivel maxim. Sunteți barcelonezi.'}</div>
+    <div class="cap mt-1">${!s.total ? 'Bifați primul loc din program și jocul pornește.' : lv.next ? `Încă ${fmtPts(lv.next - s.total)} puncte până la nivelul ${lv.n + 1}` : 'Nivel maxim. Sunteți barcelonezi.'}</div>
     <div class="lb-rows">${order.map((p, i) => `<button data-action="person" data-person="${p}" class="lb-row press ${i === 0 && top ? 'lead' : ''}" style="--pc: var(--p-${p})"><span class="lb-slot px">${PLAYER_SLOT[p]}</span><span class="avatar p-${p}">${PEOPLE_META[p].name[0]}</span><span class="flex-1 text-left font-medium">${PEOPLE_META[p].name}${i === 0 && top ? ` ${icon('workspace_premium', 'i-18 ms-fill', 'color: var(--star)')}` : ''}</span><b class="px lb-pts">${fmtPts(s.sc[p])}</b></button>`).join('')}</div>
     <p class="cap lb-how">+${PTS.visit} bifat · +${PTS.bucket} bucketlist · +${PTS.counter} la contor · +${PTS.comment} comentariu · +${PTS.react} reacție</p>
   </section>`;
@@ -2111,7 +2112,7 @@ function playerSelectHTML(first) {
   return `<div class="ps-head"><div class="ps-kick px">Alege jucătorul</div><h2 id="psTitle" class="ps-title">${first ? 'Cine joacă?' : 'Cine e la telefon?'}</h2>
       <p class="ps-sub">${first ? 'Te ținem minte pe telefonul ăsta. Punctele, reacțiile și pozele apar pe numele tău.' : 'Schimbă jucătorul de pe acest telefon.'}</p></div>
     <div class="ps-grid">${PERSONS.map((p) => { const m = PEOPLE_META[p], on = set && m.name === cur; return `<button data-action="who-set" data-person="${p}" class="ps-card press ${on ? 'on' : ''}" style="--pc: var(--p-${p})" aria-pressed="${on}">
-      <span class="ps-slot px">${PLAYER_SLOT[p]}</span><span class="ps-av avatar p-${p}">${m.name[0]}</span><span class="ps-name">${m.name}</span><span class="ps-tag">${esc(m.tag)}</span><span class="ps-pts px">${fmtPts(s.sc[p])}</span>${on ? '<span class="ps-ready px">Tu</span>' : ''}</button>`; }).join('')}</div>
+      <span class="ps-slot px">${PLAYER_SLOT[p]}</span><span class="ps-av avatar p-${p}">${m.name[0]}</span><span class="ps-name">${m.name}</span><span class="ps-tag">${esc(m.tag)}</span><span class="ps-pts"><b class="px">${fmtPts(s.sc[p])}</b> pct</span>${on ? '<span class="ps-ready px">Tu</span>' : ''}</button>`; }).join('')}</div>
     <div class="ps-foot"><button data-action="sfx-toggle" class="chip press">${icon(sfxOn() ? 'volume_up' : 'volume_off', 'i-18')}<span data-sfx-label>${sfxOn() ? 'Sunet pornit' : 'Sunet oprit'}</span></button>${first ? '' : '<button data-action="ps-close" class="btn btn-text press">Închide</button>'}</div>`;
 }
 function openWhoAmI(first = false) { const d = $('#playerDlg'); if (!d) return; $('#playerBody').innerHTML = playerSelectHTML(first); d.dataset.first = first ? '1' : ''; d.classList.remove('hidden'); if (matchMedia('(pointer: fine)').matches) setTimeout(() => $('#playerBody .ps-card.on, #playerBody .ps-card')?.focus(), 60); }
@@ -2122,6 +2123,21 @@ function setMe(person) {
   setTimeout(() => { $('#playerDlg').classList.add('hidden'); renderMe(); renderAll(); refreshDetail(); toast(`Salut, ${m.name}! Joci ca ${PLAYER_SLOT[person]}.`, 'sports_esports', 3200); }, RM() ? 150 : 700);
 }
 
+// ---------- „Mai mult”: ce nu încape în bara de jos ----------
+function openMore() {
+  const d = state.pos ? distanceM(state.pos, TRIP.base) : null, tile = (act, ic, t, sub, extra = '') => `<button ${act} class="more-tile press">${icon(ic, 'i-24')}<span class="more-t">${t}</span><span class="more-s">${sub}</span>${extra}</button>`;
+  openSheet(`${sheetHead('Toate ecranele', 'Mai mult')}
+    <div class="more-grid">
+      ${tile('data-action="more-go" data-view="translate"', 'translate', 'Traducere', 'Fraze cu pronunție, spaniolă și catalană')}
+      ${tile('data-action="more-go" data-view="info"', 'info', 'Info', 'Rezervări, bagaj, notițe, urgențe')}
+      ${tile('data-action="open-home"', 'hotel', 'Cazarea', d != null && d < 120 ? 'Sunteți acasă' : 'Pellaires 35: traseu și adresă', d != null && d < 120 ? '<i class="more-dot"></i>' : '')}
+    </div>
+    <div class="card list mt-3 mb-3">
+      <button data-action="whoami" class="li press">${icon('sports_esports', 't-blue')}<span class="flex-1 text-left">Schimbă jucătorul</span><span class="cap">${esc(me())}</span></button>
+      <button data-action="sfx-toggle" class="li press">${icon('volume_up', 't-blue')}<span class="flex-1 text-left">Sunete arcade</span><span class="cap" data-sfx-label>${sfxOn() ? 'Sunet pornit' : 'Sunet oprit'}</span></button>
+      <button data-action="toggle-theme" class="li press">${icon('dark_mode', 't-blue')}<span class="flex-1 text-left">Temă întunecată / deschisă</span></button>
+    </div>`);
+}
 // ---------- PWA ----------
 function setupPWA() {
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); state.installPrompt = e; $('#installBtn')?.classList.remove('hidden'); });
@@ -2217,7 +2233,7 @@ document.addEventListener('click', (e) => {
     'react': () => { if (myReaction(el.dataset.id) !== el.dataset.k) emojiBurst(el, reactEmoji(el.dataset.k)); toggleReaction(el.dataset.id, el.dataset.k).then(() => {}); popAfterRender(`[data-action="react"][data-id="${CSS.escape(el.dataset.id)}"][data-k="${el.dataset.k}"]`); }, 'open-comments': () => openComments(el.dataset.id),
     'vote': () => castVote(el.dataset.key, el.dataset.ref, Number(el.dataset.v)), 'meal-pick': () => pickMeal(el.dataset.key, el.dataset.ref), 'remove-loc': () => removeLoc(id), 'restore-loc': () => restoreLoc(id),
     'show-on-map': () => showOnMap(id), 'open-search': () => openSearch(), 'srch-hint': () => { const i = $('#srchQ'); if (i) { i.value = el.dataset.q; renderSearch(i.value); i.focus(); } }, 'srch-add': () => { closeModals(); openAdd(); setTimeout(() => { const i = $('#addQ'); if (i) { i.value = el.dataset.q; onAddQuery(el.dataset.q); } }, 150); },
-    'whoami': () => openWhoAmI(false), 'who-set': () => setMe(el.dataset.person),
+    'whoami': () => { $('#coffeeSheet').classList.add('hidden'); openWhoAmI(false); }, 'who-set': () => setMe(el.dataset.person),
     'hq-meal': () => { const k = el.dataset.key; hq.meal = hq.meal === k ? null : (mealRows(k).length > 1 ? k : null); renderHQ(); },
     'hq-day': () => hqSetDay(el.dataset.day), 'hq-open-day': () => { switchDay(el.dataset.day); setView('plan'); }, 'hq-route': () => { switchDay(el.dataset.day); dayRoute(); },
     'hq-open-plan': () => setView('plan'), 'hq-open-map': () => setView('explore'), 'hq-open-budget': () => setView('budget'),
@@ -2228,7 +2244,7 @@ document.addEventListener('click', (e) => {
     'book': () => openBook(id), 'book-done': () => bookToggle(id), 'book-copy': () => { const loc = findLoc(id); if (loc) copyText(bookMessage(loc), 'Mesajul e copiat: lipiți-l în WhatsApp, Instagram sau e-mail.'); },
     'note-add': () => noteAdd(id), 'note-del': () => noteDel(id, el.dataset.i), 'note-who': () => { lsSet(LS.me, PEOPLE_META[el.dataset.person].name); const t = $('#noteText')?.value || ''; refreshDetail(); if ($('#noteText')) { $('#noteText').value = t; $('#noteText').focus(); } },
     'coll-open': () => openCollection(el.dataset.coll), 'coll-filter': () => { collState.filter = el.dataset.f; renderCollectionSheet(); }, 'coll-visit': async () => { await toggleVisited(id, el); renderCollectionSheet(); },
-    'open-coffee': () => coffeeQuick(el), 'coffee-quick': () => coffeeQuick(el), 'coffee-here': () => coffeeQuick(el, el.dataset.place), 'sfx-toggle': toggleSfx, 'ps-close': () => $('#playerDlg').classList.add('hidden'), 'open-home': openHome, 'copy-address': () => copyText('Carrer de Pellaires 35, 08019 Barcelona', 'Adresa a fost copiată.'), 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
+    'open-coffee': () => coffeeQuick(el), 'coffee-quick': () => coffeeQuick(el), 'coffee-here': () => coffeeQuick(el, el.dataset.place), 'sfx-toggle': toggleSfx, 'open-more': openMore, 'tip-toggle': () => { state.tipOpen = !state.tipOpen; el.classList.toggle('open', state.tipOpen); el.setAttribute('aria-expanded', state.tipOpen); const ic = el.lastElementChild; if (ic) ic.replaceWith(htmlEl(icon(state.tipOpen ? 'expand_less' : 'expand_more', 'i-20 t-3'))); }, 'more-go': () => { closeModals(); setView(el.dataset.view); scrollTo(0, 0); }, 'ps-close': () => $('#playerDlg').classList.add('hidden'), 'open-home': openHome, 'copy-address': () => copyText('Carrer de Pellaires 35, 08019 Barcelona', 'Adresa a fost copiată.'), 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
     'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta), el), 'bucket-new': () => openBucketEditor(el.dataset.person), 'bucket-edit': () => { const it = bucketOf(el.dataset.person).find((x) => x.id === id); if (it) openBucketEditor(el.dataset.person, it); }, 'bucket-pick': () => bucketPick(el.dataset.loc), 'bucket-toggle': () => { const l = findLoc(id); if (l) bucketToggle(el.dataset.person, l); }, 'bucket-save': bucketSave, 'bucket-delete': bucketDelete, 'bucket-newloc': bucketNewLoc,
     'schedule': () => openSchedule(id), 'sched-day': () => { $$('#schedDays .chip').forEach((c) => c.classList.toggle('on', c === el)); if (el.dataset.time && el.dataset.time !== 'Flexibil') $('#schedTime').value = el.dataset.time; }, 'sched-save': () => scheduleSave(), 'sched-pool': () => scheduleSave('pool'),
     'add-alt': () => addAlternative(Number(el.dataset.index)),
