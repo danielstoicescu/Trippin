@@ -1146,3 +1146,9 @@ body.is-dragging { -webkit-user-select: none; user-select: none; }
 .tp-sum .tp-dur { display: table; margin: 4px 0 0; vertical-align: 0; }
 .tp-head { align-items: flex-start; }
 .tp-nudge { margin-top: 4px; }
+/* Eticheta „Cafeaua zilei” / „Prânzul”: aer deasupra, ca să nu se lipească de ce e mai sus */
+.tl > li.stop:has(> .cup-flag), .tl > li.stop:has(> .meal-flag) { margin-top: 14px; }
+.tl > li.stop:first-child:has(> .cup-flag), .tl > li.stop:first-child:has(> .meal-flag) { margin-top: 20px; }
+.plan-tools { margin-bottom: 14px; }
+.daylight { column-gap: 14px; }
+.daylight .dotsep::before { content: none; }

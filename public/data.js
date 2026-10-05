@@ -157,9 +157,9 @@ export const ITINERARY = [
     tips: ['Cereți să fie încălzit: diferența e mare.', 'Un roll ajunge pentru doi.'],
     lat: 41.4005, lng: 2.2000, radius: 150, approx: true },
   { id: 'beach', rec: 'poza cu cuburile „L’Estel Ferit”, la apus', legIn: { min: 17, mode: 'walking', icon: 'directions_walk', label: 'pe jos până la plaja Bogatell' },
-    img: {file: 'W Barcelona from Barceloneta Beach.jpg',q: 'Platja de la Barceloneta'}, site: 'https://www.barcelona.cat/en/what-to-do-in-bcn/bathing-and-beaches/barceloneta-beach', budget: 'Gratis', day: 'fri', zone: 'poblenou', cat: 'art', time: '17:33 – 17:58', catLabel: 'Apus pe plajă ~17:41',
+    img: {file: 'W Barcelona from Barceloneta Beach.jpg',q: 'Platja de la Barceloneta'}, site: 'https://www.barcelona.cat/en/what-to-do-in-bcn/bathing-and-beaches/barceloneta-beach', budget: 'Gratis', day: 'fri', zone: 'poblenou', cat: 'art', time: '17:33 – 17:58', catLabel: 'Apus 17:41, culori până la 18:00',
     title: 'Pe plajă la apus: Bogatell → Barceloneta', short: '2 km pe nisip, cu cinnamon rolls',
-    desc: 'De la Nomad, 17 minute pe jos până la Platja del Bogatell. Apoi mergeți pe malul mării spre sud-vest, pe lângă Port Olímpic și hotelul W, până în Barceloneta (≈ 2,3 km, 35 min). Soarele apune la ~17:41 în spatele orașului. Plaja e goală în noiembrie, ~17 °C. La capăt, La Cova Fumada e la 3 minute.',
+    desc: 'De la Nomad, 17 minute pe jos până la Platja del Bogatell. Apoi mergeți pe malul mării spre sud-vest, pe lângă Port Olímpic și hotelul W, până în Barceloneta (≈ 2,3 km, 35 min). Soarele apune la 17:41 în spatele orașului, nu în mare (plaja e spre răsărit): de pe nisip vedeți cerul roz-portocaliu peste oraș și marea care prinde culorile, cel mai frumos între 17:40 și 18:00. Plaja e goală în noiembrie, ~17 °C. La capăt, La Cova Fumada e la 3 minute.',
     address: 'Platja del Bogatell → Platja de la Barceloneta', placeQuery: 'Platja del Bogatell', hours: 'Oricând', price: 'Gratis', free: true,
     tips: ['Sculptura „L\'Estel Ferit” (cuburile) din Barceloneta e locul de poză al cartierului.', 'Luați o jachetă: după apus se răcește repede lângă apă.', 'Dacă sunteți obosiți: metrou L4 Poblenou → Barceloneta, 10 min.'],
     arrive: { title: 'Platja de la Barceloneta', placeQuery: 'Platja de la Barceloneta', lat: 41.3805, lng: 2.1910 },
@@ -277,16 +277,16 @@ export const ITINERARY = [
     tips: ['Rezervați acum, pentru sâmbătă 7 nov, ora 14:45.', 'Plan B, la 2 minute: Bar Joan, în Mercat de Santa Caterina (mâncare catalană de casă, din 1984). Sâmbăta închide la 15:30, deci doar dacă ajungeți până pe la 14:30.', 'Vinul la pahar e scump față de zonă; luați o caña sau vermut.'],
     lat: 41.3853, lng: 2.1808, radius: 120, approx: true },
   { id: 'mnac', book: { need: 'opțional', url: 'https://www.museunacional.cat/en/tickets', note: 'Terasa e gratis fără bilet. Biletul de 0 € (sâmbătă după 15:00) trebuie doar dacă intrați în muzeu.' }, closed: ['mon'],
-    img: {file: 'Palau Nacional. Museu Nacional d\'Art de Catalunya.jpg',q: 'Palau Nacional Montjuïc'}, site: 'https://www.museunacional.cat/en', menu: 'https://www.museunacional.cat/en/tickets', budget: 'Gratis sâmbătă după 15:00 (rezervare); altfel 12 €/adult, sub 16 ani gratis', day: 'sat', zone: 'poblesec', cat: 'art', time: '17:00 – 17:40', catLabel: 'Apus ~17:40',
+    img: {file: 'Palau Nacional. Museu Nacional d\'Art de Catalunya.jpg',q: 'Palau Nacional Montjuïc'}, site: 'https://www.museunacional.cat/en', menu: 'https://www.museunacional.cat/en/tickets', budget: 'Gratis sâmbătă după 15:00 (rezervare); altfel 12 €/adult, sub 16 ani gratis', day: 'sat', zone: 'poblesec', cat: 'art', time: '17:00 – 17:50', catLabel: 'Apus 17:40, culori până pe la 17:55',
     title: 'Terasa MNAC la apus', short: 'Toată Barcelona la picioare, gratis',
-    desc: 'Metrou L4 Jaume I → Passeig de Gràcia → L3 Espanya, apoi scările rulante (≈ 30 min). Terasa din fața Palatului Național e gratis și deschisă oricând: cea mai frumoasă panoramă la apus. Muzeul închide la 18:00; dacă vreți înăuntru, sâmbăta după 15:00 e gratis cu bilet de 0 € rezervat online. Apoi coborâți pe scări, pe lângă Font Màgica, spre Poble Sec.',
+    desc: 'Metrou L4 Jaume I → Passeig de Gràcia → L3 Espanya, apoi scările rulante (≈ 30 min). Terasa din fața Palatului Național e gratis și deschisă oricând: cea mai frumoasă panoramă la apus. Soarele apune la 17:40 în spatele vostru, peste Montjuïc; de la 17:00 orașul e în lumină aurie, iar cerul se colorează cel mai tare între 17:40 și 17:55. Nu plecați imediat după apus. Muzeul închide la 18:00; dacă vreți înăuntru, sâmbăta după 15:00 e gratis cu bilet de 0 € rezervat online. Apoi coborâți pe scări, pe lângă Font Màgica, spre Poble Sec.',
     address: 'Palau Nacional, Parc de Montjuïc', placeQuery: 'Museu Nacional d\'Art de Catalunya', hours: 'Iarna: Ma–Sâ 10:00 – 18:00 · Du 10:00 – 15:00', price: 'GRATIS sâmbăta după 15:00 (rezervare online) · altfel 12 €', free: true,
     rating: 4.7, ratingCount: 28000, review: 'Doar pentru măreția sălilor și vederile impresionante de pe terasă, vizita merită. Unul dintre cele mai bune belvedere din Barcelona.',
     popular: ['Frescele romanice din Pirinei (Sant Climent de Taüll)', 'Sala Ovală', 'Terasele-mirador de la nivelul 3', 'Colecția modernistă (Gaudí, Casas)'],
     tips: ['Terasa de la intrare e gratis oricum; terasa de pe acoperiș se vede doar cu bilet.', 'Font Màgica e la coborâre: dacă are spectacol la 20:00 sau 21:00 (verificați barcelona.cat), vă întoarceți după Blai.'],
     lat: 41.3684, lng: 2.1533, radius: 200, approx: true },
   { id: 'fontmagica', rec: 'poza cu fântâna și Plaça d’Espanya de pe scări',
-    img: {file: '089 Font Màgica de Montjuïc (Barcelona).jpg',q: 'Font Màgica de Montjuïc'}, site: 'https://www.barcelona.cat/en/what-to-do-in-bcn/magic-fountain', budget: 'Gratis', day: 'sat', zone: 'poblesec', cat: 'art', time: '17:50 – 18:05', catLabel: 'Coborâre spre Poble Sec',
+    img: {file: '089 Font Màgica de Montjuïc (Barcelona).jpg',q: 'Font Màgica de Montjuïc'}, site: 'https://www.barcelona.cat/en/what-to-do-in-bcn/magic-fountain', budget: 'Gratis', day: 'sat', zone: 'poblesec', cat: 'art', time: '17:55 – 18:08', catLabel: 'Coborâre spre Poble Sec',
     title: 'Scările Montjuïc & Font Màgica', short: 'Dacă fântâna e în program',
     desc: 'Coborâți pe scările de sub MNAC, pe lângă Font Màgica. Lucrările s-au terminat în aprilie 2026; în noiembrie spectacolele sunt joi–sâmbătă seara, dar sursele diferă (20:00 sau 21:00): verificați barcelona.cat cu o săptămână înainte. Dacă e la 20:00 sau 21:00, vă întoarceți după Blai, e la 12 minute pe jos.',
     address: 'Plaça de Carles Buïgas', placeQuery: 'Font Màgica de Montjuïc', hours: 'Verificați programul spectacolelor', price: 'Gratis', free: true, verify: true,
@@ -697,14 +697,14 @@ export const DAY_OPPS = {
     { title: 'Nomad Frutas Selectas: locul 25 în lume', when: 'Lu–Vi până la 18:00', price: '€', link: 'https://nomadcoffee.es', locId: 'nomad-fs', kind: 'tip' },
   ],
   sat: [
-    { title: 'Terasa MNAC la apus, gratis', when: 'Oricând · apus ~17:40', price: 'Gratis', link: 'https://www.museunacional.cat/en', locId: 'mnac', kind: 'gratis' },
+    { title: 'Terasa MNAC la apus, gratis', when: 'Aur de la 17:00 · apus 17:40 · culori până la 17:55', price: 'Gratis', link: 'https://www.museunacional.cat/en', locId: 'mnac', kind: 'gratis' },
     { title: 'Toboganul Sephora fără coadă, la deschidere', when: 'Sâ de la 9:30 · duminică închis', price: 'Gratis', link: 'https://www.sephora.es', locId: 'sephora', kind: 'tip' },
     { title: 'MACBA gratis sâmbăta de la 16:00', when: 'Sâ 16:00 – 20:00', price: 'Gratis (altfel 12 €)', link: 'https://www.macba.cat/en', kind: 'gratis' },
   ],
   sun: [
     { title: 'House of Candy e deschis și duminica', when: 'Zilnic 11:00 – 21:00 · ultima intrare 19:30', price: '≈ 12–14,50 €', link: 'https://houseofcandy.fun', kind: 'tip' },
     { title: 'Museu del Disseny gratis de la 15:00', when: 'Du 15:00 – 20:00, bilet online pe interval', price: 'Gratis (altfel 6 €)', link: 'https://www.dissenyhub.barcelona/en', locId: 'disseny', kind: 'gratis' },
-    { title: 'Bunkers: urcați înainte de 17:30', when: 'Incinta se închide iarna ~17:30 · apus ~17:40', price: 'Gratis', link: 'https://www.barcelona.cat/en/what-to-do-in-bcn/bunkers-del-carmel', locId: 'bunkers', kind: 'tip' },
+    { title: 'Bunkers: lumina de aur, nu apusul', when: 'Intrare până la 17:30, se golește înainte de apus · urcați pe la 16:45', price: 'Gratis', link: 'https://www.barcelona.cat/en/what-to-do-in-bcn/bunkers-del-carmel', locId: 'bunkers', kind: 'tip' },
     { title: 'MUHBA Plaça del Rei gratis de la 15:00', when: 'Du 15:00 – 20:00', price: 'Gratis (altfel 7 €)', link: 'https://www.barcelona.cat/museuhistoria/en', kind: 'gratis' },
     { title: 'Museu Marítim gratis de la 15:00', when: 'Du 15:00 – 20:00', price: 'Gratis (altfel 10 €)', link: 'https://www.mmb.cat/en/', kind: 'gratis' },
   ],
@@ -789,13 +789,15 @@ export const PHRASES = [
 
 // Răsărit/apus (Barcelona, CET) și vremea tipică de noiembrie. Joi = Salou.
 export const SUN = {
-  thu: { rise: '7:26', set: '17:48', temp: '17°/11°', place: 'Salou' },
-  fri: { rise: '7:24', set: '17:43', temp: '17°/10°' },
-  sat: { rise: '7:25', set: '17:42', temp: '17°/10°' },
-  sun: { rise: '7:27', set: '17:41', temp: '16°/10°' },
-  mon: { rise: '7:28', set: '17:39', temp: '16°/10°' },
+  // Calculat astronomic (NOAA) pentru 5–9 nov. 2026, ora României −1 (CET). Lumina de aur = soarele sub 6°;
+  // întuneric = sfârșitul crepusculului civil. Cele mai frumoase culori: 5–15 minute după apus.
+  thu: { rise: '7:31', gold: '17:07', set: '17:47', dusk: '18:16', temp: '17°/11°', place: 'Salou' },
+  fri: { rise: '7:28', gold: '17:01', set: '17:41', dusk: '18:10', temp: '17°/10°' },
+  sat: { rise: '7:30', gold: '17:00', set: '17:40', dusk: '18:09', temp: '17°/10°' },
+  sun: { rise: '7:31', gold: '16:59', set: '17:39', dusk: '18:08', temp: '16°/10°' },
+  mon: { rise: '7:32', gold: '16:57', set: '17:38', dusk: '18:07', temp: '16°/10°' },
 };
-export const WEATHER_NOTE = 'Noiembrie la Barcelona: ~17 °C ziua, ~10 °C noaptea, marea ~18 °C. Zile scurte (se întunecă pe la 17:40) și câteva ploi scurte. O geacă de vânt și un strat în plus ajung.';
+export const WEATHER_NOTE = 'Noiembrie la Barcelona: ~17 °C ziua, ~10 °C noaptea, marea ~18 °C. Zile scurte (apus pe la 17:40, întuneric pe la 18:10) și câteva ploi scurte. O geacă de vânt și un strat în plus ajung.';
 
 // Sloturile de masă: prima variantă e cea din program, restul sunt alternativele (votate în aplicație).
 // Referințe: id-ul unei opriri din ITINERARY (inclusiv „pool”) sau 'alt:' + titlul exact din ALTERNATIVES.
