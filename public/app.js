@@ -1840,15 +1840,15 @@ function gapIdeas(g, plan = planDay(g.day)) {
 }
 const gapWhere = (g) => g.zone ? `prin ${g.zone}` : g.a ? `lângă ${shortTitle(g.a.loc.title)}` : 'pornind de la cazare';
 function ideaRowHTML(g, x, i) {
-  const e = enriched(x.loc), why = [x.wanted ? 'dorit' : '', x.need ? (x.k === 'sweet' ? 'vă mai trebuie un dulce' : x.k === 'coffee' ? 'încă o cafea azi' : 'masa zilei') : '', e.free ? 'gratis' : ''].filter(Boolean)[0];
-  return `<div class="li tight idea k-${x.k}"><button data-action="open-detail" data-id="${esc(x.loc.id)}" class="flex items-center gap-3 flex-1 min-w-0 text-left">${thumbHTML(e, 40)}<span class="min-w-0"><span class="block font-medium truncate">${esc(x.loc.title)}</span><span class="block cap truncate">${hhmm(x.start)}–${hhmm(x.end)} · ${x.detour <= 3 ? 'pe drum' : `+${fmtMin(x.detour)} ocol`}${why ? ` · <b class="idea-why">${why}</b>` : ''}</span></span></button>
-    <button data-action="gap-place" data-day="${g.day}" data-id="${esc(x.loc.id)}" data-time="${hhmm(x.start)} – ${hhmm(x.end)}" class="icon-btn ol press" aria-label="Pune ${esc(x.loc.title)} la ${hhmm(x.start)}" title="Pune aici">${icon('add', 'i-20', 'color: var(--brand)')}</button></div>`;
+  const e = enriched(x.loc), why = [x.wanted ? 'dorit' : '', x.need ? (x.k === 'sweet' ? 'un dulce' : x.k === 'coffee' ? 'încă o cafea' : 'masa zilei') : '', e.free ? 'gratis' : ''].filter(Boolean)[0];
+  return `<div class="li idea k-${x.k}"><button data-action="open-detail" data-id="${esc(x.loc.id)}" class="idea-main flex items-start gap-2 flex-1 min-w-0 text-left">${thumbHTML(e, 40)}<span class="min-w-0 flex-1"><span class="block font-medium truncate">${esc(x.loc.title)}</span><span class="block cap truncate">${hhmm(x.start)} · ${x.detour <= 3 ? 'pe drum' : `+${fmtMin(x.detour)} ocol`}</span>${why ? `<span class="idea-badge">${why}</span>` : ''}</span></button>
+    <button data-action="gap-place" data-day="${g.day}" data-id="${esc(x.loc.id)}" data-time="${hhmm(x.start)} – ${hhmm(x.end)}" class="icon-btn ol press idea-add" aria-label="Pune ${esc(x.loc.title)} la ${hhmm(x.start)}" title="Pune aici">${icon('add', 'i-20', 'color: var(--brand)')}</button></div>`;
 }
 function gapHTML(g, idx, plan) {
   const ideas = gapIdeas(g, plan), when = g.head ? `până la ${hhmm(g.to)}` : g.tail ? `după ${hhmm(g.from)}` : `${hhmm(g.from)} – ${hhmm(g.to)}`;
   return `<li class="gap"><div class="tm"></div><div class="rail"><span class="gap-ic">${icon('more_time', 'i-18')}</span></div><div class="body"><div class="gap-card">
     <div class="gap-h"><b>${g.tail ? 'Seară liberă' : g.head ? 'Dimineață liberă' : `${fmtMin(g.free)} libere`}</b><span class="cap">${when} · ${esc(gapWhere(g))}</span></div>
-    ${ideas.length ? `<div class="card list mt-2">${ideas.slice(0, 2).map((x, i) => ideaRowHTML(g, x, i)).join('')}</div>${ideas.length > 2 ? `<button data-action="gap-open" data-day="${g.day}" data-gap="${idx}" class="btn btn-text btn-sm press mt-1">${icon('lightbulb', 'i-18')} Încă ${ideas.length - 2} idei prin zonă</button>` : ''}` : `<p class="cap mt-1">Timp de plimbare, nimic din listă nu încape pe drum.</p>`}
+    ${ideas.length ? `<div class="card list mt-2">${ideas.slice(0, 2).map((x, i) => ideaRowHTML(g, x, i)).join('')}</div>${ideas.length > 2 ? `<button data-action="gap-open" data-day="${g.day}" data-gap="${idx}" class="btn btn-text btn-sm press mt-2">${icon('lightbulb', 'i-18')} ${ideas.length - 2 === 1 ? 'Încă o idee' : `Încă ${ideas.length - 2} idei`} prin zonă</button>` : ''}` : `<p class="cap mt-1">Timp de plimbare, nimic din listă nu încape pe drum.</p>`}
   </div></div></li>`;
 }
 function openGap(day, idx) {
@@ -1898,7 +1898,7 @@ function calHTML(day) {
   gaps.forEach((g, gi) => {
     const from = g.a ? g.from + (g.b ? (legOf(g.a.loc, g.b.loc, day)?.min ?? 0) : 0) : g.from, top = y(from) + 2, h = y(g.to) - top - 4; if (h < 26) return;
     const n = gapIdeas(g, plan).length;
-    html += `<button class="cal-gap press" data-action="gap-open" data-day="${day}" data-gap="${gi}" style="top:${top}px;height:${h}px">${icon('more_time', 'i-18')}<span><b>${g.tail ? 'Seară liberă' : g.head ? 'Dimineață liberă' : fmtMin(g.free) + ' libere'}</b>${n ? ` · ${n} idei ${esc(gapWhere(g))}` : ''}</span></button>`;
+    html += `<button class="cal-gap press" data-action="gap-open" data-day="${day}" data-gap="${gi}" style="top:${top}px;height:${h}px">${icon('more_time', 'i-18')}<span><b>${g.tail ? 'Seară liberă' : g.head ? 'Dimineață liberă' : fmtMin(g.free) + ' libere'}</b>${n ? ` · ${n === 1 ? 'o idee' : n + ' idei'} ${esc(gapWhere(g))}` : ''}</span></button>`;
   });
   return `<p class="cap cal-hint">${icon('drag_pan', 'i-16')} ${isDesk() ? 'Trageți un loc ca să-l mutați, de marginea de jos ca să-l lungiți.' : 'Țineți apăsat pe un loc, apoi trageți-l. Marginea de jos îl lungește.'} Golurile arată ce încape prin zonă.</p>
     <div class="cal" style="--hour:${60 * ppm}px"><div class="cal-axis" style="height:${H}px">${hours.map((m) => `<span style="top:${y(m)}px">${hhmm(m)}</span>`).join('')}</div>

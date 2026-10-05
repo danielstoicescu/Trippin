@@ -854,18 +854,20 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .seg-b.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); }
 .here-cta { margin-left: auto; }
 
-/* ======== Ferestre libere (goluri) în listă ======== */
-.gap { display: grid; grid-template-columns: 54px 1fr; gap: 0; position: relative; }
-.gap .tm { grid-column: 1; }
-.gap .rail { grid-column: 1; display: flex; justify-content: center; position: relative; }
-.gap .rail::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: repeating-linear-gradient(var(--line) 0 4px, transparent 4px 9px); }
-.gap-ic { position: relative; z-index: 1; width: 28px; height: 28px; border-radius: 99px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
-.gap .body { grid-column: 2; padding: 2px 0 16px 4px; }
-.gap-card { border: 1px dashed color-mix(in srgb, var(--cat-red) 32%, var(--line)); border-radius: 14px; padding: 10px 12px; background: color-mix(in srgb, var(--cat-yellow) 7%, var(--surface)); }
-.gap-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+/* ======== Ferestre libere (goluri) în listă — aliniate cu grila programului ======== */
+.tl .gap .rail::before { top: -4px; }
+.gap-ic { position: relative; z-index: 1; width: 26px; height: 26px; border-radius: 99px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
+.tl .gap .body { padding: 4px 0 18px; min-width: 0; }
+.gap-card { border: 1px dashed color-mix(in srgb, var(--cat-red) 36%, var(--line)); border-radius: 14px; padding: 12px; background: color-mix(in srgb, var(--cat-yellow) 7%, var(--surface)); }
+.gap-h { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; }
 .gap-h b { font-weight: 600; }
-.idea { gap: 10px; }
-.idea-why { color: var(--brand); font-weight: 600; }
+.gap-card .card.list { background: var(--surface); border-radius: 12px; border: 1px solid var(--line-soft); overflow: hidden; }
+.idea { gap: 8px; padding: 8px 8px 8px 10px; align-items: center; }
+.idea-main { gap: 10px; }
+.idea-main .thumb { margin-top: 1px; }
+.idea .cap { line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.idea-badge { display: inline-block; margin-top: 4px; padding: 1px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; line-height: 1.5; color: var(--brand); background: var(--brand-soft); }
+.idea-add { flex-shrink: 0; align-self: center; }
 .idea .srch-dot, .idea .thumb { flex-shrink: 0; }
 
 /* ======== Calendar (ziua pe ore) ======== */
