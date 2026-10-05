@@ -61,6 +61,7 @@
       <button data-action="open-home" class="side-btn press" title="Cazarea"><span class="material-symbols-rounded">hotel</span><span class="side-lbl">Cazarea</span></button>
     </nav>
     <div class="side-foot">
+      <div id="sideLevel" class="side-level" aria-label="Nivelul echipei"></div>
       <button id="sideMe" data-action="whoami" class="me-chip unset press" aria-label="Alege cine ești"></button>
       <div class="side-row">
         <button id="sideWx" data-action="open-weather" class="wx press" aria-label="Vremea în Barcelona"></button>
@@ -164,7 +165,8 @@
         <h1 class="h-display">Ce vrea fiecare</h1>
         <p class="page-sub">Mara, Anne și Daniel: bifați pe măsură ce le faceți</p>
       </header>
-      <div class="tabs mt-4" id="peopleTabs"></div>
+      <div id="usBoard" class="mt-4"></div>
+      <div class="tabs" id="peopleTabs"></div>
       <div id="usContent" class="pt-4"></div>
     </section>
 
@@ -194,6 +196,7 @@
           <a href="https://www.tmb.cat/en/barcelona/metro" target="_blank" rel="noopener" class="li press"><span class="material-symbols-rounded t-blue">subway</span><span class="flex-1">Metrou (L4 galbenă spre Poblenou)</span><span class="material-symbols-rounded t-3 i-20">chevron_right</span></a>
           <div id="syncText" class="li"></div>
           <button data-action="toggle-theme" class="li press theme-row"><span class="material-symbols-rounded t-blue">dark_mode</span><span class="flex-1 text-left">Temă întunecată / deschisă</span></button>
+          <button data-action="sfx-toggle" class="li press"><span class="material-symbols-rounded t-blue">volume_up</span><span class="flex-1 text-left">Sunete arcade</span><span class="cap" data-sfx-label>Sunet pornit</span></button>
         </div>
       </div>
       <div class="sec"><div class="sec-h"><h2 class="ttl-2">Trimite aplicația</h2></div>
@@ -249,6 +252,7 @@
   <div id="detailSheet" class="scrim hidden" data-modal><div class="sheet" id="detailBody"></div></div>
   <div id="addSheet" class="scrim hidden" data-modal><div class="sheet" id="addBody"></div></div>
   <div id="coffeeSheet" class="scrim hidden" data-modal><div class="sheet" id="coffeeBody"></div></div>
+  <div id="playerDlg" class="scrim ps-scrim hidden" data-modal><div class="ps-dlg" id="playerBody" role="dialog" aria-modal="true" aria-labelledby="psTitle"></div></div>
 
   <div id="toast" class="snackbar off" role="status"><span id="toastIcon" class="inline-flex shrink-0" style="color: #8AB4F8"></span><span id="toastMessage" class="flex-1">Mesaj</span><button id="toastAction" class="hidden btn btn-sm press" style="color: #8AB4F8; padding: 0 8px"></button></div>
   <input type="file" id="photoInput" accept="image/*" class="hidden">

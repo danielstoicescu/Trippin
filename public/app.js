@@ -378,7 +378,7 @@ function stopHTML(loc, slot = null, amCoffee = false) {
       ${skipped ? '' : `<div class="feed-social">${feedSocialHTML(loc)}</div>`}
       ${mealKey && !skipped ? mealOptsHTML(mealKey, 3) : ''}
       ${bookOf(loc) && !skipped && bookOf(loc).need !== 'verificare' ? `<button data-action="book" data-id="${esc(loc.id)}" class="btn btn-sm ${isBooked(loc.id) ? 'btn-booked' : needsBooking(bookOf(loc)) ? 'btn-book' : 'btn-outline'} press mt-3">${icon(isBooked(loc.id) ? 'event_available' : 'event', 'i-18')} ${isBooked(loc.id) ? 'Rezervat' : needsBooking(bookOf(loc)) ? (BOOK_NEED[bookOf(loc).need] || BOOK_NEED.recomandat)[0].replace('Rezervare obligatorie', 'Rezervă (obligatoriu)').replace('Rezervare recomandată', 'Rezervă').replace('Doar cu programare', 'Fă programarea').replace('Bilet online', 'Ia biletul') : 'Bilet (opțional)'}</button>` : ''}
-      ${amCoffee && !skipped ? `<button data-action="coffee-here" data-place="${esc(loc.title)}" class="btn btn-sm btn-coffee press mt-3">${icon('add', 'i-18')} Am băut espresso-ul aici</button>` : ''}
+      ${amCoffee && !skipped ? `<button data-action="coffee-here" data-place="${esc(loc.title)}" class="btn btn-sm btn-coffee press mt-3">${icon('coffee', 'i-18 ms-fill')} <span class="px">+1</span> espresso aici</button>` : ''}
       ${skipped ? `<button data-action="toggle-skip" data-id="${esc(loc.id)}" class="btn btn-sm btn-outline press mt-2">${icon('undo', 'i-18')} Pune înapoi în program</button>` : ''}
     </div>
   </li>`;
@@ -748,7 +748,7 @@ function mealRows(key) {
 async function castVote(key, ref, v) {
   const id = optId(ref), cur = votesOf(key, ref), mine = +cur[me()] || 0, next = { ...cur, [me()]: mine === v ? 0 : v };
   const slot = { ...(state.shared.votes?.[key] || {}), [id]: next }; state.shared.votes = { ...(state.shared.votes || {}), [key]: slot };
-  buzz(8); renderAll(); refreshDetail(); popAfterRender(`[data-action="vote"][data-key="${key}"][data-ref="${CSS.escape(ref)}"][data-v="${v}"]`); await saveShared({ votes: { [key]: slot } });
+  buzz(8); sfx(next[me()] ? 'blip' : 'undo'); renderAll(); refreshDetail(); popAfterRender(`[data-action="vote"][data-key="${key}"][data-ref="${CSS.escape(ref)}"][data-v="${v}"]`); await saveShared({ votes: { [key]: slot } });
 }
 async function pickMeal(key, ref) {
   const [d, m] = key.split('-'), def = MEAL_SLOTS?.[d]?.[m]?.[0]; const val = ref === def ? null : ref;
@@ -809,27 +809,11 @@ function renderMe() {
   for (const el of [$('#meChip'), $('#sideMe')]) {
     if (!el) continue;
     el.className = `me-chip press ${set ? 'p-' + k : 'unset'}`;
-    el.innerHTML = `<span class="avatar p-${k}">${set ? m.name[0] : '?'}</span><span class="me-name">${set ? m.name : 'Cine ești?'}</span>`;
-    el.setAttribute('aria-label', set ? `Ești ${m.name}. Atinge pentru a schimba persoana.` : 'Alege cine ești');
+    el.innerHTML = `<span class="avatar p-${k}">${set ? m.name[0] : '?'}</span><span class="me-name">${set ? m.name : 'Cine ești?'}</span>${set ? `<span class="hud-pts px" data-v="0" aria-label="puncte">0</span>` : ''}`;
+    el.setAttribute('aria-label', set ? `Ești ${m.name}. Atinge pentru a schimba jucătorul.` : 'Alege cine ești');
   }
+  if (set) renderHud();
 }
-function setMe(person) {
-  const m = PEOPLE_META[person]; if (!m) return;
-  lsSet(LS.me, m.name); buzz(); $('#coffeeSheet').classList.add('hidden');
-  renderMe(); renderAll(); refreshDetail();
-  toast(`Salut, ${m.name}! Reacțiile, notițele și pozele sunt acum semnate de tine.`, 'waving_hand', 3800);
-}
-function whoAmISheetHTML(first) {
-  const cur = me(), set = hasMe();
-  const head = first
-    ? `<div class="sheet-top"><div class="handle"></div><div class="pb-2"><div class="cap">Bine ai venit în trip·in</div><h2 class="ttl-1 mt-0.5">Cine ești?</h2></div></div>`
-    : sheetHead('Persoana activă pe acest telefon', 'Cine ești?');
-  return `${head}
-    <p class="t-2 mb-4">${first ? 'Ca să știm ale cui sunt reacțiile 😍, notițele și pozele. Alegi o singură dată — te ținem minte pe telefonul ăsta.' : 'Schimbă cine folosește acum aplicația pe acest telefon.'}</p>
-    <div class="who-grid">${PERSONS.map((p) => { const m = PEOPLE_META[p]; const on = set && m.name === cur; return `<button data-action="who-set" data-person="${p}" class="who-card press ${on ? 'on' : ''}" aria-pressed="${on}"><span class="avatar p-${p} who-av">${m.name[0]}</span><span class="min-w-0 flex-1"><span class="who-name">${m.name}</span><span class="who-tag">${m.tag}</span></span>${on ? `<span class="who-check">${icon('check', 'i-20')}</span>` : ''}</button>`; }).join('')}</div>
-    <div style="height:10px"></div>`;
-}
-function openWhoAmI(first = false) { openSheet(whoAmISheetHTML(first)); }
 
 // ---------- Reacții: fiecare pune un emoji, dintr-un set de 4 ----------
 const REACTIONS = [{ k: 'love', e: '😍', t: 'Ne place mult' }, { k: 'good', e: '👍', t: 'Bun' }, { k: 'meh', e: '😐', t: 'Așa și-așa' }, { k: 'nope', e: '👎', t: 'Nu prea' }];
@@ -837,7 +821,7 @@ const reactEmoji = (k) => (REACTIONS.find((r) => r.k === k) || {}).e || '';
 const reactionsOf = (id) => (state.shared.reactions?.[id] && typeof state.shared.reactions[id] === 'object' ? state.shared.reactions[id] : {});
 const myReaction = (id) => reactionsOf(id)[me()];
 async function toggleReaction(id, k) {
-  const cur = reactionsOf(id), mine = cur[me()]; const next = { ...cur }; if (mine === k) delete next[me()]; else { next[me()] = k; buzz(10); }
+  const cur = reactionsOf(id), mine = cur[me()]; const next = { ...cur }; if (mine === k) { delete next[me()]; sfx('undo'); } else { next[me()] = k; buzz(10); sfx('blip'); }
   const all = { ...(state.shared.reactions || {}), [id]: next }; if (!Object.keys(next).length) delete all[id];
   state.shared.reactions = all; renderAll(); refreshDetail(); await saveShared({ reactions: { [id]: Object.keys(next).length ? next : null } });
 }
@@ -871,7 +855,7 @@ function commentsHTML(id) {
 async function noteAdd(id) {
   const inp = $('#noteText'); const text = (inp?.value || '').trim(); if (!text) return inp?.focus();
   const list = [...commentsOf(id), { by: me(), text: text.slice(0, 280), at: Date.now() }].slice(-30);
-  const comments = { ...(state.shared.comments || {}), [id]: list }; state.shared.comments = comments; buzz(); renderAll(); refreshDetail(); await saveShared({ comments: { [id]: list } });
+  const comments = { ...(state.shared.comments || {}), [id]: list }; state.shared.comments = comments; buzz(); sfx('select'); popFrom($('#noteText'), `+${PTS.comment}`); renderAll(); refreshDetail(); await saveShared({ comments: { [id]: list } });
 }
 async function noteDel(id, i) { const list = commentsOf(id).filter((_, j) => j !== Number(i)); state.shared.comments = { ...(state.shared.comments || {}), [id]: list }; renderAll(); refreshDetail(); await saveShared({ comments: { [id]: list } }); }
 
@@ -1033,14 +1017,17 @@ function bucketRowHTML(it, person) {
 }
 function counterOf(key) { if (key === 'coffee') return (state.shared.coffeeLog || []).reduce((s, x) => s + (x.shots || 1), 0) || state.shared.coffeeCount || 0; return (state.shared.counters || {})[key] || 0; }
 function usCounterHTML(person) {
-  const meta = PEOPLE_META[person], cnt = counterOf(meta.counter.key), goal = meta.counter.goal;
-  const perDay = DAYS.map((d) => (state.shared.coffeeLog || []).filter((x) => x.day === d).reduce((s, x) => s + (x.shots || 1), 0));
-  return person === 'daniel'
-    ? `<button data-action="open-coffee" class="card li press mt-4">${icon('coffee', 'i-28 ms-fill', 'color: var(--amber)')}<div class="flex-1 min-w-0 text-left"><div class="font-medium">${cnt} / ${goal} espresso</div><div class="flex items-end gap-1 mt-1.5 h-5">${perDay.map((v, i) => `<i class="flex-1 rounded-sm" style="height:${Math.max(3, Math.min(20, v * 4))}px; background: ${DAYS[i] === todayKey() ? 'var(--blue)' : 'var(--surface-4)'}" title="${DAY_LABEL[DAYS[i]]}: ${v}"></i>`).join('')}</div></div><span class="btn btn-sm btn-tonal">${icon('add', 'i-18')} Încă unul</span></button>`
-    : `<div class="card li mt-4">${icon(meta.counter.icon, 'i-28 ms-fill', `color: var(--p-${person})`)}<div class="flex-1"><div class="font-medium">${cnt} / ${goal}</div><div class="cap">${esc(meta.counter.label)}</div></div><button data-action="counter" data-key="${meta.counter.key}" data-delta="-1" class="icon-btn ol press" aria-label="Scade">${icon('remove')}</button><button data-action="counter" data-key="${meta.counter.key}" data-delta="1" class="icon-btn press" style="background: var(--blue-soft); color: var(--blue-strong)" aria-label="Adaugă">${icon('add')}</button></div>`;
+  const meta = PEOPLE_META[person], key = meta.counter.key, cnt = counterOf(key), goal = meta.counter.goal, coffee = key === 'coffee';
+  const pips = Array.from({ length: goal }, (_, i) => `<i class="${i < cnt ? 'on' : ''}"></i>`).join('');
+  return `<div class="ctr mt-4" style="--pc: var(--p-${person})">
+    <div class="ctr-l"><div class="ctr-n"><b class="px">${cnt}</b><span>/ ${goal}</span></div><div class="cap">${esc(meta.counter.label)}${cnt >= goal ? ' · gata! 🏆' : ''}</div><div class="ctr-pips" aria-hidden="true">${pips}</div></div>
+    ${cnt ? `<button data-action="${coffee ? 'coffee-undo' : 'counter'}" data-key="${key}" data-delta="-1" class="icon-btn sm press ctr-minus" aria-label="Scade unul" title="Scade unul">${icon('remove', 'i-18')}</button>` : ''}
+    <button data-action="${coffee ? 'coffee-quick' : 'counter'}" data-key="${key}" data-delta="1" class="arc-btn press" aria-label="Încă ${coffee ? 'un espresso' : 'unul'}">${icon(meta.counter.icon, 'i-24 ms-fill')}<span class="px">+1</span></button>
+  </div>`;
 }
 // Pe desktop, toți trei unul lângă altul, fără tab-uri
 function renderUsDesk() {
+  const ub = $('#usBoard'); if (ub) ub.innerHTML = leaderboardHTML();
   $('#usContent').innerHTML = `<div class="us-cols">${PERSONS.map((person) => {
     const meta = PEOPLE_META[person], items = bucketOf(person), done = items.filter((i) => i.done).length, pct = items.length ? Math.round((done / items.length) * 100) : 0;
     return `<section class="us-col" id="us-${person}" aria-label="${meta.name}">
@@ -1059,6 +1046,7 @@ function renderUs() {
   const tabs = $('#peopleTabs'); if (tabs) tabs.innerHTML = PERSONS.map((p) => `<button data-action="person" data-person="${p}" class="tab press ${p === person ? 'on' : ''}"><span class="avatar p-${p}" style="width: 24px; height: 24px; font-size: 12px">${PEOPLE_META[p].name[0]}</span>${PEOPLE_META[p].name}</button>`).join('');
   const items = bucketOf(person), done = items.filter((i) => i.done).length, pct = items.length ? Math.round((done / items.length) * 100) : 0;
   const counter = usCounterHTML(person);
+  const ub = $('#usBoard'); if (ub) ub.innerHTML = leaderboardHTML();
   $('#usContent').innerHTML = `
     ${person === 'mara' ? `<div class="bday mb-4">${icon('cake', 'i-24 ms-fill')}<div><div class="font-medium">Excursia ei de 13 ani 🎂</div><div class="cap">Hai să i-o facem de neuitat: tobogan, churros, matcha, Shambhala.</div></div></div>` : ''}
     <div class="flex items-center gap-4"><div class="prog" style="--p:${pct}; --ring: var(--p-${person})"><span class="font-medium">${pct}%</span></div><div><div class="ttl-2">${done} din ${items.length} bifate</div><div class="cap">${esc(meta.tag)} · ${items.filter((i) => i.loc).length} legate de locuri</div></div></div>
@@ -1068,28 +1056,8 @@ function renderUs() {
     </div>
     <p class="cap mt-3 pb-4">Pe pagina oricărui loc poți bifa pe lista cui intră.</p>`;
 }
-function coffeeSheetHTML() {
-  const cnt = counterOf('coffee'), goal = PEOPLE_META.daniel.counter.goal, log = (state.shared.coffeeLog || []).slice(-6).reverse();
-  const todays = dayItems(todayKey() || state.day).filter((l) => catKey(enriched(l).cat) === 'coffee');
-  if (coffeeSel.place && !todays.some((l) => l.title === coffeeSel.place)) todays.unshift({ title: coffeeSel.place });
-  return `${sheetHead('Daniel', `${cnt} / ${goal} espresso`)}
-    <h3 class="ttl-3 mb-2">Ce a fost</h3><div class="flex flex-wrap gap-2" id="coffeeTypes">${COFFEE_TYPES.map((t, i) => `<button class="chip press ${i === 0 ? 'on' : ''}" data-action="coffee-type" data-type="${t.key}">${t.label}${t.shots > 1 ? ' ×2' : ''}</button>`).join('')}</div>
-    <h3 class="ttl-3 mt-4 mb-2">Unde</h3><div class="flex flex-wrap gap-2" id="coffeePlaces"><button class="chip press on" data-action="coffee-place" data-place="">Oriunde</button>${todays.map((l) => `<button class="chip press" data-action="coffee-place" data-place="${esc(l.title)}">${esc(shortTitle(l.title))}</button>`).join('')}</div>
-    <button data-action="coffee-add" class="btn btn-primary btn-lg w-full mt-5 press">${icon('coffee', 'i-20')} Adaugă în contor</button>
-    ${log.length ? `<h3 class="ttl-3 mt-5 mb-2">Ultimele</h3><div class="card list">${log.map((x, i) => `<div class="li tight"><div class="flex-1">${esc(COFFEE_TYPES.find((t) => t.key === x.type)?.label || 'Espresso')}${x.place ? ` · ${esc(x.place)}` : ''}</div><div class="cap">${esc(DAY_LABEL[x.day] || '')} ${esc(x.at ? new Date(x.at).toTimeString().slice(0, 5) : '')}</div>${i === 0 ? `<button data-action="coffee-undo" class="icon-btn sm press" aria-label="Anulează">${icon('undo', 'i-20')}</button>` : ''}</div>`).join('')}</div>` : ''}<div style="height:12px"></div>`;
-}
-let coffeeSel = { type: 'espresso', place: '' };
-function openCoffee(place = '') { coffeeSel = { type: 'espresso', place }; openSheet(coffeeSheetHTML()); if (place) $$('#coffeePlaces .chip').forEach((c) => c.classList.toggle('on', c.dataset.place === place)); }
-async function coffeeAdd() {
-  const t = COFFEE_TYPES.find((x) => x.key === coffeeSel.type) || COFFEE_TYPES[0];
-  const log = [...(state.shared.coffeeLog || []), { type: t.key, shots: t.shots, place: coffeeSel.place, day: todayKey() || state.day, at: new Date().toISOString() }].slice(-200);
-  state.shared.coffeeLog = log; state.shared.coffeeCount = counterOf('coffee'); buzz();
-  await saveShared({ coffeeLog: log, coffeeCount: state.shared.coffeeCount });
-  $('#coffeeBody').innerHTML = coffeeSheetHTML(); renderUs();
-  const c = counterOf('coffee'); toast(c >= PEOPLE_META.daniel.counter.goal ? '20 de espresso! Daniel, ești oficial barcelonez.' : `${c} espresso. ${t.label}${coffeeSel.place ? ' la ' + coffeeSel.place : ''}.`, 'coffee');
-}
-async function coffeeUndo() { const log = (state.shared.coffeeLog || []).slice(0, -1); state.shared.coffeeLog = log; state.shared.coffeeCount = counterOf('coffee'); await saveShared({ coffeeLog: log, coffeeCount: state.shared.coffeeCount }); $('#coffeeBody').innerHTML = coffeeSheetHTML(); renderUs(); }
-async function bumpCounter(key, delta) { const counters = { ...(state.shared.counters || {}) }; counters[key] = Math.max(0, (counters[key] || 0) + delta); state.shared.counters = counters; renderUs(); await saveShared({ counters }); }
+async function coffeeUndo() { const log = (state.shared.coffeeLog || []).slice(0, -1); state.shared.coffeeLog = log; state.shared.coffeeCount = counterOf('coffee'); sfx('undo'); renderUs(); renderHud(); refreshDetail(); await saveShared({ coffeeLog: log, coffeeCount: state.shared.coffeeCount }); }
+async function bumpCounter(key, delta, el) { if (delta > 0) { sfx('coin'); popFrom(el, `+${PTS.counter}`); buzz(12); } else sfx('undo'); const counters = { ...(state.shared.counters || {}) }; counters[key] = Math.max(0, (counters[key] || 0) + delta); state.shared.counters = counters; renderUs(); await saveShared({ counters }); }
 async function bucketSet(person, id, patch) { const b = { ...(state.shared.bucket || {}) }; const p = { ...(b[person] || {}) }; p[id] = { ...(p[id] || {}), ...patch }; b[person] = p; state.shared.bucket = b; renderUs(); await saveShared({ bucket: b }); }
 async function bucketDel(person, id) { const b = { ...(state.shared.bucket || {}) }; const p = { ...(b[person] || {}) }; p[id] = { hidden: true }; b[person] = p; state.shared.bucket = b; renderUs(); await saveShared({ bucket: b }); }
 
@@ -1119,7 +1087,7 @@ function switchDay(day, dir) { if (!DAYS.includes(day)) return; state.focusHold 
   const d = dir || (DAYS.indexOf(day) > from ? 'left' : DAYS.indexOf(day) < from ? 'right' : ''); const it = $('#itinerary'); if (it && d && !RM()) { it.classList.remove('day-in-left', 'day-in-right'); void it.offsetWidth; it.classList.add('day-in-' + d); } }
 function setFilter(c) { state.filter = c; renderDay(); }
 function renderNotes() { const ta = $('#sharedNotes'); if (ta && document.activeElement !== ta) ta.value = state.shared.notes || ''; }
-function renderAll() { renderDay(); renderMap(); renderNextStop(); renderNearby(); renderCollections(); renderUs(); renderHome(); renderBookings(); renderBudget(); renderPacking(); renderPhrases(); renderHQ(); }
+function renderAll() { renderDay(); renderMap(); renderNextStop(); renderNearby(); renderCollections(); renderUs(); renderHome(); renderBookings(); renderBudget(); renderPacking(); renderPhrases(); renderHQ(); renderHud(); }
 function setView(v) {
   if (!['hq', 'plan', 'explore', 'us', 'info', 'budget', 'translate'].includes(v) || (v === 'hq' && !isDesk())) v = 'plan';
   if (state.picking && v !== 'explore') stopPick();
@@ -1185,16 +1153,14 @@ async function saveLocation(data, editingId) {
 }
 async function deleteLocation(id) { if (!confirm('Ștergi acest loc din programul comun?')) return; if (fb && state.online && !String(id).startsWith('local-')) { const { db, fs } = fb; await fs.deleteDoc(fs.doc(db, 'trips', TRIP_ID, 'locations', id)); } else { state.custom = state.custom.filter((l) => l.id !== id); persistLocal(); renderAll(); } addState = null; closeModals(); toast('Locul a fost șters.', 'delete'); }
 async function toggleVisited(k, el) {
-  const v = { ...state.shared.visited, [k]: !state.shared.visited[k] }; state.shared.visited = v;
-  if (v[k]) { buzz(14); const r = (el || document.body).getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + Math.min(r.height / 2, 40)); toast(`Bifat: ${shortTitle(findLoc(k)?.title || '')}`, 'check_circle', 3500, { label: 'Anulează', run: () => toggleVisited(k) });
+  const v = { ...state.shared.visited, [k]: state.shared.visited[k] ? false : { by: me(), at: Date.now() } }; state.shared.visited = v;
+  if (!v[k]) sfx('undo');
+  if (v[k]) { buzz(14); sfx('power'); const r = (el || document.body).getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + Math.min(r.height / 2, 40)); scorePop(r.left + r.width / 2, r.top, `+${PTS.visit}`); toast(`Bifat: ${shortTitle(findLoc(k)?.title || '')}`, 'check_circle', 3500, { label: 'Anulează', run: () => toggleVisited(k) });
     const loc = findLoc(k); const day = loc && DAYS.includes(loc.day) ? loc.day : null;
     if (day) { const stops = dayItems(day); if (stops.length && stops.every((l) => v[l.id])) setTimeout(() => dayDone(day), 400); } }
   renderAll(); refreshDetail(); await saveShared({ visited: v });
 }
-function dayDone(day) {
-  buzz(24); for (let i = 0; i < 3; i++) setTimeout(() => confetti(window.innerWidth * (0.2 + Math.random() * 0.6), window.innerHeight * 0.3), i * 180);
-  toast(`${DAY_THEMES[day]?.name || DAY_LABEL[day]}: zi completă! 🎉`, 'celebration', 5000);
-}
+function dayDone(day) { arcadeMoment('Zi completă!', DAY_THEMES[day]?.name || DAY_LABEL[day], 'clear'); }
 async function chooseSkip(k) { const s = { ...state.shared.skipped, [k]: true }; state.shared.skipped = s; buzz(); renderAll(); await saveShared({ skipped: s }); toast(`Sărim peste ${shortTitle(findLoc(k)?.title || '')}.`, 'skip_next', 4000, { label: 'Anulează', run: () => toggleSkip(k) }); }
 async function shiftTime(id, time) {
   const loc = findLoc(id); if (!loc) return; buzz();
@@ -1859,7 +1825,7 @@ function openGap(day, idx) {
     <button data-action="open-add" class="btn btn-outline press mt-3 mb-3 w-full">${icon('add_location_alt', 'i-18')} Alt loc</button>`);
 }
 async function gapPlace(day, id, time) {
-  const loc = findLoc(id); if (!loc) return; buzz(16);
+  const loc = findLoc(id); if (!loc) return; buzz(16); sfx('power');
   if (loc.isAlt) {
     const x = ALTERNATIVES[loc.altIndex], k = catKey(x.cat), data = { title: x.title.slice(0, 120), day, cat: k === 'none' ? 'fun' : k, time, desc: [x.note, x.price ? `Preț: ${x.price}` : ''].filter(Boolean).join('\n').slice(0, 1500), addedBy: PEOPLE.includes(me()) ? me() : 'Daniel', mapLink: mapsSearch(x.title) };
     if (typeof x.lat === 'number') { data.lat = x.lat; data.lng = x.lng; } if (x.address) data.address = x.address.slice(0, 200); if (x.hours) data.hours = String(x.hours).slice(0, 120);
@@ -1932,7 +1898,7 @@ function dragArm(blk, x, y, mode, input) {
   if (input === 'touch') { if (mode === 'resize') dragActivate(); else s.timer = setTimeout(dragActivate, 380); }
 }
 function dragActivate() {
-  const s = DRAG.s; if (!s || s.active) return; s.active = true; buzz(18);
+  const s = DRAG.s; if (!s || s.active) return; s.active = true; buzz(18); sfx('blip');
   const r = s.blk.getBoundingClientRect(); s.ghost = document.createElement('div'); s.ghost.className = 'drag-ghost'; s.ghost.style.cssText = `top:${s.blk.style.top};height:${r.height}px;left:${s.blk.offsetLeft}px;width:${r.width}px`; s.zone.appendChild(s.ghost);
   s.tip = document.createElement('div'); s.tip.className = 'drag-tip'; s.blk.appendChild(s.tip);
   s.blk.classList.add('dragging'); document.body.classList.add('is-dragging'); dragMove(s.x, s.y);
@@ -1958,7 +1924,7 @@ async function dragEnd() {
   dragCleanup(); DRAG.suppress = Date.now() + 450;
   const day0 = findLoc(s.id)?.day; if (s.ns === s.start && s.ne === s.end && s.day === day0) { rerenderDrag(); return; }
   const loc = findLoc(s.id); if (!loc) return rerenderDrag(); const prev = { day: loc.day, time: loc.time }, time = `${hhmm(s.ns)} – ${hhmm(s.ne)}`;
-  buzz(12); await moveLoc(s.id, s.day, time);
+  buzz(12); sfx('drop'); await moveLoc(s.id, s.day, time);
   toast(`${shortTitle(loc.title)}: ${s.day !== prev.day ? DAY_LABEL[s.day] + ', ' : ''}${time}`, 'schedule', 5000, { label: 'Anulează', run: () => moveLoc(s.id, prev.day, prev.time) });
 }
 function dragInit() {
@@ -2048,8 +2014,112 @@ async function hereApply() {
   const { day, at, pt } = hereState; const r = replanFrom(day, pt, at);
   const snap = r.seq.filter((x) => x.moved).map((x) => ({ id: x.loc.id, day: findLoc(x.loc.id)?.day, time: findLoc(x.loc.id)?.time }));
   for (const x of r.seq) if (x.moved) await moveLoc(x.loc.id, day, `${hhmm(x.start)} – ${hhmm(x.end)}`);
-  closeModals(); buzz(16); setView('plan'); if (state.day !== day) switchDay(day); else renderDay();
+  closeModals(); buzz(16); sfx('power'); setView('plan'); if (state.day !== day) switchDay(day); else renderDay();
   toast(`Ziua refăcută din ${hhmm(at)}.`, 'update', 6000, { label: 'Anulează', run: async () => { for (const s of snap) await moveLoc(s.id, s.day, s.time); } });
+}
+
+// =====================================================================
+// Arcade: tripul e un joc pentru trei jucători. Sunete 8-bit scurte,
+// puncte care sar din buton, nivele pentru echipă. Interfața rămâne curată:
+// jocul apare doar ca răspuns la ce faceți.
+// =====================================================================
+const SFX = 'bcn_sfx';
+const sfxOn = () => lsGet(SFX, true) !== false;
+let actx = null;
+const TUNES = {
+  coin: [[988, .07], [1319, .24]], select: [[660, .05], [990, .1]], blip: [[1175, .045]], undo: [[587, .06], [392, .12]], drop: [[392, .05], [523, .09]],
+  power: [[523, .06], [659, .06], [784, .06], [1047, .16]], levelup: [[523, .09], [659, .09], [784, .09], [1047, .09], [784, .07], [1047, .3]], clear: [[784, .1], [784, .1], [1047, .12], [988, .1], [1319, .34]],
+};
+function sfx(kind) {
+  if (!sfxOn()) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume();
+    let t = actx.currentTime + 0.01;
+    for (const [f, d] of TUNES[kind] || TUNES.blip) {
+      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'square'; o.frequency.setValueAtTime(f, t);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.045, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + d + 0.03); t += d * 0.92;
+    }
+  } catch {}
+}
+function toggleSfx() { const on = !sfxOn(); lsSet(SFX, on); if (on) sfx('select'); $$('[data-sfx-label]').forEach((el) => { el.textContent = on ? 'Sunet pornit' : 'Sunet oprit'; }); $$('.ps-foot [data-action="sfx-toggle"] .ic').forEach((el) => el.replaceWith(htmlEl(icon(on ? 'volume_up' : 'volume_off', 'i-18')))); }
+const htmlEl = (h) => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstChild; };
+// „+10” în font pixel, care sare din locul apăsat
+function scorePop(x, y, text, color = 'var(--cat-yellow)') { const s = document.createElement('span'); s.className = 'score-pop'; s.textContent = text; s.style.cssText = `left:${x}px;top:${y}px;--c:${color}`; document.body.appendChild(s); setTimeout(() => s.remove(), 1100); }
+function popFrom(el, text, color) { const r = el?.getBoundingClientRect?.() || { left: innerWidth / 2, top: innerHeight / 2, width: 0 }; scorePop(r.left + r.width / 2, r.top, text, color); }
+// Un moment mare, pe mijlocul ecranului: nivel nou, zi completă
+function arcadeMoment(big, small, tune = 'levelup') {
+  sfx(tune); buzz(30); const o = document.createElement('div'); o.className = 'arcade-moment'; o.setAttribute('role', 'status');
+  o.innerHTML = `<div class="am-in"><div class="am-big">${esc(big)}</div>${small ? `<div class="am-small">${esc(small)}</div>` : ''}</div>`;
+  document.body.appendChild(o); for (let i = 0; i < 3; i++) setTimeout(() => confetti(innerWidth * (0.2 + 0.3 * i), innerHeight * 0.38), i * 140);
+  setTimeout(() => o.classList.add('out'), 1900); setTimeout(() => o.remove(), 2400);
+}
+// ---------- Puncte și nivele ----------
+const PTS = { visit: 25, bucket: 50, counter: 10, comment: 5, react: 2 };
+const LEVELS = [0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200];
+const LEVEL_NAMES = ['Turiști', 'Exploratori', 'Plimbăreți', 'Gurmanzi', 'Navigatori', 'Cunoscători', 'Aproape localnici', 'Barcelonezi', 'Legende', 'Campionii Barcelonei'];
+const PLAYER_SLOT = { mara: 'P1', anne: 'P2', daniel: 'P3' };
+function scores() {
+  const sc = Object.fromEntries(PERSONS.map((p) => [p, 0])), byName = Object.fromEntries(PERSONS.map((p) => [PEOPLE_META[p].name, p])); let team = 0;
+  for (const v of Object.values(state.shared.visited || {})) { if (!v) continue; const p = byName[v.by]; if (p) sc[p] += PTS.visit; else team += PTS.visit; }
+  for (const p of PERSONS) sc[p] += bucketOf(p).filter((i) => i.done).length * PTS.bucket + counterOf(PEOPLE_META[p].counter.key) * PTS.counter;
+  for (const list of Object.values(state.shared.comments || {})) if (Array.isArray(list)) for (const c of list) { const p = byName[c.by]; if (p) sc[p] += PTS.comment; }
+  for (const r of Object.values(state.shared.reactions || {})) if (r && typeof r === 'object') for (const [n, k] of Object.entries(r)) { const p = byName[n]; if (p && k) sc[p] += PTS.react; }
+  return { sc, team, total: team + PERSONS.reduce((s, p) => s + sc[p], 0) };
+}
+function levelOf(total) { let i = 0; while (i < LEVELS.length - 1 && total >= LEVELS[i + 1]) i++; const next = LEVELS[i + 1] ?? null; return { n: i + 1, name: LEVEL_NAMES[i], from: LEVELS[i], next, pct: next ? (total - LEVELS[i]) / (next - LEVELS[i]) : 1 }; }
+const fmtPts = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const meKeyNow = () => PERSONS.find((p) => PEOPLE_META[p].name === me()) || 'daniel';
+// Scorul jucătorului în cip, nivelul echipei în bara laterală; nivel nou = moment arcade
+function renderHud() {
+  const s = scores(), lv = levelOf(s.total), mine = s.sc[meKeyNow()] || 0;
+  $$('.hud-pts').forEach((el) => { const old = +el.dataset.v || 0; el.dataset.v = mine; el.textContent = fmtPts(mine); if (mine > old && old) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } });
+  const lb = $('#sideLevel'); if (lb) lb.innerHTML = `<span class="px">Niv ${lv.n}</span><span class="side-lbl">${esc(lv.name)}</span><i style="--p:${Math.round(lv.pct * 100)}%"></i>`;
+  const seen = lsGet('bcn_lvl', 0); if (!seen) lsSet('bcn_lvl', lv.n); else if (lv.n > seen) { lsSet('bcn_lvl', lv.n); setTimeout(() => arcadeMoment(`Nivel ${lv.n}!`, lv.name), 450); }
+}
+function leaderboardHTML() {
+  const s = scores(), lv = levelOf(s.total), order = [...PERSONS].sort((a, b) => s.sc[b] - s.sc[a]), top = s.sc[order[0]];
+  return `<section class="lb" aria-label="Clasament">
+    <div class="lb-team"><div><div class="lb-lv px">Nivel ${lv.n}</div><div class="lb-name">${esc(lv.name)}</div></div><div class="lb-total"><b class="px">${fmtPts(s.total)}</b><span>puncte echipă</span></div></div>
+    <div class="lb-bar"><i style="width:${Math.round(lv.pct * 100)}%"></i></div>
+    <div class="cap mt-1">${lv.next ? `Încă ${fmtPts(lv.next - s.total)} puncte până la nivelul ${lv.n + 1}` : 'Nivel maxim. Sunteți barcelonezi.'}</div>
+    <div class="lb-rows">${order.map((p, i) => `<button data-action="person" data-person="${p}" class="lb-row press ${i === 0 && top ? 'lead' : ''}" style="--pc: var(--p-${p})"><span class="lb-slot px">${PLAYER_SLOT[p]}</span><span class="avatar p-${p}">${PEOPLE_META[p].name[0]}</span><span class="flex-1 text-left font-medium">${PEOPLE_META[p].name}${i === 0 && top ? ` ${icon('workspace_premium', 'i-18 ms-fill', 'color: var(--star)')}` : ''}</span><b class="px lb-pts">${fmtPts(s.sc[p])}</b></button>`).join('')}</div>
+    <p class="cap lb-how">+${PTS.visit} bifat · +${PTS.bucket} bucketlist · +${PTS.counter} la contor · +${PTS.comment} comentariu · +${PTS.react} reacție</p>
+  </section>`;
+}
+// ---------- Cafeaua dintr-o atingere ----------
+let coffeeCombo = { n: 0, t: 0 };
+function nearCoffeeTitle() {
+  if (!state.pos) return ''; let best = null, bd = 220;
+  for (const l of dayItems(todayKey() || state.day)) { if (catKey(enriched(l).cat) !== 'coffee') continue; const p = coordsOf(l); if (!p) continue; const d = distanceM(state.pos, p); if (d < bd) { bd = d; best = l; } }
+  return best ? best.title : '';
+}
+async function coffeeQuick(btn, place = '') {
+  const now = Date.now(); coffeeCombo = now - coffeeCombo.t < 120000 ? { n: coffeeCombo.n + 1, t: now } : { n: 1, t: now };
+  place = place || nearCoffeeTitle();
+  const log = [...(state.shared.coffeeLog || []), { type: 'espresso', shots: 1, place, by: me(), day: todayKey() || state.day, at: new Date().toISOString() }].slice(-200);
+  state.shared.coffeeLog = log; state.shared.coffeeCount = counterOf('coffee'); const c = state.shared.coffeeCount, goal = PEOPLE_META.daniel.counter.goal;
+  buzz(12); sfx('coin'); popFrom(btn, coffeeCombo.n > 1 ? `x${coffeeCombo.n} +${PTS.counter}` : `+${PTS.counter}`);
+  btn?.classList.remove('hit'); void btn?.offsetWidth; btn?.classList.add('hit');
+  renderUs(); renderHud(); refreshDetail(); if (c === goal) setTimeout(() => arcadeMoment(`${goal} espresso!`, 'Daniel e oficial barcelonez', 'clear'), 300);
+  toast(coffeeCombo.n > 1 ? `Combo x${coffeeCombo.n}! Espresso #${c}` : `Espresso #${c}${place ? ' la ' + shortTitle(place) : ''}`, 'coffee', 3500, { label: 'Anulează', run: coffeeUndo });
+  await saveShared({ coffeeLog: log, coffeeCount: c });
+}
+// ---------- Alege jucătorul: pe mijlocul ecranului ----------
+function playerSelectHTML(first) {
+  const cur = me(), set = hasMe(), s = scores();
+  return `<div class="ps-head"><div class="ps-kick px">Alege jucătorul</div><h2 id="psTitle" class="ps-title">${first ? 'Cine joacă?' : 'Cine e la telefon?'}</h2>
+      <p class="ps-sub">${first ? 'Te ținem minte pe telefonul ăsta. Punctele, reacțiile și pozele apar pe numele tău.' : 'Schimbă jucătorul de pe acest telefon.'}</p></div>
+    <div class="ps-grid">${PERSONS.map((p) => { const m = PEOPLE_META[p], on = set && m.name === cur; return `<button data-action="who-set" data-person="${p}" class="ps-card press ${on ? 'on' : ''}" style="--pc: var(--p-${p})" aria-pressed="${on}">
+      <span class="ps-slot px">${PLAYER_SLOT[p]}</span><span class="ps-av avatar p-${p}">${m.name[0]}</span><span class="ps-name">${m.name}</span><span class="ps-tag">${esc(m.tag)}</span><span class="ps-pts px">${fmtPts(s.sc[p])}</span>${on ? '<span class="ps-ready px">Tu</span>' : ''}</button>`; }).join('')}</div>
+    <div class="ps-foot"><button data-action="sfx-toggle" class="chip press">${icon(sfxOn() ? 'volume_up' : 'volume_off', 'i-18')}<span data-sfx-label>${sfxOn() ? 'Sunet pornit' : 'Sunet oprit'}</span></button>${first ? '' : '<button data-action="ps-close" class="btn btn-text press">Închide</button>'}</div>`;
+}
+function openWhoAmI(first = false) { const d = $('#playerDlg'); if (!d) return; $('#playerBody').innerHTML = playerSelectHTML(first); d.dataset.first = first ? '1' : ''; d.classList.remove('hidden'); if (matchMedia('(pointer: fine)').matches) setTimeout(() => $('#playerBody .ps-card.on, #playerBody .ps-card')?.focus(), 60); }
+function setMe(person) {
+  const m = PEOPLE_META[person]; if (!m) return; const card = $(`#playerBody [data-person="${person}"]`);
+  lsSet(LS.me, m.name); buzz(18); sfx('select');
+  $$('#playerBody .ps-card').forEach((c) => c.classList.toggle('picked', c === card)); card?.insertAdjacentHTML('beforeend', '<span class="ps-go px">Gata!</span>');
+  setTimeout(() => { $('#playerDlg').classList.add('hidden'); renderMe(); renderAll(); refreshDetail(); toast(`Salut, ${m.name}! Joci ca ${PLAYER_SLOT[person]}.`, 'sports_esports', 3200); }, RM() ? 150 : 700);
 }
 
 // ---------- PWA ----------
@@ -2071,7 +2141,7 @@ async function hardRefresh() {
 async function installApp() { const p = state.installPrompt; if (!p) return openInstallSheet(); p.prompt(); await p.userChoice; state.installPrompt = null; $('#installBtn')?.classList.add('hidden'); }
 
 // ---------- Micro-interacțiuni ----------
-function confetti(x, y, colors = ['#1A73E8', '#EA4335', '#FBBC04', '#34A853', '#E0457B']) { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; for (let i = 0; i < 16; i++) { const el = document.createElement('i'); el.className = 'confetti'; const a = (Math.PI * 2 * i) / 16 + Math.random() * 0.4, r = 40 + Math.random() * 60; el.style.cssText = `left:${x}px;top:${y}px;background:${colors[i % colors.length]};--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r - 30}px;--rot:${Math.round(Math.random() * 360)}deg`; document.body.appendChild(el); setTimeout(() => el.remove(), 950); } }
+function confetti(x, y, colors = ['#FCDD09', '#DA121A', '#C93468', '#1A73E8', '#2BB673', '#FFFFFF']) { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; for (let i = 0; i < 16; i++) { const el = document.createElement('i'); el.className = 'confetti'; const a = (Math.PI * 2 * i) / 16 + Math.random() * 0.4, r = 40 + Math.random() * 60; el.style.cssText = `left:${x}px;top:${y}px;background:${colors[i % colors.length]};--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r - 30}px;--rot:${Math.round(Math.random() * 360)}deg`; document.body.appendChild(el); setTimeout(() => el.remove(), 950); } }
 
 // ---------- Micro-interacțiuni ----------
 const RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2129,7 +2199,7 @@ let lastY = 0; window.addEventListener('scroll', () => { const y = window.scroll
 // ---------- Evenimente ----------
 document.addEventListener('pointerdown', (e) => { ripple(e); if (e.target.closest('.chip, .date, .nav-btn, .ptoggle, .tab')) buzz(6); });
 document.addEventListener('click', (e) => {
-  const el = e.target.closest('[data-action]'); if (!el) { if (e.target.matches('[data-modal]')) closeModals(); return; }
+  const el = e.target.closest('[data-action]'); if (!el) { if (e.target.matches('[data-modal]') && !(e.target.id === 'playerDlg' && e.target.dataset.first)) closeModals(); return; }
   if (el.tagName === 'FORM' || el.tagName === 'LABEL') return;
   const a = el.dataset.action, id = el.dataset.id;
   const actions = {
@@ -2158,10 +2228,8 @@ document.addEventListener('click', (e) => {
     'book': () => openBook(id), 'book-done': () => bookToggle(id), 'book-copy': () => { const loc = findLoc(id); if (loc) copyText(bookMessage(loc), 'Mesajul e copiat: lipiți-l în WhatsApp, Instagram sau e-mail.'); },
     'note-add': () => noteAdd(id), 'note-del': () => noteDel(id, el.dataset.i), 'note-who': () => { lsSet(LS.me, PEOPLE_META[el.dataset.person].name); const t = $('#noteText')?.value || ''; refreshDetail(); if ($('#noteText')) { $('#noteText').value = t; $('#noteText').focus(); } },
     'coll-open': () => openCollection(el.dataset.coll), 'coll-filter': () => { collState.filter = el.dataset.f; renderCollectionSheet(); }, 'coll-visit': async () => { await toggleVisited(id, el); renderCollectionSheet(); },
-    'open-coffee': () => openCoffee(), 'coffee-here': () => openCoffee(el.dataset.place), 'open-home': openHome, 'copy-address': () => copyText('Carrer de Pellaires 35, 08019 Barcelona', 'Adresa a fost copiată.'), 'coffee-add': coffeeAdd, 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
-    'coffee-type': () => { coffeeSel.type = el.dataset.type; $$('#coffeeTypes .chip').forEach((c) => c.classList.toggle('on', c === el)); },
-    'coffee-place': () => { coffeeSel.place = el.dataset.place; $$('#coffeePlaces .chip').forEach((c) => c.classList.toggle('on', c === el)); },
-    'counter': () => { buzz(); bumpCounter(el.dataset.key, Number(el.dataset.delta)); }, 'bucket-new': () => openBucketEditor(el.dataset.person), 'bucket-edit': () => { const it = bucketOf(el.dataset.person).find((x) => x.id === id); if (it) openBucketEditor(el.dataset.person, it); }, 'bucket-pick': () => bucketPick(el.dataset.loc), 'bucket-toggle': () => { const l = findLoc(id); if (l) bucketToggle(el.dataset.person, l); }, 'bucket-save': bucketSave, 'bucket-delete': bucketDelete, 'bucket-newloc': bucketNewLoc,
+    'open-coffee': () => coffeeQuick(el), 'coffee-quick': () => coffeeQuick(el), 'coffee-here': () => coffeeQuick(el, el.dataset.place), 'sfx-toggle': toggleSfx, 'ps-close': () => $('#playerDlg').classList.add('hidden'), 'open-home': openHome, 'copy-address': () => copyText('Carrer de Pellaires 35, 08019 Barcelona', 'Adresa a fost copiată.'), 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
+    'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta), el), 'bucket-new': () => openBucketEditor(el.dataset.person), 'bucket-edit': () => { const it = bucketOf(el.dataset.person).find((x) => x.id === id); if (it) openBucketEditor(el.dataset.person, it); }, 'bucket-pick': () => bucketPick(el.dataset.loc), 'bucket-toggle': () => { const l = findLoc(id); if (l) bucketToggle(el.dataset.person, l); }, 'bucket-save': bucketSave, 'bucket-delete': bucketDelete, 'bucket-newloc': bucketNewLoc,
     'schedule': () => openSchedule(id), 'sched-day': () => { $$('#schedDays .chip').forEach((c) => c.classList.toggle('on', c === el)); if (el.dataset.time && el.dataset.time !== 'Flexibil') $('#schedTime').value = el.dataset.time; }, 'sched-save': () => scheduleSave(), 'sched-pool': () => scheduleSave('pool'),
     'add-alt': () => addAlternative(Number(el.dataset.index)),
     'add-clear': () => { addState.q = ''; addState.results = []; addState.link = null; renderAdd(); $('#addQ')?.focus(); },
@@ -2192,7 +2260,7 @@ document.addEventListener('submit', (e) => {
   if (e.target.closest('#coffeeBody') && bucketEdit) { e.preventDefault(); bucketSave(); }
 });
 document.addEventListener('change', async (e) => {
-  if (e.target.matches('.bucket-check')) { if (e.target.checked) { buzz(); const r = e.target.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + r.height / 2); } bucketSet(e.target.dataset.person, e.target.dataset.id, { done: e.target.checked }); }
+  if (e.target.matches('.bucket-check')) { if (e.target.checked) { buzz(14); sfx('power'); const r = e.target.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + r.height / 2); scorePop(r.left + r.width / 2, r.top, `+${PTS.bucket}`); } else sfx('undo'); bucketSet(e.target.dataset.person, e.target.dataset.id, { done: e.target.checked }); }
   if (e.target.id === 'photoInput' && e.target.files?.[0] && state.photoTarget) { try { await savePhoto(state.photoTarget, e.target.files[0]); } catch (err) { console.error(err); toast('Nu am putut salva poza: ' + (err.message || err), 'image'); } }
   if (e.target.id === 'hereTime') { hereState.at = +e.target.value; hereRefresh(); }
 });
@@ -2213,7 +2281,7 @@ loadLocal(); renderNotes(); renderWeather(); loadWeather(); setSyncStatus('conne
 state.day = todayKey() || 'thu'; renderDay(); renderNextStop(); renderHome();
 const hasShare = new URL(location.href).searchParams.has('text') || new URL(location.href).searchParams.has('url');
 setView(hasShare ? 'plan' : isDesk() ? lsGet(LS.viewDesk, 'hq') : lsGet(LS.view, 'plan'));
-renderMe(); setupPWA(); connectFirebase(); handleShareTarget(); dragInit();
+renderMe(); setupPWA(); connectFirebase(); handleShareTarget(); dragInit(); $$('[data-sfx-label]').forEach((el) => { el.textContent = sfxOn() ? 'Sunet pornit' : 'Sunet oprit'; });
 if (!hasMe()) setTimeout(() => openWhoAmI(true), 500); else maybePromptInstall();
 setInterval(() => { renderNextStop(); if (state.view === 'hq') renderHQHero(); }, 60000);
 // Fereastra trece între telefon și desktop (laptop micșorat, tabletă rotită)
