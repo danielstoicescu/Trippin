@@ -25,7 +25,7 @@ const SUMMARY_TEXT = `Trippin · Barcelona (Mara 13, Anne & Daniel), 5–9 nov:
 const state = {
   view: 'plan', day: 'thu', filter: 'all', person: 'mara',
   custom: [], photos: {},
-  shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, times: {}, days: {}, comments: {}, reactions: {}, booked: {}, expenses: [], packing: {}, packAdd: [], removed: {}, mealPick: {}, votes: {}, notes: '' },
+  shared: { coffeeCount: 0, coffeeLog: [], counters: {}, bucket: {}, quests: {}, visited: {}, pins: {}, skipped: {}, times: {}, days: {}, comments: {}, reactions: {}, booked: {}, expenses: [], packing: {}, packAdd: [], removed: {}, mealPick: {}, votes: {}, budget: {}, notes: '' },
   online: false, radarOn: false, pos: null, watchId: null, alerted: {},
   installPrompt: null, map: null, markers: [], markerById: {}, focusId: null, focusMarker: null, focusHold: null, meMarker: null, homeMarker: null, newMarker: null, detailId: null, photoTarget: null, picking: false,
 };
@@ -528,11 +528,12 @@ function detailHTML(raw) {
        ${bookOf(loc) && bookOf(loc).need !== 'verificare' ? `<button data-action="book" data-id="${esc(id)}" class="act press ${isBooked(id) ? 'on' : ''}">${icon(isBooked(id) ? 'event_available' : 'event', 'i-20')} ${isBooked(id) ? 'Rezervat' : 'Rezervă'}</button>` : ''}
        <button data-action="toggle-visited" data-id="${esc(id)}" class="act press ${visited ? 'on' : ''}">${icon(visited ? 'check_circle' : 'check', 'i-20')} ${visited ? 'Am fost' : 'Am fost aici'}</button>
        ${loc.isCustom ? `<button data-action="schedule" data-id="${esc(id)}" class="act press">${icon('edit_calendar', 'i-20')} ${isPool(loc) ? 'Pune în zi' : 'Mută'}</button><button data-action="edit-loc" data-id="${esc(id)}" class="act press">${icon('edit', 'i-20')} Editează</button>` : loc.fixed ? '' : `${isPool(loc) || id.startsWith('alt-') ? '' : `<button data-action="toggle-skip" data-id="${esc(id)}" class="act press">${icon(skipped ? 'undo' : 'skip_next', 'i-20')} ${skipped ? 'Pune înapoi' : 'Sari peste'}</button>`}${id.startsWith('alt-') ? '' : `<button data-action="schedule" data-id="${esc(id)}" class="act press">${icon('edit_calendar', 'i-20')} ${isPool(loc) ? 'Pune în zi' : 'Mută'}</button>`}`}
+       ${DAYS.includes(loc.day) && id !== 'home' ? `<button data-action="add-expense" data-loc="${esc(id)}" class="act press">${icon('payments', 'i-20')} Cheltuială</button>` : ''}
        <button data-action="add-photo" data-id="${esc(id)}" class="act press">${icon('add_a_photo', 'i-20')} Poză</button>
        <button data-action="pin-here" data-id="${esc(id)}" class="act press" ${state.pos ? '' : 'disabled style="opacity:.4"'}>${icon('push_pin', 'i-20')} Fixează aici</button>
        ${id === 'home' ? '' : `<button data-action="remove-loc" data-id="${esc(id)}" class="act act-del press">${icon('delete', 'i-20')} Șterge</button>`}`;
   const row = (ic, body, href, trail = '') => href ? `<a href="${esc(href)}" target="_blank" rel="noopener" class="li press">${icon(ic, '', 'color: var(--text-2)')}<div class="flex-1 min-w-0">${body}</div>${trail || icon('chevron_right', 't-3 i-20')}</a>` : `<div class="li">${icon(ic, '', 'color: var(--text-2)')}<div class="flex-1 min-w-0">${body}</div></div>`;
-  const info = [loc.hours ? row('schedule', esc(loc.hours)) : '', loc.price ? row('euro', esc(loc.price)) : '', loc.budget ? row('payments', `${esc(loc.budget)}<div class="cap">buget estimat pentru trei</div>`) : '', loc.address ? row('location_on', `${esc(loc.address)}${p && !p.exact ? '<div class="cap">poziție aproximativă · „Fixează aici” o corectează</div>' : ''}`, mapsSearch(placeQuery(loc)), icon('gmaps', 'i-20')) : '', loc.link ? row('link', `<span class="t-blue">Deschide ${esc(SOURCE[loc.source] || 'linkul')}</span>`, loc.link, icon('open_in_new', 't-3 i-20')) : ''].filter(Boolean).join('');
+  const info = [loc.hours ? row('schedule', esc(loc.hours)) : '', loc.price ? row('euro', esc(loc.price)) : '', (!loc.isAlt && id !== 'home' && DAYS.includes(loc.day)) ? `<button data-action="bud-item" data-id="${esc(id)}" class="li press text-left w-full">${icon('payments', '', 'color: var(--text-2)')}<div class="flex-1 min-w-0"><div>Buget ${itemBudget(loc) ? eur(itemBudget(loc)) : '—'}${sumOf(expenses().filter((x) => x.loc === id)) ? ` · cheltuit ${eur(sumOf(expenses().filter((x) => x.loc === id)))}` : ''}</div><div class="cap">${loc.budget ? esc(loc.budget) + ' · ' : ''}atinge ca să schimbi bugetul sau să adaugi o cheltuială</div></div>${icon('chevron_right', 't-3 i-20')}</button>` : loc.budget ? row('payments', `${esc(loc.budget)}<div class="cap">buget estimat pentru trei</div>`) : '', loc.address ? row('location_on', `${esc(loc.address)}${p && !p.exact ? '<div class="cap">poziție aproximativă · „Fixează aici” o corectează</div>' : ''}`, mapsSearch(placeQuery(loc)), icon('gmaps', 'i-20')) : '', loc.link ? row('link', `<span class="t-blue">Deschide ${esc(SOURCE[loc.source] || 'linkul')}</span>`, loc.link, icon('open_in_new', 't-3 i-20')) : ''].filter(Boolean).join('');
   const sec = (title, body) => `<div class="hair pt-5 mt-5"><h3 class="ttl-3 mb-3">${title}</h3>${body}</div>`;
   const variants = loc.variants?.length ? sec(`${loc.variants.length} locații`, `<div class="card list">${loc.variants.map((v) => { const vd = state.pos && typeof v.lat === 'number' ? distanceM(state.pos, v) : null; return `<a href="${esc(mapsNav({ placeQuery: v.placeQuery, title: v.title, lat: v.lat, lng: v.lng, approx: true }))}" target="_blank" rel="noopener" class="li press"><div class="flex-1 min-w-0"><div class="font-medium">${esc(v.title)}</div><div class="cap">${esc(v.address)}${vd != null ? ` · ${fmtDist(vd)}` : ''}</div><div class="cap">${esc(v.hours || '')}${v.note ? ' · ' + esc(v.note) : ''}</div></div>${icon('gmaps', 'i-22')}</a>`; }).join('')}</div>`) : '';
   const persons = sec('Pe bucketlist-ul lui', `<div class="flex flex-wrap gap-2">${PERSONS.map((pp) => { const on = !!bucketEntryFor(pp, id); return `<button data-action="bucket-toggle" data-person="${pp}" data-id="${esc(id)}" class="ptoggle press ${on ? 'on' : ''}" aria-pressed="${on}"><span class="avatar p-${pp}">${PEOPLE_META[pp].name[0]}</span>${PEOPLE_META[pp].name}${on ? icon('check', 'i-18') : ''}</button>`; }).join('')}</div>`);
@@ -612,36 +613,175 @@ function nearHomeHTML() {
 }
 function renderBookings() { const el = $('#bookings'); if (el) el.innerHTML = bookingsHTML(); const nh = $('#nearHome'); if (nh && !nh.dataset.done) { nh.innerHTML = nearHomeHTML(); nh.dataset.done = '1'; } }
 
-// ---------- Buget: estimat din program + cheltuieli reale, împărțite la trei ----------
+// ---------- Buget: plan editabil (total, pe zile, pe activități), cheltuieli cu categorii, rapoarte ----------
 const eur = (n) => `${Math.round(n)} €`;
+const eur2 = (n) => `${(Math.round((+n || 0) * 100) / 100).toLocaleString('ro-RO', { maximumFractionDigits: 2 })} €`;
+const EXP_CATS = [
+  { k: 'food', label: 'Mâncare', icon: 'restaurant', color: '#1E8E3E' },
+  { k: 'coffee', label: 'Cafea & dulciuri', icon: 'coffee', color: '#B06000' },
+  { k: 'transport', label: 'Transport', icon: 'directions_subway', color: '#1A73E8' },
+  { k: 'tickets', label: 'Bilete & intrări', icon: 'confirmation_number', color: '#8430CE' },
+  { k: 'shop', label: 'Cumpărături', icon: 'shopping_bag', color: '#C5157A' },
+  { k: 'stay', label: 'Cazare & bagaje', icon: 'hotel', color: '#5F6368' },
+  { k: 'other', label: 'Altele', icon: 'more_horiz', color: '#80868B' },
+];
+const expCat = (k) => EXP_CATS.find((c) => c.k === k) || EXP_CATS[EXP_CATS.length - 1];
+const EXP_DAYS = ['pre', ...DAYS];
+const expDayLabel = (d) => (d === 'pre' ? 'Înainte de plecare' : DAY_LABEL[d] || '—');
+const expDayShort = (d) => (d === 'pre' ? 'Înainte' : DAY_SHORT[d] ? `${DAY_SHORT[d][0]} ${DAY_SHORT[d][1]}` : '—');
+function guessExpCat(label = '', loc = null) {
+  if (loc) return { food: 'food', coffee: 'coffee', sweet: 'coffee', shop: 'shop', fun: 'tickets', art: 'tickets' }[catKey(enriched(loc).cat)] || 'other';
+  const t = fold(label);
+  if (/metro|tren|taxi|bus|t-casual|aerob|rodalies|cabify|uber|freenow/.test(t)) return 'transport';
+  if (/bilet|intrar|portaventura|ferrari|muze|ticket/.test(t)) return 'tickets';
+  if (/pranz|cina|tapas|paella|restaurant|meniu|pizza|mic-dejun|bocadillo|pinchos/.test(t)) return 'food';
+  if (/cafea|espresso|cortado|churros|gelato|dulc|inghetat|ciocolat|matcha|cinnamon/.test(t)) return 'coffee';
+  if (/magazin|haine|suvenir|sephora|tk maxx|cumpar|supermarket|mercadona|lidl/.test(t)) return 'shop';
+  if (/cazare|airbnb|hotel|bagaj|dulap/.test(t)) return 'stay';
+  return 'other';
+}
+const expenses = () => (Array.isArray(state.shared.expenses) ? state.shared.expenses : []);
+const expCatOf = (e) => e.cat || guessExpCat(e.label, e.loc ? findLoc(e.loc) : null);
+const sumOf = (list) => list.reduce((s, e) => s + (+e.amount || 0), 0);
+const bplan = () => (state.shared.budget && typeof state.shared.budget === 'object' ? state.shared.budget : {});
+const num0 = (v) => { const n = parseFloat(String(v ?? '').replace(',', '.')); return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null; };
 function estBudget(loc) { // estimare grosieră pentru trei, din textul budget/price
   const b = enriched(loc).budget || enriched(loc).price || ''; if (!b) return 0;
   const m = [...b.matchAll(/(\d+)(?:\s*[–-]\s*(\d+))?\s*€/g)]; if (!m.length) return 0;
   const lo = +m[0][1], hi = m[0][2] ? +m[0][2] : lo; let v = (lo + hi) / 2;
   if (/\/\s*pers/i.test(b)) v *= 3; return v;
 }
-const expenses = () => (Array.isArray(state.shared.expenses) ? state.shared.expenses : []);
-function dayEstimate(day) { return dayItems(day).filter((l) => !state.shared.skipped[l.id]).reduce((s, l) => s + estBudget(l), 0); }
-const tripEstimate = () => DAYS.reduce((s, d) => s + dayEstimate(d), 0);
-const spentTotal = () => expenses().reduce((s, e) => s + (Number(e.amount) || 0), 0);
+function itemBudget(loc) { const v = bplan().items?.[loc.id]; return typeof v === 'number' ? v : estBudget(loc); }
+function dayEstimate(day) { return dayItems(day).filter((l) => !state.shared.skipped[l.id]).reduce((s, l) => s + itemBudget(l), 0); }
+function dayBudget(day) { const v = bplan().days?.[day]; return typeof v === 'number' ? v : dayEstimate(day); }
+const daysTotal = () => DAYS.reduce((s, d) => s + dayBudget(d), 0);
+const tripEstimate = () => { const v = bplan().total; return typeof v === 'number' ? v : daysTotal(); };
+const spentTotal = () => sumOf(expenses());
+const bar = (v, max, cls = '') => `<span class="bud-track ${cls}"><i style="width:${max ? Math.min(100, (v / max) * 100) : 0}%"></i></span>`;
+function budReportHTML(tab) {
+  const ex = expenses(), f = state.budFilter || {};
+  if (tab === 'cat') {
+    const rows = EXP_CATS.map((c) => ({ c, v: sumOf(ex.filter((e) => expCatOf(e) === c.k)) })).filter((r) => r.v > 0).sort((a, b) => b.v - a.v), tot = sumOf(ex);
+    return rows.length ? `<div class="bud-rows">${rows.map(({ c, v }) => `<button data-action="bud-filter" data-cat="${c.k}" class="bud-row press ${f.cat === c.k ? 'on' : ''}" style="--ec:${c.color}"><span class="bud-ic">${icon(c.icon, 'i-18')}</span><span class="bud-l"><b>${c.label}</b>${bar(v, tot)}</span><span class="bud-v"><b>${eur(v)}</b><span>${Math.round((v / tot) * 100)}%</span></span></button>`).join('')}</div>` : '<p class="cap bud-empty">Categoriile apar după prima cheltuială.</p>';
+  }
+  if (tab === 'act') {
+    const locs = DAYS.flatMap((d) => dayItems(d)).map((l) => ({ l, b: itemBudget(l), v: sumOf(ex.filter((e) => e.loc === l.id)) })).filter((r) => r.b > 0 || r.v > 0).sort((a, b) => b.v - a.v || b.b - a.b);
+    return locs.length ? `<div class="bud-rows">${locs.slice(0, state.budAll ? 99 : 10).map(({ l, b, v }) => `<button data-action="bud-item" data-id="${esc(l.id)}" class="bud-row press" style="--ec:${expCat(guessExpCat('', l)).color}"><span class="bud-ic">${icon(smartIcon(enriched(l)), 'i-18')}</span><span class="bud-l"><b>${esc(shortTitle(l.title))}</b><span class="cap">${DAY_SHORT[l.day] ? DAY_SHORT[l.day].join(' ') : ''} · buget ${b ? eur(b) : '—'}${typeof bplan().items?.[l.id] === 'number' ? ' (setat)' : ''}</span>${bar(v, Math.max(v, b), v > b && b ? 'over' : '')}</span><span class="bud-v"><b>${v ? eur(v) : '—'}</b>${icon('edit', 'i-16 t-3')}</span></button>`).join('')}</div>${locs.length > 10 && !state.budAll ? `<button data-action="bud-all" class="btn btn-text btn-sm press mt-1">Toate cele ${locs.length} activități</button>` : ''}` : '<p class="cap bud-empty">Nicio activitate cu buget încă.</p>';
+  }
+  if (tab === 'who') {
+    const tot = sumOf(ex), rows = PERSONS.map((p) => ({ p, v: sumOf(ex.filter((e) => e.by === PEOPLE_META[p].name)) }));
+    return `<div class="bud-rows">${rows.map(({ p, v }) => `<div class="bud-row"><span class="avatar p-${p}" style="width:32px;height:32px;font-size:13px">${PEOPLE_META[p].name[0]}</span><span class="bud-l"><b>${PEOPLE_META[p].name}</b>${bar(v, tot)}</span><span class="bud-v"><b>${eur(v)}</b><span>${tot ? Math.round((v / tot) * 100) : 0}%</span></span></div>`).join('')}</div><p class="cap mt-2">Pe persoană (împărțit la trei): ≈ ${eur(tot / 3)}.</p>`;
+  }
+  const max = Math.max(1, ...EXP_DAYS.map((d) => Math.max(d === 'pre' ? 0 : dayBudget(d), sumOf(ex.filter((e) => e.day === d)))));
+  return `<div class="bud-rows">${EXP_DAYS.map((d) => { const v = sumOf(ex.filter((e) => e.day === d)), b = d === 'pre' ? 0 : dayBudget(d); if (d === 'pre' && !v) return ''; return `<button data-action="bud-filter" data-day="${d}" class="bud-row press ${f.day === d ? 'on' : ''}"><span class="bud-day">${expDayShort(d)}</span><span class="bud-l"><span class="bud-two">${bar(v, max, b && v > b ? 'over' : '')}${b ? `<span class="bud-mark" style="left:${Math.min(100, (b / max) * 100)}%" title="Buget ${eur(b)}"></span>` : ''}</span><span class="cap">${b ? `buget ${eur(b)}${typeof bplan().days?.[d] === 'number' ? ' (setat)' : ''}` : 'cheltuieli dinainte'}</span></span><span class="bud-v"><b>${v ? eur(v) : '—'}</b>${b && v ? `<span class="${v > b ? 't-red' : ''}">${v > b ? '+' + eur(v - b) : eur(b - v) + ' rămași'}</span>` : ''}</span></button>`; }).join('')}</div>`;
+}
+function expRowHTML(e) {
+  const c = expCat(expCatOf(e)), loc = e.loc ? findLoc(e.loc) : null, t = e.at ? new Date(e.at) : null;
+  return `<button data-action="exp-edit" data-id="${esc(e.id)}" class="li tight exp-row press" style="--ec:${c.color}"><span class="bud-ic">${icon(c.icon, 'i-18')}</span><span class="flex-1 min-w-0 text-left"><span class="block font-medium truncate">${esc(e.label || (loc ? shortTitle(loc.title) : c.label))}</span><span class="block cap truncate">${[loc && e.label ? shortTitle(loc.title) : '', c.label, e.by || '', t ? t.toTimeString().slice(0, 5) : ''].filter(Boolean).map(esc).join(' · ')}</span></span><span class="exp-amt-v">${eur2(e.amount)}</span></button>`;
+}
 function budgetHTML() {
-  const est = tripEstimate(), spent = spentTotal(), list = [...expenses()].reverse().slice(0, 8);
-  const perDay = DAYS.map((d) => ({ d, e: dayEstimate(d), s: expenses().filter((x) => x.day === d).reduce((a, x) => a + (+x.amount || 0), 0) }));
-  return `<div class="sec"><div class="sec-h"><h2 class="ttl-2">Buget</h2><span class="cap">estimativ, pentru trei</span></div>
-    <div class="card p-4">
-      <div class="flex items-end justify-between gap-3">
-        <div><div class="cap">Cheltuit până acum</div><div class="h-display" style="font-size: 26px; line-height: 30px">${eur(spent)}</div></div>
-        <div class="text-right"><div class="cap">Estimat pe tot tripul</div><div class="ttl-2">≈ ${eur(est)}</div></div>
-      </div>
-      <div class="budget-bar mt-3"><i style="width: ${est ? Math.min(100, Math.round(spent / est * 100)) : 0}%"></i></div>
-      <div class="flex justify-between cap mt-2"><span>≈ ${eur(spent / 3)} de persoană</span><span>${spent <= est ? `${eur(est - spent)} sub estimat` : `${eur(spent - est)} peste estimat`}</span></div>
+  const total = tripEstimate(), spent = spentTotal(), pct = total ? spent / total : 0, over = spent > total, tab = state.budTab || 'day', f = state.budFilter || {}, set = typeof bplan().total === 'number';
+  const list = expenses().filter((e) => (!f.day || e.day === f.day) && (!f.cat || expCatOf(e) === f.cat)).sort((a, b) => (b.at || 0) - (a.at || 0));
+  const groups = EXP_DAYS.slice().reverse().map((d) => ({ d, items: list.filter((e) => e.day === d) })).filter((g) => g.items.length);
+  const filt = f.day || f.cat ? `<div class="bud-filter">${f.day ? `<button data-action="bud-filter" data-day="${f.day}" class="chip on press">${expDayLabel(f.day)} ${icon('close', 'i-16')}</button>` : ''}${f.cat ? `<button data-action="bud-filter" data-cat="${f.cat}" class="chip on press">${expCat(f.cat).label} ${icon('close', 'i-16')}</button>` : ''}<span class="cap">${eur(sumOf(list))}</span></div>` : '';
+  return `<div class="bud-grid"><div>
+    <div class="bud-hero">
+      <div class="bud-top"><div><div class="cap">Cheltuit</div><div class="bud-big">${eur(spent)}</div></div>
+        <button data-action="bud-edit" class="bud-plan press" aria-label="Editează bugetul"><span class="cap">${set ? 'Bugetul nostru' : 'Buget estimat'}</span><b>${eur(total)}</b><span class="bud-edit">${icon('edit', 'i-16')} Editează</span></button></div>
+      <div class="bud-bar ${over ? 'over' : ''}"><i style="width:${Math.min(100, pct * 100)}%"></i></div>
+      <div class="bud-meta"><span>${Math.round(pct * 100)}% folosit · ≈ ${eur(spent / 3)} de persoană</span><span class="${over ? 't-red' : ''}">${over ? `${eur(spent - total)} peste buget` : `${eur(total - spent)} rămași`}</span></div>
     </div>
-    <div class="budget-days mt-3">${perDay.map((x) => `<button data-action="add-expense" data-day="${x.d}" class="bd press"><div class="cap">${DAY_SHORT[x.d][0]} ${DAY_SHORT[x.d][1]}</div><div class="font-medium tabular">${x.s ? eur(x.s) : '—'}</div><div class="cap t-3">din ≈${Math.round(x.e)}</div></button>`).join('')}</div>
     <button data-action="add-expense" class="btn btn-primary btn-lg press w-full mt-3">${icon('add', 'i-20')} Adaugă o cheltuială</button>
-    ${list.length ? `<div class="card list mt-3">${list.map((e) => `<div class="li tight"><span class="avatar p-${personKey(e.by)}" style="width:30px;height:30px;font-size:13px">${esc((e.by || '?')[0])}</span><div class="flex-1 min-w-0"><div class="font-medium truncate">${esc(e.label || 'Cheltuială')}</div><div class="cap">${e.day && DAY_LABEL[e.day] ? DAY_LABEL[e.day] + ' · ' : ''}${esc(e.by || '')}</div></div><div class="font-medium tabular">${eur(+e.amount || 0)}</div><button data-action="del-expense" data-id="${esc(e.id)}" class="icon-btn press" aria-label="Șterge">${icon('close', 'i-18')}</button></div>`).join('')}</div>` : '<p class="cap mt-3">Adăugați ce cheltuiți (bilete, mese, taxi) și aplicația ține totalul și cât iese de persoană.</p>'}
-    </div>`;
+    <div class="sec"><div class="sec-h"><h2 class="ttl-2">Raport</h2><span class="cap">atinge un rând ca să filtrezi</span></div>
+      <div class="seg bud-tabs" role="tablist">${[['day', 'Zile'], ['cat', 'Categorii'], ['act', 'Activități'], ['who', 'Cine']].map(([k, t]) => `<button data-action="bud-tab" data-tab="${k}" class="seg-b press ${tab === k ? 'on' : ''}" role="tab" aria-selected="${tab === k}">${t}</button>`).join('')}</div>
+      <div class="mt-3">${budReportHTML(tab)}</div>
+      <div class="bud-export mt-3"><button data-action="bud-share" class="btn btn-sm btn-tonal press">${icon('ios_share', 'i-18')} Trimite raportul</button><button data-action="bud-copy" class="btn btn-sm btn-outline press">${icon('content_copy', 'i-18')} Copiază</button><button data-action="bud-csv" class="btn btn-sm btn-outline press">${icon('download', 'i-18')} Tabel CSV</button></div>
+    </div>
+  </div><div>
+    <div class="sec bud-list-sec"><div class="sec-h"><h2 class="ttl-2">Cheltuieli</h2><span class="cap">${expenses().length ? `${expenses().length} · atinge ca să editezi` : ''}</span></div>
+      ${filt}
+      ${groups.length ? groups.map((g) => `<h3 class="cap bud-gh">${expDayLabel(g.d)} · ${eur(sumOf(g.items))}</h3><div class="card list">${g.items.map(expRowHTML).join('')}</div>`).join('') : `<div class="card-flat p-4 t-2">${f.day || f.cat ? 'Nimic pentru filtrul ales.' : 'Încă nicio cheltuială. Adăugați una după fiecare plată: suma, categoria și, dacă vreți, locul. Raportul se face singur.'}</div>`}
+    </div>
+  </div></div>`;
 }
 function renderBudget() { const el = $('#budget'); if (el) el.innerHTML = budgetHTML(); }
+// Foaia de cheltuială: nouă sau editată
+let expenseDraft = null;
+function openExpense(o = {}) {
+  const ex = o.id ? expenses().find((e) => e.id === o.id) : null, loc = ex?.loc ? findLoc(ex.loc) : o.loc ? findLoc(o.loc) : null;
+  expenseDraft = ex ? { ...ex, cat: expCatOf(ex) } : { id: null, by: hasMe() ? me() : 'Daniel', day: o.day || (loc && DAYS.includes(loc.day) ? loc.day : todayKey() || (DAYS.includes(state.day) ? state.day : 'fri')), amount: '', label: '', loc: loc?.id || null, cat: loc ? guessExpCat('', loc) : 'food' };
+  openSheet(expenseSheetHTML()); if (!ex) setTimeout(() => $('#expAmount')?.focus(), 250);
+}
+function syncExp() { if (!expenseDraft) return; const a = $('#expAmount'), l = $('#expLabel'); if (a) expenseDraft.amount = a.value; if (l) expenseDraft.label = l.value; }
+function expenseSheetHTML() {
+  const dr = expenseDraft, acts = DAYS.includes(dr.day) ? dayItems(dr.day) : [];
+  return `${sheetHead(dr.id ? 'Editează cheltuiala' : 'Cheltuială nouă', dr.id ? 'Modifică sau șterge' : 'Cât și pe ce')}
+    <div class="exp-amt"><input id="expAmount" type="number" inputmode="decimal" min="0" step="0.01" value="${esc(String(dr.amount ?? ''))}" placeholder="0" aria-label="Sumă în euro, pentru toți trei"><span>€</span></div>
+    <div class="exp-quick">${[5, 10, 20, 50].map((n) => `<button data-action="exp-plus" data-n="${n}" class="chip press">+${n}</button>`).join('')}<span class="cap">pentru toți trei</span></div>
+    <h3 class="ttl-3 mt-4 mb-2">Categorie</h3><div class="flex flex-wrap gap-2">${EXP_CATS.map((c) => `<button data-action="exp-cat" data-cat="${c.k}" class="chip press exp-cat ${dr.cat === c.k ? 'on' : ''}" style="--ec:${c.color}">${icon(c.icon, 'i-18')}${c.label}</button>`).join('')}</div>
+    <h3 class="ttl-3 mt-4 mb-2">Ziua</h3><div class="flex flex-wrap gap-2">${EXP_DAYS.map((d) => `<button data-action="exp-day" data-day="${d}" class="chip press ${d === dr.day ? 'on' : ''}">${expDayShort(d)}</button>`).join('')}</div>
+    ${acts.length ? `<h3 class="ttl-3 mt-4 mb-2">Activitatea <span class="cap">opțional</span></h3><div class="exp-acts"><button data-action="exp-loc" data-id="" class="chip press ${!dr.loc ? 'on' : ''}">Fără</button>${acts.map((l) => `<button data-action="exp-loc" data-id="${esc(l.id)}" class="chip press ${dr.loc === l.id ? 'on' : ''}">${esc(shortTitle(l.title))}</button>`).join('')}</div>` : ''}
+    <label class="field mt-4"><span>Descriere (opțional)</span><input id="expLabel" class="input" maxlength="60" value="${esc(dr.label || '')}" placeholder="Ex: bilete metrou, prânz, suvenir"></label>
+    <h3 class="ttl-3 mt-4 mb-2">Cine a plătit</h3><div class="flex flex-wrap gap-2">${PERSONS.map((pp) => `<button data-action="exp-who" data-person="${pp}" class="chip press ${PEOPLE_META[pp].name === dr.by ? 'on' : ''}"><span class="avatar p-${pp}" style="width:22px;height:22px;font-size:11px">${PEOPLE_META[pp].name[0]}</span>${PEOPLE_META[pp].name}</button>`).join('')}</div>
+    <div class="flex gap-2 mt-5 pb-3"><button data-action="exp-save" class="btn btn-primary btn-lg press flex-1">${dr.id ? 'Salvează' : 'Adaugă în buget'}</button>${dr.id ? `<button data-action="del-expense" data-id="${esc(dr.id)}" class="btn btn-outline btn-lg press" style="color: var(--red)" aria-label="Șterge cheltuiala">${icon('delete', 'i-20')}</button>` : ''}</div>`;
+}
+function expRerender() { syncExp(); $('#coffeeBody').innerHTML = expenseSheetHTML(); }
+async function expenseSave() {
+  syncExp(); const dr = expenseDraft, amount = num0(dr.amount); if (!amount) { $('#expAmount')?.focus(); return toast('Scrie suma.', 'payments'); }
+  const e = { id: dr.id || 'e' + Date.now(), amount, label: (dr.label || '').trim().slice(0, 60), day: dr.day, by: dr.by, cat: dr.cat, loc: dr.loc || null, at: dr.at || Date.now() };
+  const prev = expenses(), list = dr.id ? prev.map((x) => (x.id === dr.id ? e : x)) : [...prev, e].slice(-500);
+  state.shared.expenses = list; buzz(12); sfx(dr.id ? 'select' : 'coin'); closeModals(); renderAll();
+  toast(dr.id ? 'Cheltuiala a fost salvată.' : `+${eur2(e.amount)} · ${expCat(e.cat).label}`, 'payments', 4000, dr.id ? null : { label: 'Anulează', run: () => expenseDel(e.id, true) });
+  await saveShared({ expenses: list });
+}
+async function expenseDel(id, quiet = false) {
+  const prev = expenses(), gone = prev.find((e) => e.id === id), list = prev.filter((e) => e.id !== id); state.shared.expenses = list; closeModals(); renderAll(); sfx('undo');
+  if (!quiet && gone) toast(`Șters: ${eur2(gone.amount)}`, 'delete', 5000, { label: 'Anulează', run: async () => { state.shared.expenses = [...expenses(), gone]; renderAll(); await saveShared({ expenses: state.shared.expenses }); } });
+  await saveShared({ expenses: list });
+}
+// Bugetul: total, pe zile; pe activitate din fișa locului
+function openBudgetEdit() {
+  const p = bplan();
+  openSheet(`${sheetHead('Bugetul nostru', 'Editează bugetul')}
+    <p class="t-2 mb-3">Lăsați gol ca să folosim estimarea din program. Sumele sunt pentru toți trei.</p>
+    <label class="field"><span>Total pe trip (€)</span><input id="budTotal" type="number" inputmode="decimal" class="input" value="${p.total ?? ''}" placeholder="≈ ${Math.round(daysTotal())}, suma zilelor"></label>
+    <h3 class="ttl-3 mt-4 mb-2">Pe zile</h3>
+    <div class="bud-days-edit">${DAYS.map((d) => `<label class="bde"><span>${DAY_LABEL[d]}</span><input data-bud-day="${d}" type="number" inputmode="decimal" class="input" value="${p.days?.[d] ?? ''}" placeholder="≈ ${Math.round(dayEstimate(d))}"></label>`).join('')}</div>
+    <p class="cap mt-3">Pe activități: din raportul „Activități” sau din fișa fiecărui loc.</p>
+    <div class="flex gap-2 mt-4 pb-3"><button data-action="bud-save" class="btn btn-primary btn-lg press flex-1">Salvează bugetul</button>${p.total != null || Object.values(p.days || {}).some((v) => v != null) ? '<button data-action="bud-reset" class="btn btn-outline btn-lg press">Înapoi la estimat</button>' : ''}</div>`);
+}
+async function budgetSave(reset = false) {
+  const days = {}; if (!reset) $$('[data-bud-day]').forEach((i) => { days[i.dataset.budDay] = num0(i.value); }); else DAYS.forEach((d) => { days[d] = null; });
+  const b = { ...bplan(), total: reset ? null : num0($('#budTotal')?.value), days };
+  state.shared.budget = b; closeModals(); renderAll(); sfx('select'); toast(reset ? 'Bugetul revine la estimarea din program.' : 'Bugetul a fost salvat.', 'savings'); await saveShared({ budget: b });
+}
+function openItemBudget(id) {
+  const loc = findLoc(id); if (!loc) return; const list = expenses().filter((e) => e.loc === id), v = bplan().items?.[id];
+  openSheet(`${sheetHead(esc(loc.title), 'Buget pe activitate')}
+    <div class="bud-item-sum"><div><div class="cap">Cheltuit aici</div><b>${eur(sumOf(list))}</b></div><div><div class="cap">Buget</div><b>${eur(itemBudget(loc))}</b></div></div>
+    <label class="field mt-3"><span>Buget pentru activitate (€, pentru trei)</span><input id="budItem" type="number" inputmode="decimal" class="input" value="${v ?? ''}" placeholder="≈ ${Math.round(estBudget(loc))} estimat din program"></label>
+    ${list.length ? `<div class="card list mt-3">${list.map(expRowHTML).join('')}</div>` : ''}
+    <div class="flex gap-2 mt-4 pb-3"><button data-action="bud-item-save" data-id="${esc(id)}" class="btn btn-primary btn-lg press flex-1">Salvează</button><button data-action="add-expense" data-loc="${esc(id)}" class="btn btn-tonal btn-lg press">${icon('add', 'i-20')} Cheltuială</button></div>`);
+}
+async function itemBudgetSave(id) {
+  const b = { ...bplan(), items: { ...(bplan().items || {}), [id]: num0($('#budItem')?.value) } }; state.shared.budget = b; closeModals(); renderAll(); sfx('select'); toast('Bugetul activității a fost salvat.', 'savings'); await saveShared({ budget: b });
+}
+// Raport: text de trimis (WhatsApp, notițe) și tabel CSV pentru Excel/Numbers
+function budgetReportText() {
+  const ex = expenses(), tot = sumOf(ex), b = tripEstimate(), L = [`Buget trip·in·Barcelona, 5–9 nov 2026`, `Cheltuit: ${eur2(tot)} din ${eur(b)} (${b ? Math.round((tot / b) * 100) : 0}%) · ≈ ${eur(tot / 3)} de persoană`, ''];
+  L.push('Pe categorii:'); EXP_CATS.forEach((c) => { const v = sumOf(ex.filter((e) => expCatOf(e) === c.k)); if (v) L.push(`• ${c.label}: ${eur2(v)} (${Math.round((v / tot) * 100)}%)`); });
+  L.push('', 'Pe zile:'); EXP_DAYS.forEach((d) => { const v = sumOf(ex.filter((e) => e.day === d)), bd = d === 'pre' ? 0 : dayBudget(d); if (v || bd) L.push(`• ${expDayLabel(d)}: ${eur2(v)}${bd ? ` din ${eur(bd)}` : ''}`); });
+  L.push('', 'Cine a plătit:'); PERSONS.forEach((p) => { const v = sumOf(ex.filter((e) => e.by === PEOPLE_META[p].name)); if (v) L.push(`• ${PEOPLE_META[p].name}: ${eur2(v)}`); });
+  return L.join('\n');
+}
+function budgetCSV() {
+  const rows = [['Data', 'Ziua', 'Categorie', 'Activitate', 'Descriere', 'Suma (EUR)', 'Cine a plătit']];
+  for (const e of [...expenses()].sort((a, b) => (a.at || 0) - (b.at || 0))) { const loc = e.loc ? findLoc(e.loc) : null; rows.push([e.at ? new Date(e.at).toLocaleString('ro-RO') : '', expDayLabel(e.day), expCat(expCatOf(e)).label, loc ? loc.title : '', e.label || '', String(e.amount).replace('.', ','), e.by || '']); }
+  const csv = '﻿' + rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'buget-barcelona.csv'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  toast('Tabelul a fost descărcat.', 'download');
+}
+async function budgetShare() { const text = budgetReportText(); if (navigator.share) { try { await navigator.share({ title: 'Buget Barcelona', text }); return; } catch {} } window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener'); }
 
 // ---------- Ce împachetăm: listă comună, bifabilă ----------
 const packKey = (t) => 'p_' + t.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 24);
@@ -711,24 +851,6 @@ function renderPhrases() { const el = $('#phrases'); if (el) el.innerHTML = phra
 async function packToggleItem(key) { const p = { ...(state.shared.packing || {}) }; if (p[key]) p[key] = false; else { p[key] = true; buzz(8); } state.shared.packing = p; renderPacking(); await saveShared({ packing: p }); }
 async function packAddItem(cat) { const text = (prompt('Ce mai adăugăm?') || '').trim(); if (!text) return; const item = { key: 'pc' + Date.now(), cat, text: text.slice(0, 60) }; const list = [...(state.shared.packAdd || []), item].slice(-200); state.shared.packAdd = list; renderPacking(); await saveShared({ packAdd: list }); }
 async function packDelItem(key) { const list = (state.shared.packAdd || []).filter((c) => c.key !== key); const p = { ...(state.shared.packing || {}) }; delete p[key]; state.shared.packAdd = list; state.shared.packing = p; renderPacking(); await saveShared({ packAdd: list, packing: p }); }
-let expenseDraft = null;
-function openExpense(day) { expenseDraft = { by: me(), day: day || (DAYS.includes(state.day) ? state.day : 'fri'), amount: '', label: '' }; openSheet(expenseSheetHTML()); setTimeout(() => $('#expAmount')?.focus(), 250); }
-function expenseSheetHTML() {
-  const dr = expenseDraft;
-  return `${sheetHead('Cheltuială', 'Cât și pe ce')}
-    <label class="field"><span>Sumă (€, pentru trei)</span><input id="expAmount" type="number" inputmode="decimal" min="0" step="0.5" class="input" value="${dr.amount}" placeholder="Ex: 68"></label>
-    <label class="field mt-3"><span>Pe ce</span><input id="expLabel" class="input" maxlength="60" value="${esc(dr.label)}" placeholder="Ex: prânz Bar Joan, bilete metrou"></label>
-    <h3 class="ttl-3 mt-4 mb-2">Ziua</h3><div class="flex flex-wrap gap-2" id="expDays">${DAYS.map((d) => `<button data-action="exp-day" data-day="${d}" class="chip press ${d === dr.day ? 'on' : ''}">${DAY_LABEL[d]}</button>`).join('')}</div>
-    <h3 class="ttl-3 mt-4 mb-2">Cine a plătit</h3><div class="flex gap-2">${PERSONS.map((pp) => `<button data-action="exp-who" data-person="${pp}" class="chip press ${PEOPLE_META[pp].name === dr.by ? 'on' : ''}"><span class="avatar p-${pp}" style="width:22px;height:22px;font-size:11px">${PEOPLE_META[pp].name[0]}</span>${PEOPLE_META[pp].name}</button>`).join('')}</div>
-    <button data-action="exp-save" class="btn btn-primary btn-lg w-full mt-5 press">Adaugă în buget</button><div style="height:12px"></div>`;
-}
-async function expenseSave() {
-  const amount = parseFloat($('#expAmount')?.value); if (!amount || amount <= 0) return $('#expAmount')?.focus();
-  const e = { id: 'e' + Date.now(), amount: Math.round(amount * 100) / 100, label: ($('#expLabel')?.value || '').trim(), day: expenseDraft.day, by: expenseDraft.by, at: Date.now() };
-  const list = [...expenses(), e].slice(-500); state.shared.expenses = list; buzz(); $('#coffeeSheet').classList.add('hidden');
-  toast(`+${eur(e.amount)} adăugat în buget.`, 'payments', 3500); renderAll(); await saveShared({ expenses: list });
-}
-async function expenseDel(id) { const list = expenses().filter((e) => e.id !== id); state.shared.expenses = list; renderAll(); await saveShared({ expenses: list }); }
 
 
 // ---------- Sloturile de masă: variante, voturi 👍/👎 și alegerea familiei ----------
@@ -1136,7 +1258,7 @@ async function connectFirebase() {
       state.custom = snap.docs.map((d) => ({ id: d.id, isCustom: true, ...d.data() })); lsSet(LS.locations, state.custom); renderAll(); refreshDetail();
       if (first) { first = false; state.online = true; setSyncStatus('online'); syncLocalLocations(local); }
     }, (err) => { console.error(err); state.online = false; setSyncStatus('local', err.message); toast('Nu m-am putut conecta la baza de date. Salvez local.', 'info'); });
-    fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters', 'times', 'days', 'comments', 'booked', 'removed', 'mealPick', 'votes']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.expenses)) state.shared.expenses = d.expenses; if (d.reactions && typeof d.reactions === 'object') state.shared.reactions = d.reactions; if (d.packing && typeof d.packing === 'object') state.shared.packing = d.packing; if (Array.isArray(d.packAdd)) state.shared.packAdd = d.packAdd; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
+    fs.onSnapshot(fs.doc(db, 'trips', TRIP_ID, 'state', 'shared'), (snap) => { const d = snap.data() || {}; for (const k of ['quests', 'visited', 'pins', 'skipped', 'bucket', 'counters', 'times', 'days', 'comments', 'booked', 'removed', 'mealPick', 'votes', 'budget']) if (d[k] && typeof d[k] === 'object') state.shared[k] = d[k]; if (Array.isArray(d.expenses)) state.shared.expenses = d.expenses; if (d.reactions && typeof d.reactions === 'object') state.shared.reactions = d.reactions; if (d.packing && typeof d.packing === 'object') state.shared.packing = d.packing; if (Array.isArray(d.packAdd)) state.shared.packAdd = d.packAdd; if (Array.isArray(d.coffeeLog)) state.shared.coffeeLog = d.coffeeLog; if (typeof d.coffeeCount === 'number') state.shared.coffeeCount = d.coffeeCount; if (typeof d.notes === 'string') state.shared.notes = d.notes; persistLocal(); renderNotes(); renderAll(); refreshDetail(); }, (err) => console.error(err));
     fs.onSnapshot(fs.collection(db, 'trips', TRIP_ID, 'photos'), (snap) => { state.photos = {}; snap.forEach((d) => { state.photos[d.id] = d.data(); }); renderAll(); refreshDetail(); }, (err) => console.error(err));
   } catch (err) { console.error(err); setSyncStatus('local', err.message); }
 }
@@ -1493,7 +1615,7 @@ function renderMap() {
 // Tabla cu cele 5 zile pe ore, harta care urmărește ziua la care vă uitați
 // și ce mai e de făcut înainte de plecare. Totul deschide foile existente.
 // =====================================================================
-const hq = { day: null, hoverDay: null, timer: null, pins: {}, layers: [], meal: null };
+const hq = { day: null, hoverDay: null, timer: null, pins: {}, layers: [], meal: null, hl: null };
 const HQ_SCALE = 1.25; // px pe minut în tabla zilelor
 const roN = (n, one, many) => (n === 1 ? `1 ${one}` : `${n}${n > 0 && (n % 100 >= 20 || n % 100 === 0) ? ' de' : ''} ${many}`);
 const eurN = (n) => `${Math.round(n).toLocaleString('ro-RO')} €`;
@@ -1562,7 +1684,7 @@ function hqBoardHTML() {
       prev = sl; const v = !!state.shared.visited[loc.id], b = bookOf(loc), needB = needsBooking(b) && !isBooked(loc.id), rx = reactionsOf(loc.id), rxs = Object.values(rx), who = whoHas(loc.id);
       const flags = [bad.has(loc.id) ? icon('warning', 'i-16 ms-fill', 'color: var(--red)') : '', v ? icon('check_circle', 'i-16 ms-fill', 'color: var(--green)') : '', needB ? icon('event_upcoming', 'i-16', 'color: var(--amber)') : isBooked(loc.id) ? icon('event_available', 'i-16 ms-fill', 'color: var(--green)') : '', loc.id === p.coffeeId ? icon('coffee', 'i-16 ms-fill', 'color: #8D5524') : '', mealSlotOf(loc) && mealRows(mealSlotOf(loc)).length > 1 ? icon('ballot', 'i-16', 'color: var(--green)') : ''].filter(Boolean).join('');
       const label = `${DAY_LABEL[d]}, ${hhmm(sl.start)}–${hhmm(sl.end)}: ${loc.title}, ${c.label}${v ? ', am fost' : ''}${needB ? ', de rezervat' : isBooked(loc.id) ? ', rezervat' : ''}${bad.has(loc.id) ? ', are o problemă' : ''}`;
-      return `${leg}<button data-action="open-detail" data-id="${esc(loc.id)}" data-hq-id="${esc(loc.id)}" ${loc.fixed ? '' : `data-drag-id="${esc(loc.id)}" data-start="${sl.start}" data-end="${sl.end}"`} class="hq-blk k-${ck} ${v ? 'done' : ''} ${bad.has(loc.id) ? 'bad' : ''} ${h < 34 ? 'tiny' : ''} ${loc.fixed ? 'fixed' : ''} ${loc.id === p.coffeeId ? 'am-coffee' : ''} ${lane[si]}" style="top:${top}px;height:${h}px;--lines:${Math.max(1, Math.min(3, Math.floor((h - 22 - (h >= 52 && (rxs.length || who.length) ? 16 : 0)) / 16)))}" aria-label="${esc(label)}" title="${esc(label)}">
+      return `${leg}<button data-action="open-detail" data-id="${esc(loc.id)}" data-hq-id="${esc(loc.id)}" ${loc.fixed ? '' : `data-drag-id="${esc(loc.id)}" data-start="${sl.start}" data-end="${sl.end}"`} data-hl="cat-${ck}${needB ? ' need' : ''}${isBooked(loc.id) ? ' booked' : ''}${mealSlotOf(loc) && mealRows(mealSlotOf(loc)).length > 1 ? ' meal' : ''}${bad.has(loc.id) ? ' bad' : ''}" class="hq-blk k-${ck} ${v ? 'done' : ''} ${bad.has(loc.id) ? 'bad' : ''} ${h < 34 ? 'tiny' : ''} ${loc.fixed ? 'fixed' : ''} ${loc.id === p.coffeeId ? 'am-coffee' : ''} ${lane[si]}" style="top:${top}px;height:${h}px;--lines:${Math.max(1, Math.min(3, Math.floor((h - 22 - (h >= 52 && (rxs.length || who.length) ? 16 : 0)) / 16)))}" aria-label="${esc(label)}" title="${esc(label)}">
         <span class="hq-blk-h">${icon(smartIcon(en), 'i-16')}<span class="hq-blk-t">${esc(shortTitle(loc.title))}</span>${flags ? `<span class="hq-blk-f">${flags}</span>` : ''}</span>
         ${h >= 34 ? `<span class="hq-blk-m">${sl.auto ? '~' : ''}${hhmm(sl.start)}–${hhmm(sl.end)}</span>` : ''}
         ${h >= 52 && (rxs.length || who.length) ? `<span class="hq-blk-s">${rxs.map((k) => reactEmoji(k)).join('')}${who.map((pp) => `<i class="p-${pp}">${PEOPLE_META[pp].name[0]}</i>`).join('')}</span>` : ''}
@@ -1587,8 +1709,11 @@ function hqBoardHTML() {
       </div>
     </div>`;
   }).join('');
-  const legend = `<div class="hq-legend-row" aria-label="Legenda culorilor">${CAT_KEYS.map((k) => `<span class="k-${k}"><i></i>${CAT[k].label}</span>`).join('')}<span class="sep"></span><span>${icon('event_upcoming', 'i-16', 'color: var(--amber)')} de rezervat</span><span>${icon('event_available', 'i-16 ms-fill', 'color: var(--green)')} rezervat</span><span>${icon('ballot', 'i-16', 'color: var(--green)')} variante de masă</span><span>${icon('warning', 'i-16 ms-fill', 'color: var(--red)')} problemă</span></div>`;
-  return legend + `<div class="hq-board" style="--hour:${60 * HQ_SCALE}px">
+  const allSlots = DAYS.flatMap((d) => plans[d].slots), badIds = new Set(DAYS.flatMap((d) => plans[d].issues.flatMap((is) => [is.a.loc.id, is.b.loc.id])));
+  const cnt = { need: allSlots.filter((sl) => needsBooking(bookOf(sl.loc)) && !isBooked(sl.loc.id)).length, booked: allSlots.filter((sl) => isBooked(sl.loc.id)).length, meal: allSlots.filter((sl) => mealSlotOf(sl.loc) && mealRows(mealSlotOf(sl.loc)).length > 1).length, bad: allSlots.filter((sl) => badIds.has(sl.loc.id)).length };
+  const lg = (key, inner, n, label) => `<button data-action="hq-hl" data-hl="${key}" class="hq-lg press ${hq.hl === key ? 'on' : ''}" aria-pressed="${hq.hl === key}" ${n ? '' : 'disabled'} title="${n ? `Arată pe tablă: ${esc(label)}` : 'Niciunul'}">${inner}<span>${esc(label)} <b class="hq-lg-n">(${n})</b></span></button>`;
+  const legend = `<div class="hq-legend-row" role="toolbar" aria-label="Legenda: atinge ca să evidențiezi pe tablă">${CAT_KEYS.map((k) => lg(`cat-${k}`, '<i></i>', allSlots.filter((sl) => catKey(enriched(sl.loc).cat) === k).length, CAT[k].label).replace('class="hq-lg', `class="k-${k} hq-lg`)).join('')}<span class="sep"></span>${lg('need', icon('event_upcoming', 'i-16', 'color: var(--amber)'), cnt.need, 'de rezervat')}${lg('booked', icon('event_available', 'i-16 ms-fill', 'color: var(--green)'), cnt.booked, 'rezervat')}${lg('meal', icon('ballot', 'i-16', 'color: var(--green)'), cnt.meal, 'variante de masă')}${lg('bad', icon('warning', 'i-16 ms-fill', 'color: var(--red)'), cnt.bad, 'problemă')}</div>`;
+  return legend + `<div class="hq-board ${hq.hl ? 'hl-on' : ''}" data-hl-key="${esc(hq.hl || '')}" style="--hour:${60 * HQ_SCALE}px">
     <div class="hq-axis"><div class="hq-axis-h"></div><div class="hq-axis-b" style="height:${H}px">${hours.map((m) => `<span style="top:${y(m)}px">${hhmm(m)}</span>`).join('')}</div></div>
     ${cols}
   </div>`;
@@ -1622,8 +1747,8 @@ function hqPanelsHTML(s) {
     ${notes.length ? `<div class="hq-list">${notes.map((c) => `<button data-action="open-detail" data-id="${esc(c.id)}" class="hq-row hq-row-btn hq-note"><span class="avatar p-${personKey(c.by)}">${esc((c.by || '?')[0])}</span><span class="hq-row-t"><span><b>${esc(c.by)}</b> la ${esc(shortTitle(findLoc(c.id).title))} · ${agoText(c.at)}</span><span class="hq-note-t">${esc(c.text)}</span></span></button>`).join('')}</div>` : '<p class="cap">Nicio notă încă. Scrieți ce vreți să comandați sau ce nu vreți să ratați.</p>'}
   </section>`;
   // Buget: o singură serie (estimatul) până începem să cheltuim; apoi estimat vs cheltuit
-  const per = DAYS.map((d) => ({ d, e: dayEstimate(d), sp: expenses().filter((x) => x.day === d).reduce((a, x) => a + (+x.amount || 0), 0) })), max = Math.max(1, ...per.map((x) => Math.max(x.e, x.sp))), two = s.spent > 0;
-  const budget = `<section class="hq-panel hq-budget"><h2 class="hq-h">Buget estimat</h2>
+  const per = DAYS.map((d) => ({ d, e: dayBudget(d), sp: expenses().filter((x) => x.day === d).reduce((a, x) => a + (+x.amount || 0), 0) })), max = Math.max(1, ...per.map((x) => Math.max(x.e, x.sp))), two = s.spent > 0;
+  const budget = `<section class="hq-panel hq-budget"><h2 class="hq-h">${typeof bplan().total === 'number' ? 'Bugetul nostru' : 'Buget estimat'}</h2>
     <div class="hq-money"><span class="hq-money-v">≈ ${eurN(s.est)}</span><span class="cap">pentru trei · ≈ ${eurN(s.est / 3)} de persoană${two ? ` · cheltuit ${eurN(s.spent)}` : ''}</span></div>
     ${two ? `<div class="hq-legend"><span><i class="lg-est"></i>estimat</span><span><i class="lg-sp"></i>cheltuit</span></div>` : ''}
     <div class="hq-bars ${two ? 'two' : ''}">${per.map((x) => `<button data-action="add-expense" data-day="${x.d}" class="hq-bar-row press" title="${DAY_LABEL[x.d]}: estimat ≈ ${eurN(x.e)}${x.sp ? `, cheltuit ${eurN(x.sp)}` : ''}. Adaugă o cheltuială.">
@@ -1647,7 +1772,7 @@ function renderHQMapBar() {
 function renderHQ() {
   if (!isDesk() || state.view !== 'hq') return;
   const s = hqStats(); renderHQHero();
-  const b = $('#hqBoard'); if (b) { b.innerHTML = hqBoardHTML(); hqBoardEvents(); }
+  const b = $('#hqBoard'); if (b) { b.innerHTML = hqBoardHTML(); hqBoardEvents(); hqApplyHl(); }
   const pn = $('#hqPanels'); if (pn) pn.innerHTML = hqPanelsHTML(s);
   renderHQMapBar(); renderHQMap();
 }
@@ -1676,6 +1801,14 @@ function renderHQMap() {
     hq.layers.push(m); hq.pins[l.id] = m; hqBounds.push([p.lat, p.lng]); });
   const b = TRIP.base; const hm = L.marker([b.lat, b.lng], { icon: L.divIcon({ className: '', html: `<div class="pin home">${icon('hotel', 'i-16 ms-fill')}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] }), zIndexOffset: 300 }).addTo(map); hm.bindTooltip('Cazarea, Pellaires 35', { direction: 'top', offset: [0, -14] }); hm.on('click', () => openHome()); hq.layers.push(hm);
   hqFit();
+}
+// Legenda: o etichetă aleasă evidențiază pe tablă doar blocurile de felul ei
+function hqSetHl(key) { hq.hl = key && key !== hq.hl ? key : null; buzz(6); sfx('blip'); hqApplyHl(); }
+function hqApplyHl() {
+  const board = $('#hqBoard .hq-board'); if (!board) return; board.classList.toggle('hl-on', !!hq.hl);
+  $$('#hqBoard .hq-blk').forEach((b) => b.classList.toggle('hl-match', !!hq.hl && (b.dataset.hl || '').split(' ').includes(hq.hl)));
+  $$('#hqBoard .hq-lg[data-hl]').forEach((b) => { const on = !!hq.hl && b.dataset.hl === hq.hl; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  const row = $('#hqBoard .hq-legend-row'); if (row) { row.querySelector('.hq-lg-clear')?.remove(); if (hq.hl) row.insertAdjacentHTML('beforeend', `<button data-action="hq-hl" data-hl="" class="hq-lg hq-lg-clear press">${icon('close', 'i-16')}<span>Toate</span></button>`); }
 }
 function hqHighlight(id, on) {
   $$(`#hqBoard [data-hq-id="${CSS.escape(id)}"]`).forEach((el) => el.classList.toggle('hl', on));
@@ -2280,8 +2413,13 @@ document.addEventListener('click', (e) => {
     'day-route': dayRoute, 'locate': locate, 'open-link': () => window.open(el.dataset.href, '_blank', 'noopener'), 'close-banner': () => $('#radarBanner').classList.add('hidden'), 'install': installApp, 'open-install': openInstallSheet, 'refresh': hardRefresh,
     'speak': () => { $$('.phr-say.speaking').forEach((x) => x.classList.remove('speaking')); el.classList.add('speaking'); buzz(8); speak(el.dataset.text, el.dataset.lang || 'es-ES', () => el.classList.remove('speaking')); },
     'pack-toggle': () => { packingOpen = !packingOpen; renderPacking(); }, 'pack-item': () => packToggleItem(el.dataset.key), 'pack-add': () => packAddItem(el.dataset.cat), 'pack-del': () => packDelItem(el.dataset.key),
-    'add-expense': () => openExpense(el.dataset.day), 'del-expense': () => expenseDel(el.dataset.id), 'exp-save': () => expenseSave(),
-    'exp-day': () => { expenseDraft.day = el.dataset.day; $$('#expDays .chip').forEach((c) => c.classList.toggle('on', c === el)); },
+    'add-expense': () => openExpense({ day: el.dataset.day, loc: el.dataset.loc }), 'del-expense': () => expenseDel(el.dataset.id), 'exp-save': () => expenseSave(), 'exp-edit': () => openExpense({ id }),
+    'exp-cat': () => { expenseDraft.cat = el.dataset.cat; expenseDraft.catTouched = true; expRerender(); }, 'exp-loc': () => { expenseDraft.loc = el.dataset.id || null; if (expenseDraft.loc && !expenseDraft.id && !expenseDraft.catTouched) expenseDraft.cat = guessExpCat('', findLoc(expenseDraft.loc)); expRerender(); },
+    'exp-plus': () => { const i = $('#expAmount'); if (i) { i.value = String(Math.round(((num0(i.value) || 0) + +el.dataset.n) * 100) / 100); buzz(6); } },
+    'bud-tab': () => { state.budTab = el.dataset.tab; renderBudget(); }, 'bud-filter': () => { const f = { ...(state.budFilter || {}) }; if (el.dataset.day) f.day = f.day === el.dataset.day ? null : el.dataset.day; if (el.dataset.cat) f.cat = f.cat === el.dataset.cat ? null : el.dataset.cat; state.budFilter = f; renderBudget(); },
+    'bud-edit': openBudgetEdit, 'bud-save': () => budgetSave(), 'bud-reset': () => budgetSave(true), 'bud-item': () => openItemBudget(id), 'bud-item-save': () => itemBudgetSave(id), 'bud-all': () => { state.budAll = true; renderBudget(); },
+    'bud-share': budgetShare, 'bud-copy': () => copyText(budgetReportText(), 'Raportul a fost copiat.'), 'bud-csv': budgetCSV,
+    'exp-day': () => { expenseDraft.day = el.dataset.day; if (expenseDraft.loc && findLoc(expenseDraft.loc)?.day !== el.dataset.day) expenseDraft.loc = null; expRerender(); },
     'exp-who': () => { expenseDraft.by = PEOPLE_META[el.dataset.person].name; $$('[data-action="exp-who"]').forEach((c) => c.classList.toggle('on', c === el)); },
     'react': () => { if (myReaction(el.dataset.id) !== el.dataset.k) emojiBurst(el, reactEmoji(el.dataset.k)); toggleReaction(el.dataset.id, el.dataset.k).then(() => {}); popAfterRender(`[data-action="react"][data-id="${CSS.escape(el.dataset.id)}"][data-k="${el.dataset.k}"]`); }, 'open-comments': () => openComments(el.dataset.id),
     'vote': () => castVote(el.dataset.key, el.dataset.ref, Number(el.dataset.v)), 'meal-pick': () => pickMeal(el.dataset.key, el.dataset.ref), 'remove-loc': () => removeLoc(id), 'restore-loc': () => restoreLoc(id),
@@ -2297,7 +2435,7 @@ document.addEventListener('click', (e) => {
     'book': () => openBook(id), 'book-done': () => bookToggle(id), 'book-copy': () => { const loc = findLoc(id); if (loc) copyText(bookMessage(loc), 'Mesajul e copiat: lipiți-l în WhatsApp, Instagram sau e-mail.'); },
     'note-add': () => noteAdd(id), 'note-del': () => noteDel(id, el.dataset.i), 'note-who': () => { lsSet(LS.me, PEOPLE_META[el.dataset.person].name); const t = $('#noteText')?.value || ''; refreshDetail(); if ($('#noteText')) { $('#noteText').value = t; $('#noteText').focus(); } },
     'coll-open': () => openCollection(el.dataset.coll), 'coll-filter': () => { collState.filter = el.dataset.f; renderCollectionSheet(); }, 'coll-visit': async () => { await toggleVisited(id, el); renderCollectionSheet(); },
-    'open-coffee': () => coffeeQuick(el), 'coffee-quick': () => coffeeQuick(el), 'coffee-here': () => coffeeQuick(el, el.dataset.place), 'sfx-toggle': toggleSfx, 'open-more': openMore, 'tp-h': () => tpUpdate(el, { h: +el.dataset.h }), 'tp-m': () => tpUpdate(el, { m: +el.dataset.m }), 'tp-d': () => tpUpdate(el, { d: +el.dataset.d }), 'tp-nudge': () => tpUpdate(el, { n: +el.dataset.n }), 'tp-flex': () => tpUpdate(el, { flex: true }), 'tp-set': () => tpUpdate(el, { s: +el.dataset.s, d: +el.dataset.d }), 'tip-toggle': () => { state.tipOpen = !state.tipOpen; el.classList.toggle('open', state.tipOpen); el.setAttribute('aria-expanded', state.tipOpen); const ic = el.lastElementChild; if (ic) ic.replaceWith(htmlEl(icon(state.tipOpen ? 'expand_less' : 'expand_more', 'i-20 t-3'))); }, 'more-go': () => { closeModals(); setView(el.dataset.view); scrollTo(0, 0); }, 'ps-close': () => $('#playerDlg').classList.add('hidden'), 'open-home': openHome, 'copy-address': () => copyText('Carrer de Pellaires 35, 08019 Barcelona', 'Adresa a fost copiată.'), 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
+    'open-coffee': () => coffeeQuick(el), 'coffee-quick': () => coffeeQuick(el), 'coffee-here': () => coffeeQuick(el, el.dataset.place), 'sfx-toggle': toggleSfx, 'open-more': openMore, 'hq-hl': () => hqSetHl(el.dataset.hl), 'tp-h': () => tpUpdate(el, { h: +el.dataset.h }), 'tp-m': () => tpUpdate(el, { m: +el.dataset.m }), 'tp-d': () => tpUpdate(el, { d: +el.dataset.d }), 'tp-nudge': () => tpUpdate(el, { n: +el.dataset.n }), 'tp-flex': () => tpUpdate(el, { flex: true }), 'tp-set': () => tpUpdate(el, { s: +el.dataset.s, d: +el.dataset.d }), 'tip-toggle': () => { state.tipOpen = !state.tipOpen; el.classList.toggle('open', state.tipOpen); el.setAttribute('aria-expanded', state.tipOpen); const ic = el.lastElementChild; if (ic) ic.replaceWith(htmlEl(icon(state.tipOpen ? 'expand_less' : 'expand_more', 'i-20 t-3'))); }, 'more-go': () => { closeModals(); setView(el.dataset.view); scrollTo(0, 0); }, 'ps-close': () => $('#playerDlg').classList.add('hidden'), 'open-home': openHome, 'copy-address': () => copyText('Carrer de Pellaires 35, 08019 Barcelona', 'Adresa a fost copiată.'), 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
     'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta), el), 'bucket-new': () => openBucketEditor(el.dataset.person), 'bucket-edit': () => { const it = bucketOf(el.dataset.person).find((x) => x.id === id); if (it) openBucketEditor(el.dataset.person, it); }, 'bucket-pick': () => bucketPick(el.dataset.loc), 'bucket-toggle': () => { const l = findLoc(id); if (l) bucketToggle(el.dataset.person, l); }, 'bucket-save': bucketSave, 'bucket-delete': bucketDelete, 'bucket-newloc': bucketNewLoc,
     'schedule': () => openSchedule(id), 'sched-day': () => { $$('#schedDays .chip').forEach((c) => c.classList.toggle('on', c === el)); if (el.dataset.time && el.dataset.time !== 'Flexibil') tpSetValue('schedTime', el.dataset.time); }, 'sched-save': () => scheduleSave(), 'sched-pool': () => scheduleSave('pool'),
     'add-alt': () => addAlternative(Number(el.dataset.index)),
