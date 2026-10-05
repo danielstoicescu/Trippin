@@ -816,9 +816,9 @@ function renderMe() {
 }
 
 // ---------- Reacții: fiecare pune un emoji, dintr-un set de 4 ----------
-const REACTIONS = [{ k: 'love', e: '😍', t: 'Ne place mult' }, { k: 'good', e: '👍', t: 'Bun' }, { k: 'meh', e: '😐', t: 'Așa și-așa' }, { k: 'nope', e: '👎', t: 'Nu prea' }];
+const REACTIONS = [{ k: 'love', e: '😍', t: 'Ne place mult' }, { k: 'good', e: '👍', t: 'Bun' }, { k: 'nope', e: '👎', t: 'Nu prea' }];
 const reactEmoji = (k) => (REACTIONS.find((r) => r.k === k) || {}).e || '';
-const reactionsOf = (id) => (state.shared.reactions?.[id] && typeof state.shared.reactions[id] === 'object' ? state.shared.reactions[id] : {});
+const reactionsOf = (id) => { const r = state.shared.reactions?.[id]; return r && typeof r === 'object' ? Object.fromEntries(Object.entries(r).filter(([, k]) => REACTIONS.some((x) => x.k === k))) : {}; };
 const myReaction = (id) => reactionsOf(id)[me()];
 async function toggleReaction(id, k) {
   const cur = reactionsOf(id), mine = cur[me()]; const next = { ...cur }; if (mine === k) { delete next[me()]; sfx('undo'); } else { next[me()] = k; buzz(10); sfx('blip'); }
@@ -1612,12 +1612,12 @@ function hqPanelsHTML(s) {
       <ul class="hq-wish">${next.map((it) => { const l = it.loc ? findLoc(it.loc) : null; return `<li><button data-action="${l ? 'open-detail' : 'hq-person'}" data-id="${l ? esc(l.id) : ''}" data-person="${pp}"><span>${esc(it.text)}</span>${l && DAYS.includes(l.day) ? `<span class="cap">${DAY_SHORT[l.day][0]} ${DAY_SHORT[l.day][1]}</span>` : ''}</button></li>`; }).join('') || '<li class="cap">Totul bifat. Bravo!</li>'}</ul>
       <button data-action="hq-person" data-person="${pp}" class="btn btn-sm btn-text press">Lista lui ${m.name}</button></div>`; }).join('')}</div></section>`;
   // Păreri și reacții: favoritele familiei + ultimele comentarii
-  const SCORE = { love: 2, good: 1, meh: 0, nope: -1 };
+  const SCORE = { love: 2, good: 1, nope: -1 };
   const favs = Object.entries(state.shared.reactions || {}).map(([id, rx]) => ({ id, rx: rx || {}, loc: findLoc(id), score: Object.values(rx || {}).reduce((a, k) => a + (SCORE[k] ?? 0), 0) })).filter((f) => f.loc && f.score > 0).sort((a, b) => b.score - a.score).slice(0, 5);
   const notes = Object.entries(state.shared.comments || {}).flatMap(([id, list]) => (Array.isArray(list) ? list : []).map((c) => ({ ...c, id }))).filter((c) => findLoc(c.id)).sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 4);
   const voices = `<section class="hq-panel hq-voices"><h2 class="hq-h">Păreri și reacții</h2>
     <div class="hq-sub-h"><span>Favoritele familiei</span></div>
-    ${favs.length ? `<div class="hq-list">${favs.map((f) => `<button data-action="open-detail" data-id="${esc(f.id)}" class="hq-row hq-row-btn">${thumbHTML(enriched(f.loc), 40)}<span class="hq-row-t"><b>${esc(shortTitle(f.loc.title))}</b><span>${DAYS.includes(f.loc.day) ? DAY_LABEL[f.loc.day] : isPool(f.loc) ? 'dorit' : 'recomandare'}</span></span><span class="react-who">${PERSONS.filter((pp) => f.rx[PEOPLE_META[pp].name]).map((pp) => `<span class="react-chip p-${pp}"><b>${PEOPLE_META[pp].name[0]}</b>${reactEmoji(f.rx[PEOPLE_META[pp].name])}</span>`).join('')}</span></button>`).join('')}</div>` : '<p class="cap">Încă nicio reacție. Pe fiecare loc din program alegeți 😍 👍 😐 sau 👎.</p>'}
+    ${favs.length ? `<div class="hq-list">${favs.map((f) => `<button data-action="open-detail" data-id="${esc(f.id)}" class="hq-row hq-row-btn">${thumbHTML(enriched(f.loc), 40)}<span class="hq-row-t"><b>${esc(shortTitle(f.loc.title))}</b><span>${DAYS.includes(f.loc.day) ? DAY_LABEL[f.loc.day] : isPool(f.loc) ? 'dorit' : 'recomandare'}</span></span><span class="react-who">${PERSONS.filter((pp) => f.rx[PEOPLE_META[pp].name]).map((pp) => `<span class="react-chip p-${pp}"><b>${PEOPLE_META[pp].name[0]}</b>${reactEmoji(f.rx[PEOPLE_META[pp].name])}</span>`).join('')}</span></button>`).join('')}</div>` : '<p class="cap">Încă nicio reacție. Pe fiecare loc din program alegeți 😍, 👍 sau 👎.</p>'}
     <div class="hq-sub-h mt-5"><span>Ultimele păreri</span></div>
     ${notes.length ? `<div class="hq-list">${notes.map((c) => `<button data-action="open-detail" data-id="${esc(c.id)}" class="hq-row hq-row-btn hq-note"><span class="avatar p-${personKey(c.by)}">${esc((c.by || '?')[0])}</span><span class="hq-row-t"><span><b>${esc(c.by)}</b> la ${esc(shortTitle(findLoc(c.id).title))} · ${agoText(c.at)}</span><span class="hq-note-t">${esc(c.text)}</span></span></button>`).join('')}</div>` : '<p class="cap">Nicio notă încă. Scrieți ce vreți să comandați sau ce nu vreți să ratați.</p>'}
   </section>`;

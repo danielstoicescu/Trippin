@@ -1,5 +1,5 @@
 // Service worker: aplicația se deschide și fără semnal (roaming / metrou).
-const VERSION = '202610051141';
+const VERSION = '202610051215';
 const CACHE = `bcn-aventura-${VERSION}`;
 const ASSETS = [
   '/', '/index.html', '/app.js', '/data.js', '/icons.js', '/version.js', '/styles.css', '/firebase-config.js', '/manifest.webmanifest',

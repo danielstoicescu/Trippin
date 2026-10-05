@@ -400,10 +400,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .rec-big { font-size: 15px; }
 .react-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .react-pick { display: inline-flex; gap: 4px; background: var(--surface-2); border-radius: 99px; padding: 3px; }
-.react-btn { width: 38px; height: 34px; border-radius: 99px; font-size: 19px; line-height: 1; display: grid; place-items: center; filter: grayscale(1) opacity(.6); transition: transform .2s var(--spring), filter .2s; }
+.react-btn { width: 46px; height: 42px; border-radius: 99px; font-size: 22px; line-height: 1; display: grid; place-items: center; filter: grayscale(1) opacity(.6); transition: transform .2s var(--spring), filter .2s; }
 .react-btn:active { transform: scale(.85); }
 .react-btn.on { filter: none; background: var(--bg); box-shadow: 0 1px 4px rgba(0,0,0,.15); transform: scale(1.08); }
-.react-row.big .react-btn { width: 46px; height: 42px; font-size: 24px; }
+.react-row.big .react-btn { width: 52px; height: 46px; font-size: 26px; }
 .react-who { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .react-chip { display: inline-flex; align-items: center; gap: 3px; height: 26px; padding: 0 8px 0 4px; border-radius: 99px; font-size: 14px; }
 .react-chip b { width: 18px; height: 18px; border-radius: 99px; background: rgba(255,255,255,.35); display: grid; place-items: center; font-size: 11px; font-weight: 600; }
@@ -1095,3 +1095,26 @@ body.is-dragging { -webkit-user-select: none; user-select: none; }
 .tl .dot { border-radius: 4px; }
 .tl .dot.done::after { content: ""; position: absolute; left: 3px; top: 0; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .tl .dot.now { border-radius: 4px; }
+
+/* Cifrele din interfață: Google Sans gros, cifre egale, fără pixeli.
+   Fontul pixel rămâne doar pentru momentele de joc (Nivel 2!, Gata!, Alege jucătorul). */
+.date .dd, .summary .num, .ctr-n b, .hud-pts b, .lb-lv, .lb-total b, .lb-slot, .lb-pts, .ps-slot, .ps-pts b, .ps-ready,
+.side-level .px, .hq-game b, .arc-btn .px, .btn-coffee .px, .score-pop {
+  font-family: 'Google Sans', system-ui, sans-serif; font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: tabular-nums;
+}
+.date .dd { font-size: 18px; line-height: 24px; }
+@media (min-width: 768px) { .date .dd { font-size: 24px; line-height: 30px; } }
+.summary .num { font-size: 18px; }
+.ctr-n b { font-size: 28px; letter-spacing: -0.02em; }
+.hud-pts b { font-size: 12px; }
+.lb-lv { font-size: 12px; letter-spacing: .02em; }
+.lb-total b { font-size: 30px; letter-spacing: -0.02em; }
+.lb-slot, .ps-slot { font-size: 12px; letter-spacing: .04em; }
+.lb-pts { font-size: 18px; }
+.ps-pts b { font-size: 15px; }
+.ps-ready { font-size: 11px; }
+.side-level .px { font-size: 12px; }
+.hq-game b { font-size: 13px; }
+.arc-btn .px { font-size: 13px; }
+.btn-coffee .px { font-size: 13px; }
+.score-pop { font-size: 22px; font-weight: 800; }
