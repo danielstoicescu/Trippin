@@ -520,10 +520,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .plan-cols > .d-main, .plan-cols > .d-side { display: block; min-width: 0; }
   .d-side .hscroll { margin: 0; padding: 0 0 4px; }
   .d-side .rec { width: 200px; }
-  .tl .stop .body { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); grid-template-rows: repeat(5, auto) 1fr; column-gap: 20px; align-items: start; }
+  .tl .stop .body { display: grid; grid-template-columns: minmax(0, clamp(150px, 40%, 300px)) minmax(0, 1fr); grid-template-rows: repeat(5, auto) 1fr; column-gap: 20px; align-items: start; }
   .tl .stop .body > .pwrap { grid-column: 1; grid-row: 1 / 7; }
   .tl .stop .body > :not(.pwrap) { grid-column: 2; }
   .tl .stop .body > .btn { justify-self: start; }
+  .tl .stop .body > .meal-opts { grid-column: 1 / -1; grid-row: auto; }
   .tl .stop .stop-info { margin-top: 0; padding: 2px 0 0 12px; }
   .tl .stop .feed-social { margin-top: 10px; }
   .tl .stop .body { padding-bottom: 20px; }
@@ -1216,3 +1217,57 @@ body.is-dragging { -webkit-user-select: none; user-select: none; }
 .hq-board.hl-on .hq-blk { opacity: .16; filter: grayscale(.7); transition: opacity .2s, filter .2s; }
 .hq-board.hl-on .hq-blk.hl-match { opacity: 1; filter: none; box-shadow: 0 0 0 2px var(--cat, var(--blue)), 0 4px 12px rgba(0,0,0,.18); z-index: 4; }
 .hq-board.hl-on .hq-leg-gap { opacity: .3; }
+
+/* ---------- Lumina zilei: patru momente, fără rânduri rupte ---------- */
+.sunbar { border-radius: 16px; background: var(--surface-2); padding: 10px 12px 12px; }
+.sb-h { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--text-2); }
+.sb-t { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; color: var(--text-2); white-space: nowrap; }
+.sb-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-top: 8px; position: relative; }
+.sb-grid::before { content: ''; position: absolute; left: 8px; right: 8px; top: 7px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, #F9AB00, #F29900 55%, #E8710A 75%, #7C5CDB); opacity: .45; }
+.sb-c { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 0 2px; }
+.sb-c .k { display: flex; flex-direction: column; gap: 6px; font-size: 11.5px; line-height: 14px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-c .k i { width: 16px; height: 16px; border-radius: 50%; background: var(--surface-2); box-shadow: inset 0 0 0 4px var(--sbc); }
+.sb-c b { font-size: 16px; line-height: 20px; font-weight: 600; color: var(--text); }
+.sb-rise { --sbc: #F9AB00; } .sb-gold { --sbc: #F29900; } .sb-set { --sbc: #E8710A; } .sb-dusk { --sbc: #7C5CDB; }
+.sb-c.now .k i { background: var(--sbc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sbc) 30%, transparent); }
+.sb-c.now .k { color: var(--text); font-weight: 600; }
+.dark .sb-dusk { --sbc: #A48BFF; }
+
+/* ---------- Bara de zile care rămâne sus pe Plan (mobil) ---------- */
+.daybar { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .22s var(--ease, ease); }
+.daybar-in { overflow: hidden; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.appbar.show-days .daybar { grid-template-rows: 1fr; }
+.appbar.show-days .daybar-in { padding-bottom: 8px; }
+.appbar.show-days { box-shadow: 0 1px 0 var(--line), 0 4px 10px rgba(60,64,67,.10); }
+.db-chip { height: 36px; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); font-size: 13px; white-space: nowrap; }
+.db-chip svg, .db-chip .material-symbols-rounded { color: var(--th); flex-shrink: 0; }
+.db-chip b { color: var(--text); font-weight: 600; }
+.db-chip.on { background: var(--blue-soft); border-color: transparent; color: var(--blue-strong); }
+.db-chip.on b { color: var(--blue-strong); }
+.db-chip.today { box-shadow: inset 0 -2px 0 var(--red); }
+@media (max-width: 359px) { .db-chip svg, .db-chip .material-symbols-rounded { display: none; } }
+@media (min-width: 768px) { .daybar { display: none; } }
+@media (prefers-reduced-motion: reduce) { .daybar { transition: none; } }
+
+/* ---------- Linia „acum” în programul zilei ---------- */
+.tl > li.now-li { align-items: center; margin: 2px 0 10px; }
+.now-li .nl-t { text-align: right; font-size: 12px; font-weight: 700; color: var(--red); }
+.now-li .nl-dot { justify-self: center; width: 12px; height: 12px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 22%, transparent); }
+.now-li .nl-line { position: relative; height: 2px; background: var(--red); border-radius: 2px; }
+.now-li .nl-lbl { position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 1px 8px; border-radius: 99px; background: var(--red); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
+
+/* Bucketlist pe laptop: trei coloane înguste, textul are prioritate */
+@media (min-width: 1100px) {
+  .us-cols .bk-row { gap: 10px !important; padding-left: 12px; }
+  .us-cols .bk-row .thumb, .us-cols .bk-row .bk-nav { display: none; }
+}
+.dark .ctr-n b { color: color-mix(in srgb, var(--pc) 45%, #fff); }
+.sb-set b { color: #B4500A; }
+#weather { min-width: 36px; justify-content: center; }
+.dark .sb-set b { color: #FF9E5A; }
+.bud-v b.t-3 { color: var(--text-3); }
+/* Sumarul și lumina zilei: un singur card */
+.summary:has(+ .sunbar) { border-radius: 12px 12px 0 0; }
+.summary + .sunbar { margin-top: 0 !important; border: 1px solid var(--line); border-top: 1px solid var(--line-soft); border-radius: 0 0 12px 12px; background: transparent; padding: 10px 12px 12px; }
+.summary + .sunbar .sb-grid { margin-top: 8px; }
+.summary + .sunbar .sb-c .k i { background: var(--bg); }

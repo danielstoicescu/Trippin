@@ -330,11 +330,22 @@ function daySummary(day) { const p = planDay(day); return { n: p.slots.length, w
 function renderDates() {
   const el = $('#dates'); const today = todayKey();
   if (el) el.innerHTML = DAYS.map((d) => { const pl = planDay(d), lv = pl.level; return `<button data-action="day" data-day="${d}" class="date press ${d === state.day ? 'on' : ''} ${d === today ? 'today' : ''}" role="tab" aria-selected="${d === state.day}" aria-label="${DAY_LABEL[d]}, ${esc(DAY_THEMES[d].name)}, ${pl.slots.length} opriri, ${LOAD[lv][0]}"><div class="dn">${DAY_SHORT[d][0]}</div><div class="dd">${DAY_SHORT[d][1]}</div><div class="lights lv-${lv}" title="${LOAD[lv][0]}"><i></i><i></i><i></i></div><div class="dm">${esc(DAY_THEMES[d].short)}</div></button>`; }).join('');
+  const db = $('#dayBarIn'); if (db) db.innerHTML = DAYS.map((d) => { const th = DAY_THEMES[d]; return `<button data-action="day" data-day="${d}" class="db-chip press ${d === state.day ? 'on' : ''} ${d === today ? 'today' : ''}" role="tab" aria-selected="${d === state.day}" aria-label="${DAY_LABEL[d]}, ${esc(th.name)}" style="--th: ${th.color}">${icon(th.icon, 'i-16 ms-fill')}<span>${DAY_SHORT[d][0]} <b class="tabular">${DAY_SHORT[d][1]}</b></span></button>`; }).join('');
   const md = $('#mapDays'); if (md) md.innerHTML = DAYS.map((d) => `<button data-action="day" data-day="${d}" class="chip press ${d === state.day ? 'on' : ''}" style="box-shadow: var(--shadow-1); border-color: transparent">${d === state.day ? icon('check', 'i-18') : ''}${DAY_SHORT[d][0]} ${DAY_SHORT[d][1]}</button>`).join('');
 }
 function essHTML(e) {
   const it = (ok, ic, txt) => `<span class="ess ${ok ? 'ok' : 'miss'}">${icon(ic, 'i-18 ms-fill')}${txt}</span>`;
   return `<div class="ess-row mt-3" aria-label="Esențialele zilei">${it(e.coffee >= 2, 'coffee', (e.coffee >= 2 ? `${e.coffee} cafenele` : `${e.coffee}/2 cafenele`))}${it(e.lunch, 'lunch_dining', 'prânz')}${it(e.dinner, 'restaurant', 'cină')}${it(e.sweet >= 2, 'icecream', (e.sweet >= 2 ? `${e.sweet} dulciuri` : `${e.sweet}/2 dulciuri`))}</div>`;
+}
+function sunHTML(day) {
+  const su = SUN[day]; if (!su) return '';
+  const toM = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const cells = [['rise', 'Răsărit', su.rise, 'Soarele răsare'], ['gold', 'Lumină aurie', su.gold, 'Soarele coboară sub 6°: lumina caldă, bună de poze'], ['set', 'Apus', su.set, 'Soarele atinge orizontul'], ['dusk', 'Întuneric', su.dusk, 'Sfârșitul crepusculului civil']].filter((c) => c[2]);
+  let cur = -1; if (todayKey() === day) { const n = nowMinute(); cells.forEach((c, i) => { if (n >= toM(c[2])) cur = i; }); if (cur === cells.length - 1 && n > toM(cells[cur][2]) + 60) cur = -1; }
+  return `<div class="sunbar mt-3" aria-label="Lumina zilei">
+    <div class="sb-h">${icon('wb_twilight', 'i-18', 'color: var(--star)')}<span class="flex-1">Lumina zilei</span><span class="sb-t">${icon('thermostat', 'i-16')}${esc(su.temp)}${su.place ? ` · ${esc(su.place)}` : ''}</span></div>
+    <div class="sb-grid">${cells.map(([k, l, v, t], i) => `<div class="sb-c sb-${k} ${i === cur ? 'now' : ''}" title="${t}"><span class="k"><i></i>${l}</span><b class="tabular">${v}</b></div>`).join('')}</div>
+  </div>`;
 }
 function renderSummary() {
   const s = daySummary(state.day), el = $('#daySummary'); if (!el) return; const lv = s.plan.level, iss = s.plan.issues;
@@ -343,7 +354,7 @@ function renderSummary() {
     <div><div class="v tabular">${s.walkT ? fmtMin(s.walkT) : '—'}</div><div class="k">pe jos${s.walkM ? ' · ' + fmtDist(s.walkM) : ''}</div></div>
     <div><div class="v tabular">${s.from != null ? hhmm(s.from) : '—'}${s.to ? '–' + hhmm(s.to) : ''}</div><div class="k">${s.other ? `+${fmtMin(s.other)} ${s.plan.slots.some((x) => x.leg?.icon === 'train') ? 'tren' : 'metrou'}` : 'interval'}</div></div>
   </div>
-  ${(() => { const su = SUN[state.day]; return su ? `<div class="daylight mt-3">${icon('wb_twilight', 'i-18', 'color: var(--star)')}<span>Răsărit ${su.rise}</span>${su.gold ? `<span class="dotsep" title="Soarele coboară sub 6°: lumina caldă, bună de poze">aur de la ${su.gold}</span>` : ''}<span class="dotsep">apus <b>${su.set}</b></span>${su.dusk ? `<span class="dotsep" title="Sfârșitul crepusculului civil">întuneric ${su.dusk}</span>` : ''}<span class="dotsep">${icon('thermostat', 'i-16')} ${su.temp}${su.place ? ' · ' + su.place : ''}</span></div>` : ''; })()}
+  ${sunHTML(state.day)}
   ${iss.length ? `<button data-action="goto-warn" class="watch-banner press mt-3">${icon('warning', 'i-20 ms-fill')}<span class="flex-1 text-left">${iss.length === 1 ? 'Un loc nu merge cum e acum' : `${iss.length} locuri nu merg cum e acum`}: alegeți ce faceți</span>${icon('chevron_right', 'i-20')}</button>` : ''}
   ${essHTML(s.plan.ess)}
   <button data-action="day-route" class="route-cta press mt-3"><span class="gm">${icon('gmaps', 'i-22')}</span><span class="flex-1 text-left"><b>Traseul zilei în Google Maps</b><span class="block">${s.n} opriri${s.walkT ? ` · ${fmtMin(s.walkT)} pe jos` : ''}</span></span>${icon('chevron_right', 'i-22')}</button>`;
@@ -417,7 +428,10 @@ function timelineHTML(list) {
   const gaps = gapsOf(state.day, plan); const gapBefore = new Map(gaps.filter((g) => g.b && !g.head).map((g) => [g.b, g])); const tailGap = gaps.find((g) => g.tail); const headGap = gaps.find((g) => g.head);
   const entries = [...plan.slots.map((sl) => ({ t: sl.start, sl })), ...skippedList.map((l) => ({ t: startMin(l), l }))].sort((a, b) => a.t - b.t);
   const seen = new Set(); let html = headGap ? gapHTML(headGap, gaps.indexOf(headGap), plan, seen) : '', prev = null;
+  const nowM = todayKey() === state.day ? nowMinute() : null; let nowShown = nowM == null || (entries.length && nowM < entries[0].t - 90);
+  const nowLi = () => { nowShown = true; return `<li class="now-li" role="presentation"><span class="nl-t tabular">${hhmm(nowM)}</span><span class="nl-dot" aria-hidden="true"></span><span class="nl-line"><span class="nl-lbl">acum</span></span></li>`; };
   for (const en of entries) {
+    if (!nowShown && en.t > nowM && prev) html += nowLi();
     if (en.l) { html += stopHTML(en.l); continue; }
     const sl = en.sl; if (prev) html += legHTML(prev.loc, sl.loc, state.day);
     const g = gapBefore.get(sl); if (g) html += gapHTML(g, gaps.indexOf(g), plan, seen);
@@ -425,6 +439,7 @@ function timelineHTML(list) {
     html += stopHTML(sl.loc, sl, sl.loc.id === plan.coffeeId); prev = sl;
   }
   if (tailGap) html += gapHTML(tailGap, gaps.indexOf(tailGap), plan, seen);
+  if (!nowShown && prev && nowM < plan.last + 120) html += nowLi();
   return `<ol class="tl">${html}</ol>`;
 }
 function oppsHTML(day) {
@@ -530,7 +545,7 @@ function detailHTML(raw) {
        ${loc.isCustom ? `<button data-action="schedule" data-id="${esc(id)}" class="act press">${icon('edit_calendar', 'i-20')} ${isPool(loc) ? 'Pune în zi' : 'Mută'}</button><button data-action="edit-loc" data-id="${esc(id)}" class="act press">${icon('edit', 'i-20')} Editează</button>` : loc.fixed ? '' : `${isPool(loc) || id.startsWith('alt-') ? '' : `<button data-action="toggle-skip" data-id="${esc(id)}" class="act press">${icon(skipped ? 'undo' : 'skip_next', 'i-20')} ${skipped ? 'Pune înapoi' : 'Sari peste'}</button>`}${id.startsWith('alt-') ? '' : `<button data-action="schedule" data-id="${esc(id)}" class="act press">${icon('edit_calendar', 'i-20')} ${isPool(loc) ? 'Pune în zi' : 'Mută'}</button>`}`}
        ${DAYS.includes(loc.day) && id !== 'home' ? `<button data-action="add-expense" data-loc="${esc(id)}" class="act press">${icon('payments', 'i-20')} Cheltuială</button>` : ''}
        <button data-action="add-photo" data-id="${esc(id)}" class="act press">${icon('add_a_photo', 'i-20')} Poză</button>
-       <button data-action="pin-here" data-id="${esc(id)}" class="act press" ${state.pos ? '' : 'disabled style="opacity:.4"'}>${icon('push_pin', 'i-20')} Fixează aici</button>
+       ${state.pos ? `<button data-action="pin-here" data-id="${esc(id)}" class="act press">${icon('push_pin', 'i-20')} Fixează aici</button>` : ''}
        ${id === 'home' ? '' : `<button data-action="remove-loc" data-id="${esc(id)}" class="act act-del press">${icon('delete', 'i-20')} Șterge</button>`}`;
   const row = (ic, body, href, trail = '') => href ? `<a href="${esc(href)}" target="_blank" rel="noopener" class="li press">${icon(ic, '', 'color: var(--text-2)')}<div class="flex-1 min-w-0">${body}</div>${trail || icon('chevron_right', 't-3 i-20')}</a>` : `<div class="li">${icon(ic, '', 'color: var(--text-2)')}<div class="flex-1 min-w-0">${body}</div></div>`;
   const info = [loc.hours ? row('schedule', esc(loc.hours)) : '', loc.price ? row('euro', esc(loc.price)) : '', (!loc.isAlt && id !== 'home' && DAYS.includes(loc.day)) ? `<button data-action="bud-item" data-id="${esc(id)}" class="li press text-left w-full">${icon('payments', '', 'color: var(--text-2)')}<div class="flex-1 min-w-0"><div>Buget ${itemBudget(loc) ? eur(itemBudget(loc)) : '—'}${sumOf(expenses().filter((x) => x.loc === id)) ? ` · cheltuit ${eur(sumOf(expenses().filter((x) => x.loc === id)))}` : ''}</div><div class="cap">${loc.budget ? esc(loc.budget) + ' · ' : ''}atinge ca să schimbi bugetul sau să adaugi o cheltuială</div></div>${icon('chevron_right', 't-3 i-20')}</button>` : loc.budget ? row('payments', `${esc(loc.budget)}<div class="cap">buget estimat pentru trei</div>`) : '', loc.address ? row('location_on', `${esc(loc.address)}${p && !p.exact ? '<div class="cap">poziție aproximativă · „Fixează aici” o corectează</div>' : ''}`, mapsSearch(placeQuery(loc)), icon('gmaps', 'i-20')) : '', loc.link ? row('link', `<span class="t-blue">Deschide ${esc(SOURCE[loc.source] || 'linkul')}</span>`, loc.link, icon('open_in_new', 't-3 i-20')) : ''].filter(Boolean).join('');
@@ -673,7 +688,7 @@ function budReportHTML(tab) {
     return `<div class="bud-rows">${rows.map(({ p, v }) => `<div class="bud-row"><span class="avatar p-${p}" style="width:32px;height:32px;font-size:13px">${PEOPLE_META[p].name[0]}</span><span class="bud-l"><b>${PEOPLE_META[p].name}</b>${bar(v, tot)}</span><span class="bud-v"><b>${eur(v)}</b><span>${tot ? Math.round((v / tot) * 100) : 0}%</span></span></div>`).join('')}</div><p class="cap mt-2">Pe persoană (împărțit la trei): ≈ ${eur(tot / 3)}.</p>`;
   }
   const max = Math.max(1, ...EXP_DAYS.map((d) => Math.max(d === 'pre' ? 0 : dayBudget(d), sumOf(ex.filter((e) => e.day === d)))));
-  return `<div class="bud-rows">${EXP_DAYS.map((d) => { const v = sumOf(ex.filter((e) => e.day === d)), b = d === 'pre' ? 0 : dayBudget(d); if (d === 'pre' && !v) return ''; return `<button data-action="bud-filter" data-day="${d}" class="bud-row press ${f.day === d ? 'on' : ''}"><span class="bud-day">${expDayShort(d)}</span><span class="bud-l"><span class="bud-two">${bar(v, max, b && v > b ? 'over' : '')}${b ? `<span class="bud-mark" style="left:${Math.min(100, (b / max) * 100)}%" title="Buget ${eur(b)}"></span>` : ''}</span><span class="cap">${b ? `buget ${eur(b)}${typeof bplan().days?.[d] === 'number' ? ' (setat)' : ''}` : 'cheltuieli dinainte'}</span></span><span class="bud-v"><b>${v ? eur(v) : '—'}</b>${b && v ? `<span class="${v > b ? 't-red' : ''}">${v > b ? '+' + eur(v - b) : eur(b - v) + ' rămași'}</span>` : ''}</span></button>`; }).join('')}</div>`;
+  return `<div class="bud-rows">${EXP_DAYS.map((d) => { const v = sumOf(ex.filter((e) => e.day === d)), b = d === 'pre' ? 0 : dayBudget(d); if (d === 'pre' && !v) return ''; return `<button data-action="bud-filter" data-day="${d}" class="bud-row press ${f.day === d ? 'on' : ''}"><span class="bud-day">${expDayShort(d)}</span><span class="bud-l"><span class="bud-two">${bar(v, max, b && v > b ? 'over' : '')}${b ? `<span class="bud-mark" style="left:${Math.min(100, (b / max) * 100)}%" title="Buget ${eur(b)}"></span>` : ''}</span><span class="cap">${b ? `buget ${eur(b)}${typeof bplan().days?.[d] === 'number' ? ' (setat)' : ''}` : 'cheltuieli dinainte'}</span></span><span class="bud-v"><b class="${v ? '' : 't-3'}">${eur(v)}</b>${b && v ? `<span class="${v > b ? 't-red' : ''}">${v > b ? '+' + eur(v - b) : eur(b - v) + ' rămași'}</span>` : ''}</span></button>`; }).join('')}</div>`;
 }
 function expRowHTML(e) {
   const c = expCat(expCatOf(e)), loc = e.loc ? findLoc(e.loc) : null, t = e.at ? new Date(e.at) : null;
@@ -1056,7 +1071,7 @@ function homeSheetHTML() {
       <div class="flex items-start gap-3">${icon('location_on', 'i-28 ms-fill', 'color: var(--brand); margin-top: 2px')}<div class="min-w-0"><div class="cap">Adresa</div><div class="addr-v">Carrer de Pellaires 35<br>08019 Barcelona</div><div class="cap mt-1">Poblenou · metrou Selva de Mar (L4, galben), 5 min pe jos</div></div></div>
       <div class="grid grid-cols-2 gap-2 mt-4">
         <a href="${esc(mapsSearch(TRIP.base.placeQuery))}" target="_blank" rel="noopener" class="btn btn-primary press" style="padding: 0 10px">${icon('gmaps', 'i-20')} Vezi pe hartă</a>
-        <button data-action="copy-address" class="btn btn-outline press" style="padding: 0 10px">${icon('content_paste', 'i-20')} Copiază adresa</button>
+        <button data-action="copy-address" class="btn btn-outline press" style="padding: 0 10px" aria-label="Copiază adresa">${icon('content_copy', 'i-20')} Copiază</button>
       </div>
     </div>
     <h3 class="ttl-3 mt-5 mb-2">Cum ajungeți acolo</h3>
@@ -1127,13 +1142,13 @@ function bucketRowHTML(it, person) {
   const loc = it.loc ? findLoc(it.loc) : null; const visited = loc && !!state.shared.visited[loc.id];
   const p = loc && coordsOf(loc), d = loc && state.pos && p ? distanceM(state.pos, p) : null;
   const sub = loc ? [shortTitle(loc.title), loc.isAlt ? 'recomandare' : isPool(loc) ? 'dorit' : DAY_LABEL[loc.day], d != null ? fmtDist(d) : ''].filter(Boolean).join(' · ') : '';
-  return `<div class="li" style="gap: 12px; padding-right: 8px">
+  return `<div class="li bk-row" style="gap: 12px; padding-right: 8px">
     <input type="checkbox" class="cb bucket-check" data-person="${person}" data-id="${esc(it.id)}" ${it.done ? 'checked' : ''} aria-label="Bifează: ${esc(it.text)}">
     <button data-action="${loc ? 'open-detail' : 'bucket-edit'}" data-person="${person}" data-id="${loc ? esc(loc.id) : esc(it.id)}" class="flex items-center gap-3 flex-1 min-w-0 text-left">
       ${loc ? thumbHTML(loc, 44) : ''}
       <div class="min-w-0"><div class="${it.done ? 'line-through t-3' : ''}">${esc(it.text)}</div>${loc ? `<div class="cap truncate">${esc(sub)}${visited ? ' · <span class="t-green">am fost</span>' : ''}</div>` : ''}</div>
     </button>
-    ${loc ? `<a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="icon-btn sm press" aria-label="Traseu spre ${esc(loc.title)}">${icon('directions', 'i-20', 'color: var(--blue)')}</a>` : ''}
+    ${loc ? `<a href="${esc(mapsNav(loc))}" target="_blank" rel="noopener" class="icon-btn sm press bk-nav" aria-label="Traseu spre ${esc(loc.title)}">${icon('directions', 'i-20', 'color: var(--blue)')}</a>` : ''}
     <button data-action="bucket-edit" data-person="${person}" data-id="${esc(it.id)}" class="icon-btn sm press" aria-label="Editează">${icon('more_horiz', 'i-20')}</button>
   </div>`;
 }
@@ -1214,7 +1229,7 @@ function setView(v) {
   if (!['hq', 'plan', 'explore', 'us', 'info', 'budget', 'translate'].includes(v) || (v === 'hq' && !isDesk())) v = 'plan';
   if (state.picking && v !== 'explore') stopPick();
   state.view = v; lsSet(isDesk() ? LS.viewDesk : LS.view, v); if (homeOpen) closeModals();
-  $('#radarBanner').classList.add('hidden');
+  $('#radarBanner').classList.add('hidden'); $('#appbar')?.classList.remove('show-days');
   $$('section[data-view]').forEach((s) => s.classList.toggle('hidden', s.dataset.view !== v));
   $$('.nav-btn[data-view], .side-btn[data-view]').forEach((b) => { b.classList.toggle('on', b.dataset.view === v); if (b.classList.contains('side-btn')) b.toggleAttribute('aria-current', b.dataset.view === v); });
   $('.nav-more')?.classList.toggle('on', v === 'translate' || v === 'info');
@@ -2396,7 +2411,8 @@ function observeReveal() {
   revealObs = revealObs || new IntersectionObserver((entries) => entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('in'); revealObs.unobserve(en.target); } }), { rootMargin: '0px 0px -6% 0px', threshold: 0.06 });
   els.forEach((e) => revealObs.observe(e));
 }
-let lastY = 0; window.addEventListener('scroll', () => { const y = window.scrollY; $('#fab')?.classList.toggle('mini', y > 160 && y > lastY); $('#appbar')?.classList.toggle('scrolled', y > 4); lastY = y; }, { passive: true });
+function dayBarSync() { const bar = $('#appbar'), d = $('#dates'); if (!bar || !d) return; const show = state.view === 'plan' && innerWidth < 768 && d.getBoundingClientRect().bottom < bar.querySelector('.appbar-in').getBoundingClientRect().bottom; bar.classList.toggle('show-days', show); }
+let lastY = 0; window.addEventListener('scroll', () => { const y = window.scrollY; dayBarSync(); $('#fab')?.classList.toggle('mini', y > 160 && y > lastY); $('#appbar')?.classList.toggle('scrolled', y > 4); lastY = y; }, { passive: true });
 
 // ---------- Evenimente ----------
 document.addEventListener('pointerdown', (e) => { ripple(e); if (e.target.closest('.chip, .date, .nav-btn, .ptoggle, .tab')) buzz(6); });
