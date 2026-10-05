@@ -1,7 +1,7 @@
 // Generează public/icons.js din @material-symbols/svg-400 (Rounded, weight 400, outlined + fill).
 // Iconițele sunt SVG inline: apar instant, fără font de 450 KB, și se colorează cu currentColor.
 import { readFileSync, writeFileSync } from 'node:fs';
-const NAMES = `add add_a_photo add_task air auto_awesome bakery_dining beach_access bolt cake calendar_month call castle celebration check check_circle
+const NAMES = `add add_a_photo add_task air auto_awesome bakery_dining beach_access brunch_dining bolt cake calendar_month call castle celebration check check_circle
 church clear_day clear_night close cloud cloud_done cloud_off coffee confirmation_number content_paste credit_card_off dark_mode delete directions_bus directions_walk download
 edit euro expand_more explore foggy format_quote group home hourglass_top icecream image info landscape language light_mode lightbulb link local_activity local_cafe
 local_pharmacy local_taxi lunch_dining map menu_book my_location near_me nightlife open_in_new palette partly_cloudy_day partly_cloudy_night payments photo_camera photo_library

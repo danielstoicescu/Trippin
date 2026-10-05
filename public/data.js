@@ -22,6 +22,7 @@ export const ZONES = {
   poblesec:    { label: 'Poble Sec & Montjuïc', icon: 'wine_bar' },
   barceloneta: { label: 'Barceloneta & Ciutadella', icon: 'waves' },
   elprat:      { label: 'Aeroportul El Prat', icon: 'flight_takeoff' },
+  sants:       { label: 'Sants', icon: 'train' },
 };
 
 export const DAY_ZONES = {
@@ -39,7 +40,7 @@ export const DAY_THEMES = {
 };
 
 export const DAY_TIPS = {
-  thu: 'Aterizați la 8:35 în T2 (Wizz Air W4 3175) și ieșiți repede: fără bagaje de cală și fără control de pașapoarte (zbor Schengen). Din T2 luați trenul R2 Nord de ~9:08 până la Sants (≈ 20 min); dacă zborul întârzie, mai e unul la ~9:38. La Sants aveți timp de un mic dejun până la trenul de ~10:30 spre PortAventura (R17, verificați orele în aplicația Renfe).',
+  thu: 'Aterizați la 8:35 în T2 (Wizz Air W4 3175) și ieșiți repede: fără bagaje de cală și fără control de pașapoarte (zbor Schengen). Din T2 luați trenul R2 Nord de ~9:08 până la Sants (≈ 20 min); dacă zborul întârzie, mai e unul la ~9:38. La Sants: cafea de specialitate și brunch la 5–7 minute de gară (alegeți din variante), apoi trenul de ~10:30 spre PortAventura (R17, verificați orele în aplicația Renfe).',
   fri: 'Zi lungă, dar frumoasă: Ferrari Land, tren, paella la Els Pescadors (rezervați 15:00), Demasié și Nomad (închide la 18:00), apusul pe plajă la ~17:41, cina la La Cova Fumada (vineri 18:00 – 20:00, cash), gelato, apoi TK Maxx deschis până seara.',
   sat: 'Ziua cu cele mai multe opriri, dar aproape toate la câteva minute una de alta, la vale: Gràcia → Rambla de Catalunya → Plaça de Catalunya → El Call → Born. Duminică aproape totul e închis, deci cumpărăturile se fac azi. Prânzul e la Bar Joan, în piața Santa Caterina: sâmbăta închide la 15:30, deci intrați până la 14:30 (plan B: Bar del Pla, la 2 minute). Bar Marsella deschide abia seara.',
   sun: 'Magazinele sunt închise, așa că mergem pe jos și profităm de ce e deschis duminica: târgul de cărți din Sant Antoni, fațadele lui Gaudí, Sagrada pe dinafară, Vietnam House, apoi Ciutadella și trei locuri gratis de la 15:00 pe același drum: El Born CCM și MUHBA (Barcino romană). Prin zonă, dacă vă e poftă: ciocolată cu churros la Granja Dulcinea sau Banys Nous, deschise duminica după-amiază. Cina la Casa Amàlia, cu metroul L4 din Jaume I.',
@@ -63,6 +64,14 @@ export const ITINERARY = [
     address: 'Estació de l’Aeroport (T2) → Estació de Barcelona-Sants', placeQuery: 'Estació Aeroport Rodalies R2 Nord', hours: 'La 30 de minute, de la ≈ 5:40', price: 'Bilet simplu ≈ 4–5 €/pers din automatul din gară, sau o călătorie din T-casual',
     tips: ['Biletul de tren nu trece prin turnichetele de metrou ale aeroportului: R2 e tren Rodalies, gara e la pasarela din fața T2.', 'Pe aplicația Renfe sau Rodalies vedeți întârzierile live.'],
     lat: 41.3036, lng: 2.0731, radius: 400 },
+  { id: 'thu-brunch', meal: 'brunch', minStay: 30, day: 'thu', time: '09:37 – 10:12', closed: ['tue', 'wed'],
+    rec: 'sandwich-ul cu pastrami și un flat white',
+    img: {q: 'Brunchies Barcelona Sants'}, site: 'https://brunchiesbcn.com/en/', budget: '≈ 35–45 € pentru trei', zone: 'sants', cat: 'coffee', catLabel: 'Cafea & brunch la Sants',
+    title: 'Brunchies (Sants)', short: 'Brunch cu influențe nordice și franțuzești · cafea de specialitate',
+    desc: 'La ≈ 5 minute pe jos de gara Sants, condus de femei, cu meniu propriu, ingrediente de sezon și cafea de specialitate. Joi deschide la 9:00, deci prindeți bucătăria liniștită. Comandați direct ce iese repede (sandwich, toast, croissant) ca să plecați spre gară pe la 10:12: R17 pleacă pe la 10:30. Alternativele sunt mai jos: votați și alegeți una.',
+    address: 'Carrer de Jaume Roig 28, Sants', placeQuery: 'Brunchies Brunch & Specialty Coffee, Carrer de Jaume Roig 28, Barcelona', hours: 'Lu, Jo–Du 9:00 – 17:00 · Ma–Mi închis', price: '€€',
+    tips: ['Spuneți de la început că aveți trenul la 10:30: vă aduc mai repede.', 'Dacă e plin, Syra Coffee e la câteva minute, cu cafea la pachet.'],
+    lat: 41.3770, lng: 2.1366, approx: true, radius: 150 },
   { id: 'thu-train', fixed: true, minStay: 80, day: 'thu', time: '10:30 – 11:50', arrive: { title: 'PortAventura', placeQuery: 'Estación de Port Aventura', lat: 41.0840, lng: 1.1620 },
     img: {file: 'Estació de Port Aventura 01 2018.jpg', q: 'Estació de Port Aventura'}, site: 'https://rodalies.gencat.cat/en/horaris/', budget: '≈ 25–30 € pentru trei (regional) · Avant/AVE + taxi ≈ 80–110 €', zone: 'salou', cat: 'art', catLabel: 'Tren spre PortAventura',
     title: 'Tren Sants → PortAventura', short: 'Sosire pe la 11:35–12:00',
@@ -580,6 +589,10 @@ export const ALTERNATIVES = [
   { zone: 'salou', cat: 'food', title: 'Racó de Mar (PortAventura)', short: 'Orez și pește, lângă lac, zona Mediterrània', address: 'PortAventura Park, Mediterrània', placeQuery: 'Racó de Mar PortAventura', hours: 'În timpul parcului (verificați în aplicație)', price: '€€€ · cel mai scump din parc', note: 'Masă la masă; rezervați din aplicația PortAventura.', lat: 41.0870, lng: 1.1560, approx: true },
   { zone: 'salou', cat: 'food', title: 'The Iron Horse (PortAventura)', short: 'Far West: grătar, porții mari, preț bun', address: 'PortAventura Park, Far West', placeQuery: 'The Iron Horse PortAventura', hours: 'În timpul parcului', price: '€€', lat: 41.0890, lng: 1.1590, approx: true },
   { zone: 'salou', cat: 'food', title: 'La Cantina (PortAventura)', short: 'México: tacos și fajitas, cu mariachi', address: 'PortAventura Park, México', placeQuery: 'La Cantina PortAventura', hours: 'În timpul parcului', price: '≈ 15–20 €/pers', lat: 41.0880, lng: 1.1575, approx: true },
+  { zone: 'sants', cat: 'coffee', title: 'Syra Coffee (Sants)', short: 'Prăjitorie din Barcelona, cafea de sezon · ≈ 7 min de gară', rec: 'un V60 cu boabe de sezon și un cookie', address: 'Carrer de Sants 37', placeQuery: 'Syra Coffee Sants, Carrer de Sants 37, Barcelona', hours: 'Zilnic 8:00 – 20:00', price: '€', site: 'https://syra.coffee/', note: 'Cea mai sigură variantă: deschis devreme în fiecare zi, cafea foarte bună, se ia ușor la pachet spre gară. Gustările sunt simple (cookies, banana bread).', lat: 41.3757, lng: 2.1389, approx: true },
+  { zone: 'sants', cat: 'coffee', title: 'Sula Espai', short: 'Cafea de specialitate cu prăjitori prin rotație, mic dejun', rec: 'un flat white și un toast de mic dejun', address: "Carrer d'Alcolea 116, Sants", placeQuery: "Sula Espai, Carrer d'Alcolea 116, Barcelona", hours: 'Lu–Vi 8:00 – 17:00 · Sâ 9:00 – 17:00 · Du închis', price: '€', closed: ['sun'], note: 'Cafenea de cartier condusă de femei: boabe locale și internaționale prin rotație, mic dejun cu variante vegane și fără gluten.', lat: 41.3783, lng: 2.1364, approx: true },
+  { zone: 'sants', cat: 'coffee', title: 'Mitzi Coffee & Brunch', short: 'Brunch vegetarian frumos, matcha, smoothie · ≈ 7 min de gară', rec: 'un toast de brunch și un matcha latte pentru Mara', address: "Carrer d'en Blanco 5, Sants", placeQuery: "Mitzi Coffee & Brunch, Carrer d'en Blanco 5, Barcelona", hours: 'Lu–Vi 8:30 – 15:30 · Sâ–Du 10:00 – 15:30', price: '€€', site: 'https://mitzi-coffee.com/en/', note: 'Cel mai „brunch” dintre toate: farfurii frumoase, totul vegetarian, cu multe variante vegane. Bucătăria lucrează de la 8:30.', lat: 41.3769, lng: 2.1412, approx: true },
+  { zone: 'sants', cat: 'sweet', title: 'Forn Baltà (din 1934)', short: 'Brutăria de cartier a Sants-ului, croissante & panellets', rec: 'un croissant cald și panellets, dacă au rămas de la Tots Sants', address: 'Carrer de Sants 119', placeQuery: 'Forn Baltà, Carrer de Sants 119, Barcelona', hours: 'Lu–Sâ 8:00 – 21:00 · Du închis', price: '€', closed: ['sun'], note: 'Brutărie tradițională cu colț de cafenea: bun pentru ceva dulce și o cafea simplă, nu de specialitate. ≈ 10 min de gară.', lat: 41.3753, lng: 2.1349, approx: true },
   { zone: 'salou', cat: 'food', title: 'Boquet (Salou)', short: 'Bucătărie de piață, mic și bun · de la 20:00', address: 'Carrer de Berenguer de Palou 9, Salou', placeQuery: 'Restaurant Boquet Salou', hours: 'Cină 20:00 – 22:30 · luni închis', price: '€€', book: { need: 'recomandat', tel: '+34977002034' }, closed: ['mon'], lat: 41.0756, lng: 1.1390, approx: true },
   { zone: 'salou', cat: 'food', title: 'La Morera de Pablo & Ester', short: 'Recomandat Michelin & Repsol · de la 20:30', address: 'Carrer de Berenguer de Palou 10, Salou', placeQuery: 'La Morera de Pablo Salou', hours: 'Joi cină 20:30 – 24:00', price: '€€€', book: { need: 'recomandat' }, lat: 41.0757, lng: 1.1392, approx: true },
   { zone: 'salou', cat: 'food', title: 'Bufacaldos (Salou)', short: 'Orez pe faleză · de la 20:30', address: 'Passeig de Miramar 40, Salou', placeQuery: 'Bufacaldos Salou', hours: 'Cină de la 20:30', price: '€€', lat: 41.0740, lng: 1.1330, approx: true },
@@ -806,7 +819,8 @@ export const WEATHER_NOTE = 'Noiembrie la Barcelona: ~17 °C ziua, ~10 °C noapt
 // Sloturile de masă: prima variantă e cea din program, restul sunt alternativele (votate în aplicație).
 // Referințe: id-ul unei opriri din ITINERARY (inclusiv „pool”) sau 'alt:' + titlul exact din ALTERNATIVES.
 export const MEAL_SLOTS = {
-  thu: { lunch: ['pa-lunch', 'alt:Racó de Mar (PortAventura)', 'alt:The Iron Horse (PortAventura)', 'alt:La Cantina (PortAventura)'],
+  thu: { brunch: ['thu-brunch', 'alt:Syra Coffee (Sants)', 'alt:Mitzi Coffee & Brunch', 'alt:Sula Espai', 'alt:Forn Baltà (din 1934)'],
+         lunch: ['pa-lunch', 'alt:Racó de Mar (PortAventura)', 'alt:The Iron Horse (PortAventura)', 'alt:La Cantina (PortAventura)'],
          dinner: ['salou-prom', 'alt:Boquet (Salou)', 'alt:La Morera de Pablo & Ester', 'alt:Bufacaldos (Salou)'] },
   fri: { lunch: ['elspescadors', 'alt:Bar Nuri', 'banhmi', 'alt:El 58 (tapas cu twist)'],
          dinner: ['covafumada', 'alt:Can Fisher', 'alt:Bodega La Peninsular', 'bitacora'] },

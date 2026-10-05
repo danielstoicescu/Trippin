@@ -47,7 +47,9 @@ const withTime = (l) => { const t = state.shared.times?.[l.id], d = state.shared
 const isRemoved = (id) => !!state.shared.removed?.[id];
 const allLocs = () => applyMeals([...ITINERARY.map(withTime), ...state.custom]).filter((l) => !isRemoved(l.id));
 // Sloturile de prânz și cină: prima variantă e cea din program; alegerea familiei o înlocuiește, la aceeași oră
-const MEAL_LABEL = { lunch: 'Prânzul', dinner: 'Cina' };
+const MEAL_LABEL = { brunch: 'Cafea & brunch', lunch: 'Prânzul', dinner: 'Cina' };
+const MEAL_FOR = { brunch: 'brunch', lunch: 'prânz', dinner: 'cină' };
+const mealIcon = (m) => (m === 'lunch' ? 'lunch_dining' : m === 'brunch' ? 'brunch_dining' : 'restaurant');
 const altIndexByTitle = (t) => ALTERNATIVES.findIndex((a) => a.title === t);
 function mealOptionLoc(ref) {
   if (String(ref).startsWith('alt:')) { const i = altIndexByTitle(ref.slice(4)); return i >= 0 ? { ...ALTERNATIVES[i], id: 'alt-' + i, isAlt: false, altIndex: i, radius: 150 } : null; }
@@ -299,7 +301,7 @@ function essentials(slots) {
   return { lunch: food.some((x) => meal(x) === 'lunch'), dinner: food.some((x) => meal(x) === 'dinner'), coffee: coffees.size, sweet: sweets };
 }
 // Cafeaua zilei: ziua începe cu o cafea, prima sau a doua oprire
-function morningCoffeeId(slots) { const s = slots.slice(0, 2).find((x) => catKey(enriched(x.loc).cat) === 'coffee'); return s ? s.loc.id : null; }
+function morningCoffeeId(slots) { const s = slots.filter((x) => catKey(enriched(x.loc).cat) !== 'none').slice(0, 2).find((x) => catKey(enriched(x.loc).cat) === 'coffee'); return s ? s.loc.id : null; }
 function planDay(day, excludeId = null) {
   const all = dayItems(day).filter((l) => l.id !== excludeId); const slots = [], flex = [];
   for (const loc of all) { const r = parseRange(loc.time); if (r) slots.push({ loc, start: r.from, end: r.to, auto: false }); else flex.push(loc); }
@@ -372,7 +374,7 @@ function stopHTML(loc, slot = null, amCoffee = false) {
   const overlay = `<span class="corner">${icon(smartIcon(e), 'i-18')}</span><div class="ph-tl">${pills}</div>${whoHas(loc.id).length ? `<div class="ph-bl">${whoHTML(loc.id)}</div>` : ''}`;
   const meta = [e.rating ? `<span><span class="star">★</span> ${Number(e.rating).toFixed(1).replace('.', ',')}${e.ratingCount ? ` <span class="t-3">(${fmtCount(e.ratingCount)})</span>` : ''}</span>` : '', e.price && !e.free ? `<span class="dotsep">${esc(e.price.split('·')[0].split('(')[0].trim())}</span>` : '', slot ? `<span class="dotsep">${fmtMin(slot.end - slot.start)} acolo</span>` : '', dist != null ? `<span class="dotsep t-blue">${fmtDist(dist)} de tine</span>` : '', e.variants?.length ? `<span class="dotsep">${e.variants.length} locații</span>` : '', commentsOf(loc.id).length ? `<span class="dotsep">${icon('forum', 'i-16', 'vertical-align: -3px; color: var(--brand)')} ${commentsOf(loc.id).length}</span>` : '', loc.isCustom ? `<span class="dotsep">de ${esc(loc.addedBy || 'noi')}</span>` : ''].filter(Boolean).join('');
   return `<li class="stop reveal k-${ck} ${amCoffee ? 'am-coffee' : ''} ${mealKey ? 'meal-stop' : ''} ${visited ? 'done' : ''} ${skipped ? 'skipped' : ''}" id="loc-${esc(loc.id)}">
-    ${mealKey ? `<div class="meal-flag">${icon(mealKey.endsWith('lunch') ? 'lunch_dining' : 'restaurant', 'i-18 ms-fill')}<b>${MEAL_LABEL[mealKey.split('-')[1]]}</b><span class="cap">${mealRows(mealKey).length > 1 ? `${mealRows(mealKey).length} variante` : ''}</span></div>` : ''}
+    ${mealKey ? `<div class="meal-flag">${icon(mealIcon(mealKey.split('-')[1]), 'i-18 ms-fill')}<b>${MEAL_LABEL[mealKey.split('-')[1]]}</b><span class="cap">${mealRows(mealKey).length > 1 ? `${mealRows(mealKey).length} variante` : ''}</span></div>` : ''}
     ${amCoffee ? `<div class="cup-flag"><span class="steam"><i></i><i></i><i></i></span>${icon('coffee', 'i-18 ms-fill')}<b>Cafeaua zilei</b><span class="cap">${slot ? hhmm(slot.start) : ''}</span></div>` : ''}
     <div class="tm">${r ? `${slot?.auto ? '~' : ''}${hhmm(r.from)}<span class="end">${hhmm(r.to)}</span>` : ''}</div>
     <div class="rail"><button class="dot ${visited ? 'done' : skipped ? 'skip' : now ? 'now' : ''}" data-action="toggle-visited" data-id="${esc(loc.id)}" aria-label="${visited ? 'Anulează: am fost' : 'Bifează: am fost'} la ${esc(loc.title)}"></button></div>
@@ -871,7 +873,7 @@ async function packDelItem(key) { const list = (state.shared.packAdd || []).filt
 // ---------- Sloturile de masă: variante, voturi 👍/👎 și alegerea familiei ----------
 function mealSlotOf(loc) {
   if (!loc) return null; if (loc.mealSlot) return loc.mealSlot;
-  for (const d of DAYS) for (const m of ['lunch', 'dinner']) { const o = MEAL_SLOTS?.[d]?.[m], k = `${d}-${m}`, p = state.shared.mealPick?.[k]; if (o && o[0] === loc.id && loc.day === d && (!p || p === o[0])) return k; }
+  for (const d of DAYS) for (const m of ['brunch', 'lunch', 'dinner']) { const o = MEAL_SLOTS?.[d]?.[m], k = `${d}-${m}`, p = state.shared.mealPick?.[k]; if (o && o[0] === loc.id && loc.day === d && (!p || p === o[0])) return k; }
   return null;
 }
 const votesOf = (key, ref) => state.shared.votes?.[key]?.[optId(ref)] || {};
@@ -890,7 +892,7 @@ async function castVote(key, ref, v) {
 async function pickMeal(key, ref) {
   const [d, m] = key.split('-'), def = MEAL_SLOTS?.[d]?.[m]?.[0]; const val = ref === def ? null : ref;
   state.shared.mealPick = { ...(state.shared.mealPick || {}), [key]: val }; buzz(14); closeModals(); renderAll();
-  const l = mealOptionLoc(ref); toast(`${MEAL_LABEL[m]} de ${DAY_LABEL[d].toLowerCase()}: ${shortTitle(l?.title || '')}.`, m === 'lunch' ? 'lunch_dining' : 'restaurant', 3500);
+  const l = mealOptionLoc(ref); toast(`${MEAL_LABEL[m]} de ${DAY_LABEL[d].toLowerCase()}: ${shortTitle(l?.title || '')}.`, mealIcon(m), 3500);
   await saveShared({ mealPick: { [key]: val } });
 }
 function mealRowHTML(key, o, chosen) {
@@ -909,7 +911,7 @@ function mealOptsHTML(key, max = 99) {
   const [, m] = key.split('-'), rows = mealRows(key), chosen = mealChosen(key); if (rows.length < 2) return '';
   const lead = rows.slice(1).find((o) => o.score > rows[0].score);
   return `<div class="meal-opts">
-    <div class="meal-opts-h">${icon(m === 'lunch' ? 'lunch_dining' : 'restaurant', 'i-18 ms-fill')}<span>Variante pentru ${m === 'lunch' ? 'prânz' : 'cină'}</span><span class="cap">votați 👍 👎</span></div>
+    <div class="meal-opts-h">${icon(mealIcon(m), 'i-18 ms-fill')}<span>Variante pentru ${MEAL_FOR[m] || 'masă'}</span><span class="cap">votați 👍 👎</span></div>
     ${lead ? `<div class="meal-lead">${icon('ballot', 'i-16')} Favoritul voturilor: <b>${esc(shortTitle(lead.loc.title))}</b></div>` : ''}
     ${rows.slice(0, max).map((o) => mealRowHTML(key, o, chosen)).join('')}
     ${rows.length > max ? `<button data-action="open-detail" data-id="${esc(optId(chosen))}" class="meal-more press">Toate cele ${rows.length} variante ${icon('chevron_right', 'i-18')}</button>` : ''}
