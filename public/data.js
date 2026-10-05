@@ -21,11 +21,12 @@ export const ZONES = {
   gracia:      { label: 'Gràcia & Bunkers', icon: 'landscape' },
   poblesec:    { label: 'Poble Sec & Montjuïc', icon: 'wine_bar' },
   barceloneta: { label: 'Barceloneta & Ciutadella', icon: 'waves' },
+  elprat:      { label: 'Aeroportul El Prat', icon: 'flight_takeoff' },
 };
 
 export const DAY_ZONES = {
   thu: ['salou'], fri: ['salou', 'poblenou', 'barceloneta'], sat: ['gracia', 'raval', 'gotic', 'poblesec'],
-  sun: ['eixample', 'gotic', 'gracia'], mon: ['poblenou', 'poblesec', 'gotic'],
+  sun: ['eixample', 'gotic', 'gracia'], mon: ['poblenou', 'poblesec', 'gotic', 'elprat'],
 };
 
 // Numele zilelor, după specific (apar în titlul zilei și pe butoanele cu date)
@@ -586,7 +587,7 @@ export const ALTERNATIVES = [
   { zone: 'poblesec', cat: 'food', title: 'Bar Calders', short: 'Vermut și tapas, bucătărie non-stop', address: 'Carrer del Parlament 25, Sant Antoni', placeQuery: 'Bar Calders Barcelona', hours: 'Sâ 12:00 – 01:00', price: '€€', lat: 41.37620, lng: 2.16130, approx: true },
   { zone: 'eixample', cat: 'food', title: 'Kook (Pg. de Sant Joan)', short: 'Orez și tapas, deschis toată duminica', address: 'Passeig de Sant Joan 85', placeQuery: 'Kook Passeig de Sant Joan Barcelona', hours: 'Du 13:00 – 23:30', price: '€€', lat: 41.39780, lng: 2.17200, approx: true },
   { zone: 'eixample', cat: 'food', title: 'La Paradeta Sagrada Família', short: 'Pește la alegere de pe gheață, autoservire', address: 'Passatge de Simó 18', placeQuery: 'La Paradeta Sagrada Familia', hours: 'Du 13:00 – 16:00', price: '€€ (după cântar)', note: 'Coadă la deschidere; fără rezervare.', lat: 41.40500, lng: 2.17650, approx: true },
-  { zone: 'poblenou', cat: 'food', title: 'ALAS by Hermanos Torres (T1)', short: 'Cel mai bun restaurant din aeroport, după securitate', address: 'Aeroport El Prat T1, după securitate', placeQuery: 'ALAS Hermanos Torres Barcelona airport', hours: 'Până seara', price: '€€€', lat: 41.2890, lng: 2.0735, approx: true },
+  { zone: 'elprat', cat: 'food', title: 'ALAS by Hermanos Torres (T1)', short: 'Cel mai bun restaurant din aeroport, după securitate', address: 'Aeroport El Prat T1, după securitate', placeQuery: 'ALAS Hermanos Torres Barcelona airport', hours: 'Până seara', price: '€€€', lat: 41.2890, lng: 2.0735, approx: true },
   { zone: 'gotic', cat: 'sweet', title: 'Granja Dulcinea', short: 'Xocolata desfeta și churros, din 1941', address: 'Carrer de Petritxol 2', placeQuery: 'Granja Dulcinea Barcelona', hours: 'Du 9:00 – 13:00 & 16:30 – 20:30', price: '€', lat: 41.38270, lng: 2.17310, approx: true },
   { zone: 'gotic', cat: 'sweet', title: 'Xurreria dels Banys Nous', short: 'Churros clasici, deschis duminica', address: 'Carrer dels Banys Nous 8', placeQuery: 'Xurreria Banys Nous Barcelona', hours: 'Du 7:00 – 14:30 & 16:30 – 20:30', price: '€', lat: 41.38250, lng: 2.17460, approx: true },
   { zone: 'eixample', cat: 'sweet', title: 'Delacrem', short: 'Gelato artizanal, deschis duminica', address: 'Carrer d\'Enric Granados 15', placeQuery: 'Delacrem Barcelona', hours: 'Duminica deschis (orele diferă după sursă)', price: '€', lat: 41.38680, lng: 2.16080, approx: true },

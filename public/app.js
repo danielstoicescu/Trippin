@@ -414,17 +414,17 @@ function warnHTML(is) {
 function timelineHTML(list) {
   if (state.filter !== 'all') return `<ol class="tl">${list.map((l) => stopHTML(l)).join('')}</ol>`;
   const plan = planDay(state.day); const skippedList = list.filter((l) => state.shared.skipped[l.id]);
-  const gaps = gapsOf(state.day, plan); const gapBefore = new Map(gaps.filter((g) => g.b).map((g) => [g.b, g])); const tailGap = gaps.find((g) => g.tail); const headGap = gaps.find((g) => g.head);
+  const gaps = gapsOf(state.day, plan); const gapBefore = new Map(gaps.filter((g) => g.b && !g.head).map((g) => [g.b, g])); const tailGap = gaps.find((g) => g.tail); const headGap = gaps.find((g) => g.head);
   const entries = [...plan.slots.map((sl) => ({ t: sl.start, sl })), ...skippedList.map((l) => ({ t: startMin(l), l }))].sort((a, b) => a.t - b.t);
-  let html = headGap ? gapHTML(headGap, gaps.indexOf(headGap), plan) : '', prev = null;
+  const seen = new Set(); let html = headGap ? gapHTML(headGap, gaps.indexOf(headGap), plan, seen) : '', prev = null;
   for (const en of entries) {
     if (en.l) { html += stopHTML(en.l); continue; }
     const sl = en.sl; if (prev) html += legHTML(prev.loc, sl.loc, state.day);
-    const g = gapBefore.get(sl); if (g) html += gapHTML(g, gaps.indexOf(g), plan);
+    const g = gapBefore.get(sl); if (g) html += gapHTML(g, gaps.indexOf(g), plan, seen);
     for (const is of [...plan.issues, ...plan.notes].filter((x) => x.b === sl)) html += warnHTML(is);
     html += stopHTML(sl.loc, sl, sl.loc.id === plan.coffeeId); prev = sl;
   }
-  if (tailGap) html += gapHTML(tailGap, gaps.indexOf(tailGap), plan);
+  if (tailGap) html += gapHTML(tailGap, gaps.indexOf(tailGap), plan, seen);
   return `<ol class="tl">${html}</ol>`;
 }
 function oppsHTML(day) {
@@ -1764,10 +1764,11 @@ function openSearch(q = '') {
 // ---------- Ferestre libere: unde e timp între opriri și ce încape acolo, după zona în care sunteți ----------
 const GAP_MIN = 30;
 function zoneNear(locs) {
+  // Zona după unde sunteți de fapt (coordonate), nu după eticheta zilei
+  const p = locs.map((l) => l && coordsOf(l)).find(Boolean);
+  if (p) { let best = null, bd = 1500; for (const a of ALTERNATIVES) { if (typeof a.lat !== 'number' || !ZONES[a.zone]) continue; const d = distanceM(p, a); if (d < bd) { bd = d; best = a.zone; } } return best ? ZONES[best].label : ''; }
   for (const l of locs) { const z = l && enriched(l).zone; if (z && ZONES[z]) return ZONES[z].label; }
-  const p = locs.map((l) => l && coordsOf(l)).find(Boolean); if (!p) return '';
-  let best = null, bd = 900; for (const a of ALTERNATIVES) { if (typeof a.lat !== 'number' || !ZONES[a.zone]) continue; const d = distanceM(p, a); if (d < bd) { bd = d; best = a.zone; } }
-  return best ? ZONES[best].label : '';
+  return '';
 }
 function gapsOf(day, plan = planDay(day)) {
   const s = plan.slots.filter((x) => !state.shared.skipped[x.loc.id]), out = [];
@@ -1786,10 +1787,13 @@ function gapsOf(day, plan = planDay(day)) {
 // Ce încape într-o fereastră: locuri dorite (fără zi) și recomandări, deschise atunci, cu ocolul socotit
 function gapIdeas(g, plan = planDay(g.day)) {
   const day = g.day, A = g.a ? g.a.loc : baseLoc(), B = g.b?.loc, ess = plan.ess, used = new Set(allLocs().filter((l) => DAYS.includes(l.day)).map((l) => fold(l.title)));
-  const direct = B ? (legOf(A, B, day)?.min ?? 0) : 0, out = [];
+  const direct = B ? (legOf(A, B, day)?.min ?? 0) : 0, out = [], planned = allLocs().filter((l) => DAYS.includes(l.day) && !state.shared.skipped[l.id]).map(coordsOf).filter(Boolean), plannedNames = new Set(allLocs().filter((l) => DAYS.includes(l.day)).map((l) => fold(shortTitle(l.title))));
   const cands = [...allLocs().filter((l) => isPool(l) && !isRemoved(l.id)).map((l) => ({ loc: l, wanted: true })), ...ALTERNATIVES.map((x, i) => ({ loc: altAsLoc(i), wanted: false })).filter((c) => !used.has(fold(c.loc.title)))];
   for (const c of cands) {
     const loc = c.loc, e = enriched(loc), p = coordsOf(loc); if (!p) continue; const k = catKey(e.cat);
+    if (e.zone === 'elprat' && day !== 'mon') continue; // după securitate: doar la plecare
+    if (planned.some((q) => distanceM(p, q) < 80) || plannedNames.has(fold(shortTitle(loc.title)))) continue; // e deja în program (poate sub alt nume)
+    if (day === 'mon' && k === 'art' && /muse|muhba|museu|fundaci/i.test(loc.title) && !/lu[ -–]|luni|zilnic|daily/i.test(e.hours || '')) continue; // muzeele sunt închise lunea
     if (e.closed?.includes(day) || (day === 'sun' && k === 'shop' && !/du|dum|zilnic|daily|7\/7/i.test(e.hours || ''))) continue;
     const [open, close0] = OPEN[k] || OPEN.none; const cl = e.closes?.[day] ? (([h, m]) => h * 60 + m)(e.closes[day].split(':').map(Number)) : close0;
     const tIn = legOf(A, loc, day)?.min ?? 0, tOut = B ? (legOf(loc, B, day)?.min ?? 0) : 0, stay = Math.min(stayOf(loc), g.tail ? 90 : 75);
@@ -1797,7 +1801,8 @@ function gapIdeas(g, plan = planDay(g.day)) {
     if (end > Math.min(cl, B ? g.to - tOut : g.to)) continue;
     const detour = g.a ? tIn + tOut - direct : tOut; if (detour > (c.wanted ? 45 : 30)) continue;
     const need = (k === 'sweet' && ess.sweet < 2) || (k === 'coffee' && ess.coffee < 2 && start < 17 * 60) || (k === 'food' && ((!ess.lunch && start >= 12 * 60 && start < 15 * 60 + 30) || (!ess.dinner && start >= 19 * 60)));
-    const score = detour - (c.wanted ? 18 : 0) - (need ? 14 : 0) - (e.free ? 4 : 0) + (k === 'food' && !need ? 12 : 0);
+    if (k === 'food' && !need) continue; // mesele sunt deja în program: nu propunem încă un restaurant
+    const score = detour - (c.wanted ? 18 : 0) - (need ? 14 : 0) - (e.free ? 4 : 0);
     out.push({ loc, wanted: c.wanted, need, start, end, tIn, detour, score, k });
   }
   out.sort((x, y) => x.score - y.score);
@@ -1811,8 +1816,8 @@ function ideaRowHTML(g, x, i) {
   return `<div class="li idea k-${x.k}"><button data-action="open-detail" data-id="${esc(x.loc.id)}" class="idea-main flex items-start gap-2 flex-1 min-w-0 text-left">${thumbHTML(e, 40)}<span class="min-w-0 flex-1"><span class="block font-medium truncate">${esc(x.loc.title)}</span><span class="block cap truncate">${hhmm(x.start)} · ${x.detour <= 3 ? 'pe drum' : `+${fmtMin(x.detour)} ocol`}</span>${why ? `<span class="idea-badge">${why}</span>` : ''}</span></button>
     <button data-action="gap-place" data-day="${g.day}" data-id="${esc(x.loc.id)}" data-time="${hhmm(x.start)} – ${hhmm(x.end)}" class="icon-btn ol press idea-add" aria-label="Pune ${esc(x.loc.title)} la ${hhmm(x.start)}" title="Pune aici">${icon('add', 'i-20', 'color: var(--brand)')}</button></div>`;
 }
-function gapHTML(g, idx, plan) {
-  const ideas = gapIdeas(g, plan), when = g.head ? `până la ${hhmm(g.to)}` : g.tail ? `după ${hhmm(g.from)}` : `${hhmm(g.from)} – ${hhmm(g.to)}`;
+function gapHTML(g, idx, plan, seen = new Set()) {
+  const all = gapIdeas(g, plan), ideas = [...all.filter((x) => !seen.has(x.loc.id)), ...all.filter((x) => seen.has(x.loc.id))]; ideas.slice(0, 2).forEach((x) => seen.add(x.loc.id)); const when = g.head ? `până la ${hhmm(g.to)}` : g.tail ? `după ${hhmm(g.from)}` : `${hhmm(g.from)} – ${hhmm(g.to)}`;
   return `<li class="gap"><div class="tm"></div><div class="rail"><span class="gap-ic">${icon('more_time', 'i-18')}</span></div><div class="body"><div class="gap-card">
     <div class="gap-h"><b>${g.tail ? 'Seară liberă' : g.head ? 'Dimineață liberă' : `${fmtMin(g.free)} libere`}</b><span class="cap">${when} · ${esc(gapWhere(g))}</span></div>
     ${ideas.length ? `<div class="card list mt-2">${ideas.slice(0, 2).map((x, i) => ideaRowHTML(g, x, i)).join('')}</div>${ideas.length > 2 ? `<button data-action="gap-open" data-day="${g.day}" data-gap="${idx}" class="btn btn-text btn-sm press mt-2">${icon('lightbulb', 'i-18')} ${ideas.length - 2 === 1 ? 'Încă o idee' : `Încă ${ideas.length - 2} idei`} prin zonă</button>` : ''}` : `<p class="cap mt-1">Timp de plimbare, nimic din listă nu încape pe drum.</p>`}
