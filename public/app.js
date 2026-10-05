@@ -16,11 +16,11 @@ const DESK = window.matchMedia('(min-width: 768px)'); // tabletă (portret) și 
 const isDesk = () => DESK.matches;
 const BCN = { lat: 41.3874, lng: 2.1686 };
 const SUMMARY_TEXT = `Trippin · Barcelona (Mara 13, Anne & Daniel), 5–9 nov:
-• Joi 5 · Ziua adrenalinei: aterizare 8:45, tren până la Sants, R17, PortAventura (Shambhala, Halloween), Café Saula, cină în Salou
+• Joi 5 · Ziua adrenalinei: aterizare 8:35 în T2, tren R2 până la Sants, R17, PortAventura (Shambhala, Halloween), Café Saula, cină în Salou
 • Vineri 6 · Red Force & apus la mare: Ferrari Land, tren, paella la Els Pescadors, Demasié, Nomad, apus pe plajă, La Cova Fumada, gelato, TK Maxx
 • Sâmbătă 7 · Marea zi de shopping: SlowMov, La Pubilla, Subdued, Sephora, Chök, Hollister & Brandy Melville, Satan's, churros, Cereria, Santa Caterina, Bar del Pla, MEMS & The Hands, terasa MNAC, Blai, Bar Marsella
 • Duminică 8 · Pe jos, gratis: La Papa, târgul de cărți Sant Antoni, Gaudí pe dinafară, House of Candy, SAISEI, Sagrada, Vietnam House, Three Marks, Ciutadella, MUHBA, Casa Amàlia
-• Luni 9 · Comori de final: Nømad, Encants, Museo Alien, Quimet & Quimet, Escribà, MUJI, Nomad, Hofmann; cină la aeroport, zbor la 20:20`;
+• Luni 9 · Comori de final: Nømad, Encants, Museo Alien, Quimet & Quimet, Escribà, MUJI, Nomad, Hofmann; cină la aeroport, zbor la 20:15 din T2`;
 
 const state = {
   view: 'plan', day: 'thu', filter: 'all', person: 'mara',
@@ -215,7 +215,7 @@ function ripple(e) { const el = e.target.closest('.press'); if (!el) return; con
 // ---------- Timp ----------
 function todayKey() { const t = new Date(), iso = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; return DAYS.find((d) => TRIP.days[d] === iso) || null; }
 function isNow(loc) { if (todayKey() !== loc.day) return false; const r = parseRange(loc.time); if (!r) return false; const m = new Date().getHours() * 60 + new Date().getMinutes(); return m >= r.from - 15 && m <= r.to; }
-function countdownText() { const start = new Date(TRIP.days.thu + 'T00:00:00'), end = new Date(TRIP.days.mon + 'T23:59:59'), now = new Date(); const mid = new Date(now); mid.setHours(0, 0, 0, 0); const cal = Math.round((start - mid) / 86400000), days = Math.floor((new Date(TRIP.days.thu + 'T08:45:00') - now) / 86400000); if (now > end) return 'A fost o excursie frumoasă'; if (cal > 1) return `Barcelona · peste ${roN(Math.max(days, 1), 'zi', 'zile')}`; if (cal === 1) return 'Mâine plecăm!'; return 'Suntem în Barcelona'; }
+function countdownText() { const start = new Date(TRIP.days.thu + 'T00:00:00'), end = new Date(TRIP.days.mon + 'T23:59:59'), now = new Date(); const mid = new Date(now); mid.setHours(0, 0, 0, 0); const cal = Math.round((start - mid) / 86400000), days = Math.floor((new Date(TRIP.days.thu + 'T08:35:00') - now) / 86400000); if (now > end) return 'A fost o excursie frumoasă'; if (cal > 1) return `Barcelona · peste ${roN(Math.max(days, 1), 'zi', 'zile')}`; if (cal === 1) return 'Mâine plecăm!'; return 'Suntem în Barcelona'; }
 
 // ---------- Categorii ----------
 const CAT = { coffee: { cls: 'c-coffee', icon: 'local_cafe', label: 'Cafea & bere' }, food: { cls: 'c-food', icon: 'restaurant', label: 'Mâncare' }, sweet: { cls: 'c-sweet', icon: 'icecream', label: 'Dulciuri' }, shop: { cls: 'c-shop', icon: 'local_mall', label: 'Shopping' }, fun: { cls: 'c-fun', icon: 'attractions', label: 'Distracție' }, art: { cls: 'c-art', icon: 'palette', label: 'Artă & vederi' } };
@@ -1636,7 +1636,7 @@ const roN = (n, one, many) => (n === 1 ? `1 ${one}` : `${n}${n > 0 && (n % 100 >
 const eurN = (n) => `${Math.round(n).toLocaleString('ro-RO')} €`;
 const hqDay = () => hq.hoverDay || hq.day || state.day;
 function tripPhase() {
-  const land = new Date(TRIP.days.thu + 'T08:45:00+01:00'), fly = new Date(TRIP.days.mon + 'T20:20:00+01:00'), now = new Date();
+  const land = new Date(TRIP.days.thu + 'T08:35:00+01:00'), fly = new Date(TRIP.days.mon + 'T20:15:00+01:00'), now = new Date();
   if (now < land) { const ms = land - now; return { phase: 'before', d: Math.floor(ms / 86400000), h: Math.floor((ms % 86400000) / 3600000), m: Math.floor((ms % 3600000) / 60000) }; }
   if (now <= fly) { const day = todayKey() || 'mon'; return { phase: 'during', day, idx: DAYS.indexOf(day) + 1 }; }
   return { phase: 'after' };
@@ -1651,7 +1651,7 @@ function renderHQHero() {
   const head = t.phase === 'before'
     ? (t.d > 1 ? `Mai sunt ${roN(t.d, 'zi', 'zile')} până aterizăm la Barcelona.` : t.d === 1 ? 'Mâine aterizăm la Barcelona.' : `Aterizăm la Barcelona în ${t.h ? roN(t.h, 'oră', 'ore') + ' și ' : ''}${roN(t.m, 'minut', 'minute')}.`)
     : t.phase === 'during' ? `Suntem în Barcelona: ziua ${t.idx} din 5.` : 'A fost o excursie frumoasă.';
-  const sub = t.phase === 'before' ? `${t.d > 1 ? `${roN(t.d, 'zi', 'zile')}, ${roN(t.h, 'oră', 'ore')} și ${roN(t.m, 'minut', 'minute')} până joi, 5 noiembrie, la 8:45. ` : ''}Mara, Anne și Daniel, cinci zile între PortAventura și Barcelona.`
+  const sub = t.phase === 'before' ? `${t.d > 1 ? `${roN(t.d, 'zi', 'zile')}, ${roN(t.h, 'oră', 'ore')} și ${roN(t.m, 'minut', 'minute')} până joi, 5 noiembrie, la 8:35. ` : ''}Mara, Anne și Daniel, cinci zile între PortAventura și Barcelona.`
     : t.phase === 'during' ? `Azi: ${DAY_THEMES[t.day].name}. ${DAY_THEMES[t.day].sub}.` : `${roN(s.stops, 'oprire', 'opriri')}, ${roN(Math.round(s.walkM / 1000), 'kilometru', 'kilometri')} pe jos și multe amintiri.`;
   const bookOk = s.book.done === s.book.total, packPct = s.pack.total ? Math.round((s.pack.done / s.pack.total) * 100) : 0;
   const stat = (action, ic, txt, tone = '', extra = '') => `<button data-action="${action}" class="hq-stat press ${tone}" ${extra}>${icon(ic, 'i-20' + (tone ? ' ms-fill' : ''))}<span>${txt}</span></button>`;
@@ -1670,9 +1670,9 @@ function renderHQHero() {
       </div>
     </div>
     <div class="hq-pass" aria-label="Zborurile">
-      <div class="hq-leg"><div class="hq-leg-k">${icon('flight_land', 'i-20')} Aterizare</div><div class="hq-leg-t">08:45</div><div class="hq-leg-d">Joi, 5 noiembrie</div><div class="hq-leg-a">Barcelona El Prat</div></div>
+      <div class="hq-leg"><div class="hq-leg-k">${icon('flight_land', 'i-20')} Aterizare</div><div class="hq-leg-t">08:35</div><div class="hq-leg-d">Joi, 5 noiembrie</div><div class="hq-leg-a">Barcelona El Prat</div></div>
       <div class="hq-pass-mid"><span class="hq-pass-line"></span><span class="hq-pass-n">5 zile · 4 nopți</span></div>
-      <div class="hq-leg"><div class="hq-leg-k">${icon('flight_takeoff', 'i-20')} Decolare</div><div class="hq-leg-t">20:20</div><div class="hq-leg-d">Luni, 9 noiembrie</div><div class="hq-leg-a">Barcelona El Prat</div></div>
+      <div class="hq-leg"><div class="hq-leg-k">${icon('flight_takeoff', 'i-20')} Decolare</div><div class="hq-leg-t">20:15</div><div class="hq-leg-d">Luni, 9 noiembrie</div><div class="hq-leg-a">Barcelona El Prat</div></div>
     </div>`;
 }
 // Vremea pe zilele tripului: prognoza, când apare (cu ~7 zile înainte), altfel media lui noiembrie
@@ -1929,12 +1929,12 @@ function gapsOf(day, plan = planDay(day)) {
   }
   // Seara: după ultima oprire, dacă ziua se termină devreme
   const last = s[s.length - 1]; if (!last.loc.endsDay && !s.some((x) => x.loc.endsDay) && last.end <= 21 * 60) out.push({ day, a: last, b: null, from: last.end, to: Math.min(DAY_END, 22 * 60), free: Math.min(DAY_END, 22 * 60) - last.end, tail: true });
-  for (const g of out) g.zone = zoneNear([g.a?.loc, g.b?.loc]);
+  for (const g of out) g.zone = zoneNear([g.a ? originOf(g.a.loc) : null, g.b?.loc]);
   return out;
 }
 // Ce încape într-o fereastră: locuri dorite (fără zi) și recomandări, deschise atunci, cu ocolul socotit
 function gapIdeas(g, plan = planDay(g.day)) {
-  const day = g.day, A = g.a ? g.a.loc : baseLoc(), B = g.b?.loc, ess = plan.ess, used = new Set(allLocs().filter((l) => DAYS.includes(l.day)).map((l) => fold(l.title)));
+  const day = g.day, A = g.a ? originOf(g.a.loc) : baseLoc(), B = g.b?.loc, ess = plan.ess, used = new Set(allLocs().filter((l) => DAYS.includes(l.day)).map((l) => fold(l.title)));
   const direct = B ? (legOf(A, B, day)?.min ?? 0) : 0, out = [], planned = allLocs().filter((l) => DAYS.includes(l.day) && !state.shared.skipped[l.id]).map(coordsOf).filter(Boolean), plannedNames = new Set(allLocs().filter((l) => DAYS.includes(l.day)).map((l) => fold(shortTitle(l.title))));
   const cands = [...allLocs().filter((l) => isPool(l) && !isRemoved(l.id)).map((l) => ({ loc: l, wanted: true })), ...ALTERNATIVES.map((x, i) => ({ loc: altAsLoc(i), wanted: false })).filter((c) => !used.has(fold(c.loc.title)))];
   for (const c of cands) {
@@ -1958,7 +1958,7 @@ function gapIdeas(g, plan = planDay(g.day)) {
   const seen = {}, pick = []; for (const x of out) { if ((seen[x.k] = (seen[x.k] || 0) + 1) > 2 && pick.length < 4) continue; pick.push(x); if (pick.length >= 8) break; }
   return pick;
 }
-const gapWhere = (g) => g.zone ? `prin ${g.zone}` : g.a ? `lângă ${shortTitle(g.a.loc.title)}` : 'pornind de la cazare';
+const gapWhere = (g) => g.a?.loc.arrive && g.b && distanceM(g.a.loc.arrive, coordsOf(g.b.loc) || g.a.loc.arrive) < 400 ? `la ${g.a.loc.arrive.title}` : g.zone ? `prin ${g.zone}` : g.a ? `lângă ${shortTitle(g.a.loc.title)}` : 'pornind de la cazare';
 function ideaRowHTML(g, x, i) {
   const e = enriched(x.loc), why = [x.wanted ? 'dorit' : '', x.need ? (x.k === 'sweet' ? 'un dulce' : x.k === 'coffee' ? 'încă o cafea' : 'masa zilei') : '', e.free ? 'gratis' : ''].filter(Boolean)[0];
   return `<div class="li idea k-${x.k}"><button data-action="open-detail" data-id="${esc(x.loc.id)}" class="idea-main flex items-start gap-2 flex-1 min-w-0 text-left">${thumbHTML(e, 40)}<span class="min-w-0 flex-1"><span class="block font-medium truncate">${esc(x.loc.title)}</span><span class="block cap truncate">${hhmm(x.start)} · ${x.detour <= 3 ? 'pe drum' : `+${fmtMin(x.detour)} ocol`}</span>${why ? `<span class="idea-badge">${why}</span>` : ''}</span></button>
