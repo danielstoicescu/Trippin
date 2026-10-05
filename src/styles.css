@@ -846,3 +846,58 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 /* Rândul de acțiuni din fișă se derulează lateral: o estompare la margine arată că mai e ceva */
 @media (max-width: 767px) { .actions { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); padding-right: 32px; } }
+
+/* ======== Plan: comutator Listă/Calendar + „Suntem aici acum” ======== */
+.plan-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.seg { display: inline-flex; padding: 3px; border-radius: 12px; background: var(--surface-3); gap: 2px; }
+.seg-b { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 9px; font-size: 14px; font-weight: 500; color: var(--text-2); white-space: nowrap; }
+.seg-b.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); }
+.here-cta { margin-left: auto; }
+
+/* ======== Ferestre libere (goluri) în listă ======== */
+.gap { display: grid; grid-template-columns: 54px 1fr; gap: 0; position: relative; }
+.gap .tm { grid-column: 1; }
+.gap .rail { grid-column: 1; display: flex; justify-content: center; position: relative; }
+.gap .rail::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: repeating-linear-gradient(var(--line) 0 4px, transparent 4px 9px); }
+.gap-ic { position: relative; z-index: 1; width: 28px; height: 28px; border-radius: 99px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
+.gap .body { grid-column: 2; padding: 2px 0 16px 4px; }
+.gap-card { border: 1px dashed color-mix(in srgb, var(--cat-red) 32%, var(--line)); border-radius: 14px; padding: 10px 12px; background: color-mix(in srgb, var(--cat-yellow) 7%, var(--surface)); }
+.gap-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.gap-h b { font-weight: 600; }
+.idea { gap: 10px; }
+.idea-why { color: var(--brand); font-weight: 600; }
+.idea .srch-dot, .idea .thumb { flex-shrink: 0; }
+
+/* ======== Calendar (ziua pe ore) ======== */
+.cal-hint { display: flex; align-items: center; gap: 6px; margin: 12px 2px 6px; }
+.cal { display: grid; grid-template-columns: 46px 1fr; gap: 6px; }
+.cal-axis { position: relative; }
+.cal-axis span { position: absolute; right: 6px; transform: translateY(-50%); font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.cal-b { position: relative; border-left: 1px solid var(--line); background: repeating-linear-gradient(var(--surface-2) 0, var(--surface-2) 1px, transparent 1px, transparent var(--hour)); border-radius: 6px; touch-action: pan-y; }
+.cal-blk { position: absolute; left: 6px; right: 6px; border-radius: 10px; padding: 5px 8px; overflow: hidden; text-align: left; background: color-mix(in srgb, var(--cat) 16%, var(--surface)); box-shadow: inset 3px 0 0 var(--cat), var(--shadow-1); color: var(--text); display: flex; flex-direction: column; gap: 2px; cursor: grab; transition: box-shadow .15s, transform .08s; }
+.cal-blk.lane-l { right: 51%; } .cal-blk.lane-r { left: 51%; }
+.cal-blk.fixed { cursor: default; background: var(--surface-2); box-shadow: inset 3px 0 0 var(--text-3), var(--shadow-1); }
+.cal-blk.done { opacity: .62; } .cal-blk.skipped { opacity: .5; text-decoration: line-through; }
+.cal-blk.bad { box-shadow: inset 3px 0 0 var(--red), 0 0 0 1.5px var(--red); }
+.cal-t { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; line-height: 1.2; }
+.cal-t .truncate { flex: 1; }
+.cal-m { font-size: 11px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.cal-blk.tiny .cal-t { font-size: 12px; }
+.cal-leg { position: absolute; left: 10px; display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-3); writing-mode: vertical-rl; justify-content: center; }
+.cal-gap { position: absolute; left: 6px; right: 6px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: 10px; border: 1px dashed color-mix(in srgb, var(--cat-red) 30%, var(--line)); background: color-mix(in srgb, var(--cat-yellow) 8%, transparent); color: var(--text-2); font-size: 12px; text-align: left; }
+.cal-gap b { color: var(--text); font-weight: 600; }
+.drag-rs { position: absolute; left: 0; right: 0; bottom: 0; height: 16px; cursor: ns-resize; touch-action: none; }
+.drag-rs::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 26px; height: 3px; margin-left: -13px; border-radius: 3px; background: color-mix(in srgb, var(--cat) 60%, transparent); }
+.cal-blk.dragging, .hq-blk.dragging { cursor: grabbing; z-index: 30; box-shadow: 0 8px 24px rgba(0,0,0,.28), inset 3px 0 0 var(--cat); transform: scale(1.02); opacity: .97; }
+.cal-blk.dragging[data-lvl="bad"], .hq-blk.dragging[data-lvl="bad"] { box-shadow: 0 8px 24px rgba(0,0,0,.28), 0 0 0 2px var(--red); }
+.cal-blk.dragging[data-lvl="warn"], .hq-blk.dragging[data-lvl="warn"] { box-shadow: 0 8px 24px rgba(0,0,0,.28), 0 0 0 2px var(--amber); }
+.drag-ghost { position: absolute; left: 6px; right: 6px; border-radius: 10px; border: 2px dashed var(--line); background: color-mix(in srgb, var(--text) 4%, transparent); z-index: 20; pointer-events: none; }
+.drag-tip { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); white-space: nowrap; padding: 3px 9px; border-radius: 99px; background: var(--text); color: var(--bg); font-size: 11px; font-weight: 600; z-index: 40; pointer-events: none; box-shadow: var(--shadow-2); }
+body.is-dragging { -webkit-user-select: none; user-select: none; }
+.hq-blk[data-drag-id] { cursor: grab; }
+
+/* ======== „Suntem aici acum” ======== */
+.here-set .field > span { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+.here-leg { flex-shrink: 0; width: 46px; font-size: 11px; color: var(--text-3); display: inline-flex; align-items: center; gap: 2px; }
+.here-drop .chip.sm, .chip.sm { height: 28px; padding: 0 10px; font-size: 12px; }
+.here-drop { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }

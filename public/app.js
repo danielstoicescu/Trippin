@@ -10,7 +10,7 @@ const DAY_SHORT = { thu: ['Joi', 5], fri: ['Vin', 6], sat: ['Sâm', 7], sun: ['D
 const DAY_SUB = Object.fromEntries(Object.entries(DAY_THEMES).map(([d, t]) => [d, t.sub]));
 const PEOPLE = ['Daniel', 'Mara', 'Anne'];
 const PERSONS = ['mara', 'anne', 'daniel'];
-const LS = { locations: 'bcn_locations', shared: 'bcn_shared', photos: 'bcn_photos', theme: 'bcn_theme', alerted: 'bcn_alerted', view: 'bcn_view', viewDesk: 'bcn_view_desk', me: 'bcn_me', install: 'bcn_install_seen', weather: 'bcn_weather', img: 'bcn_img2' };
+const LS = { locations: 'bcn_locations', shared: 'bcn_shared', photos: 'bcn_photos', theme: 'bcn_theme', alerted: 'bcn_alerted', view: 'bcn_view', viewDesk: 'bcn_view_desk', me: 'bcn_me', install: 'bcn_install_seen', weather: 'bcn_weather', img: 'bcn_img2', planMode: 'bcn_planmode' };
 // Tabletă, laptop, monitor: bară laterală + Centru de comandă. Pe telefon nu se schimbă nimic.
 const DESK = window.matchMedia('(min-width: 768px)'); // tabletă (portret) și mai mare
 const isDesk = () => DESK.matches;
@@ -414,14 +414,17 @@ function warnHTML(is) {
 function timelineHTML(list) {
   if (state.filter !== 'all') return `<ol class="tl">${list.map((l) => stopHTML(l)).join('')}</ol>`;
   const plan = planDay(state.day); const skippedList = list.filter((l) => state.shared.skipped[l.id]);
+  const gaps = gapsOf(state.day, plan); const gapBefore = new Map(gaps.filter((g) => g.b).map((g) => [g.b, g])); const tailGap = gaps.find((g) => g.tail); const headGap = gaps.find((g) => g.head);
   const entries = [...plan.slots.map((sl) => ({ t: sl.start, sl })), ...skippedList.map((l) => ({ t: startMin(l), l }))].sort((a, b) => a.t - b.t);
-  let html = '', prev = null;
+  let html = headGap ? gapHTML(headGap, gaps.indexOf(headGap), plan) : '', prev = null;
   for (const en of entries) {
     if (en.l) { html += stopHTML(en.l); continue; }
     const sl = en.sl; if (prev) html += legHTML(prev.loc, sl.loc, state.day);
+    const g = gapBefore.get(sl); if (g) html += gapHTML(g, gaps.indexOf(g), plan);
     for (const is of [...plan.issues, ...plan.notes].filter((x) => x.b === sl)) html += warnHTML(is);
     html += stopHTML(sl.loc, sl, sl.loc.id === plan.coffeeId); prev = sl;
   }
+  if (tailGap) html += gapHTML(tailGap, gaps.indexOf(tailGap), plan);
   return `<ol class="tl">${html}</ol>`;
 }
 function oppsHTML(day) {
@@ -443,7 +446,12 @@ function renderDay() {
   renderDates(); renderSummary(); renderFilters();
   const list = dayItems(state.day, true).filter((l) => state.filter === 'all' || catKey(enriched(l).cat) === state.filter);
   $('#dayTip').innerHTML = DAY_TIPS[state.day] && state.filter === 'all' ? `<div class="card-flat p-3 mt-4 flex gap-3">${icon('lightbulb', 'i-20', 'color: var(--amber)')}<span class="t-2">${esc(DAY_TIPS[state.day])}</span></div>` : '';
-  c.innerHTML = list.length ? timelineHTML(list) : `<div class="card-flat p-6 text-center t-2">Nimic pentru filtrul ales.<br><button data-action="open-add" class="btn btn-text press mt-2">Adaugă un loc</button></div>`;
+  const cal = planMode() === 'cal' && state.filter === 'all';
+  const toggle = `<div class="plan-tools mt-4"><div class="seg" role="tablist" aria-label="Cum arată ziua">
+    <button data-action="plan-mode" data-mode="list" class="seg-b press ${cal ? '' : 'on'}" role="tab" aria-selected="${!cal}">${icon('view_agenda', 'i-18')} Listă</button>
+    <button data-action="plan-mode" data-mode="cal" class="seg-b press ${cal ? 'on' : ''}" role="tab" aria-selected="${cal}">${icon('calendar_view_day', 'i-18')} Calendar</button>
+  </div><button data-action="here-open" class="btn btn-sm btn-tonal press here-cta">${icon('near_me', 'i-18')} Suntem aici acum</button></div>`;
+  c.innerHTML = toggle + (list.length ? (cal ? (calHTML(state.day) || timelineHTML(list)) : timelineHTML(list)) : `<div class="card-flat p-6 text-center t-2">Nimic pentru filtrul ales.<br><button data-action="open-add" class="btn btn-text press mt-2">Adaugă un loc</button></div>`);
   $('#opps').innerHTML = state.filter === 'all' ? oppsHTML(state.day) : '';
   renderPool(); renderZones(); observeReveal();
 }
@@ -1425,7 +1433,8 @@ function startPick() { $$('[data-modal]').forEach((m) => m.classList.add('hidden
 let pickTimer;
 function pickMoved() { if (!state.picking) return; clearTimeout(pickTimer); pickTimer = setTimeout(async () => { const c = state.map.getCenter(); const r = await geoReverse(c.lat, c.lng); if (state.picking) $('#pickHint').textContent = r[0] ? r[0].title + (r[0].address ? ' · ' + r[0].address : '') : 'Punct pe hartă'; }, 450); }
 function stopPick() { state.picking = false; $('#crosshair').classList.add('hidden'); $('#pickBar').classList.add('hidden'); state.map?.off('moveend', pickMoved); }
-async function confirmPick() { const c = state.map.getCenter(); stopPick(); await addAt({ lat: c.lat, lng: c.lng }); }
+async function confirmPick() { const c = state.map.getCenter(); const forHere = state.pickFor === 'here'; state.pickFor = null; stopPick(); if (forHere) { hereState.pt = { lat: c.lat, lng: c.lng }; hereState.ptName = 'punct pe hartă'; const r = await geoReverse(c.lat, c.lng); if (r[0]) hereState.ptName = shortTitle(r[0].title); openHereSheet(); return; } await addAt({ lat: c.lat, lng: c.lng }); }
+function herePick() { state.pickFor = 'here'; $('#pickHint') && ($('#pickHint').textContent = 'Centrați pe locul unde sunteți'); startPick(); }
 async function addAt(pos) {
   showNewMarker(pos); toast('Caut ce e acolo…', 'pin_drop', 2000);
   const res = await geoReverse(pos.lat, pos.lng);
@@ -1586,10 +1595,11 @@ function hqBoardHTML() {
       prev = sl; const v = !!state.shared.visited[loc.id], b = bookOf(loc), needB = needsBooking(b) && !isBooked(loc.id), rx = reactionsOf(loc.id), rxs = Object.values(rx), who = whoHas(loc.id);
       const flags = [bad.has(loc.id) ? icon('warning', 'i-16 ms-fill', 'color: var(--red)') : '', v ? icon('check_circle', 'i-16 ms-fill', 'color: var(--green)') : '', needB ? icon('event_upcoming', 'i-16', 'color: var(--amber)') : isBooked(loc.id) ? icon('event_available', 'i-16 ms-fill', 'color: var(--green)') : '', loc.id === p.coffeeId ? icon('coffee', 'i-16 ms-fill', 'color: #8D5524') : '', mealSlotOf(loc) && mealRows(mealSlotOf(loc)).length > 1 ? icon('ballot', 'i-16', 'color: var(--green)') : ''].filter(Boolean).join('');
       const label = `${DAY_LABEL[d]}, ${hhmm(sl.start)}–${hhmm(sl.end)}: ${loc.title}, ${c.label}${v ? ', am fost' : ''}${needB ? ', de rezervat' : isBooked(loc.id) ? ', rezervat' : ''}${bad.has(loc.id) ? ', are o problemă' : ''}`;
-      return `${leg}<button data-action="open-detail" data-id="${esc(loc.id)}" data-hq-id="${esc(loc.id)}" class="hq-blk k-${ck} ${v ? 'done' : ''} ${bad.has(loc.id) ? 'bad' : ''} ${h < 34 ? 'tiny' : ''} ${loc.id === p.coffeeId ? 'am-coffee' : ''} ${lane[si]}" style="top:${top}px;height:${h}px;--lines:${Math.max(1, Math.min(3, Math.floor((h - 22 - (h >= 52 && (rxs.length || who.length) ? 16 : 0)) / 16)))}" aria-label="${esc(label)}" title="${esc(label)}">
+      return `${leg}<button data-action="open-detail" data-id="${esc(loc.id)}" data-hq-id="${esc(loc.id)}" ${loc.fixed ? '' : `data-drag-id="${esc(loc.id)}" data-start="${sl.start}" data-end="${sl.end}"`} class="hq-blk k-${ck} ${v ? 'done' : ''} ${bad.has(loc.id) ? 'bad' : ''} ${h < 34 ? 'tiny' : ''} ${loc.fixed ? 'fixed' : ''} ${loc.id === p.coffeeId ? 'am-coffee' : ''} ${lane[si]}" style="top:${top}px;height:${h}px;--lines:${Math.max(1, Math.min(3, Math.floor((h - 22 - (h >= 52 && (rxs.length || who.length) ? 16 : 0)) / 16)))}" aria-label="${esc(label)}" title="${esc(label)}">
         <span class="hq-blk-h">${icon(smartIcon(en), 'i-16')}<span class="hq-blk-t">${esc(shortTitle(loc.title))}</span>${flags ? `<span class="hq-blk-f">${flags}</span>` : ''}</span>
         ${h >= 34 ? `<span class="hq-blk-m">${sl.auto ? '~' : ''}${hhmm(sl.start)}–${hhmm(sl.end)}</span>` : ''}
         ${h >= 52 && (rxs.length || who.length) ? `<span class="hq-blk-s">${rxs.map((k) => reactEmoji(k)).join('')}${who.map((pp) => `<i class="p-${pp}">${PEOPLE_META[pp].name[0]}</i>`).join('')}</span>` : ''}
+        ${loc.fixed ? '' : '<span class="drag-rs" aria-hidden="true"></span>'}
       </button>`;
     }).join('');
     return `<div class="hq-col ${d === sel ? 'sel' : ''} ${d === today ? 'today' : ''}" data-day="${d}" style="--th:${th.color}">
@@ -1603,7 +1613,7 @@ function hqBoardHTML() {
         </button>
         <button data-action="hq-open-day" data-day="${d}" class="icon-btn sm press hq-col-open" aria-label="Deschide ${DAY_LABEL[d]} în Plan" title="Deschide ziua">${icon('open_in_new', 'i-18')}</button>
       </div>
-      <div class="hq-col-b" style="height:${H}px">
+      <div class="hq-col-b" data-dz data-day="${d}" data-t0="${t0}" data-ppm="${HQ_SCALE}" style="height:${H}px">
         ${sunset && sunset < t1 ? `<div class="hq-dusk" style="top:${y(sunset)}px"><span>${icon('wb_twilight', 'i-16')} apus ${w.set}</span></div>` : ''}
         ${d === today && nowMin > t0 && nowMin < t1 ? `<div class="hq-now" style="top:${y(nowMin)}px"></div>` : ''}
         ${blocks || '<div class="hq-empty">Nimic încă</div>'}
@@ -1784,6 +1794,264 @@ function openSearch(q = '') {
   renderSearch(q); setTimeout(() => $('#srchQ')?.focus(), 200);
 }
 
+// ---------- Ferestre libere: unde e timp între opriri și ce încape acolo, după zona în care sunteți ----------
+const GAP_MIN = 30;
+function zoneNear(locs) {
+  for (const l of locs) { const z = l && enriched(l).zone; if (z && ZONES[z]) return ZONES[z].label; }
+  const p = locs.map((l) => l && coordsOf(l)).find(Boolean); if (!p) return '';
+  let best = null, bd = 900; for (const a of ALTERNATIVES) { if (typeof a.lat !== 'number' || !ZONES[a.zone]) continue; const d = distanceM(p, a); if (d < bd) { bd = d; best = a.zone; } }
+  return best ? ZONES[best].label : '';
+}
+function gapsOf(day, plan = planDay(day)) {
+  const s = plan.slots.filter((x) => !state.shared.skipped[x.loc.id]), out = [];
+  if (!s.length) return out;
+  // Dimineața, pe zilele din Barcelona: de la 9:00 până la prima oprire, plecând de la cazare
+  if (['sat', 'sun'].includes(day)) { const f = s[0], t = legOf(baseLoc(), f.loc, day)?.min ?? 0, free = f.start - DAY_START - t; if (free >= 45) out.push({ day, a: null, b: f, from: DAY_START, to: f.start, free, head: true }); }
+  for (let i = 1; i < s.length; i++) {
+    const a = s[i - 1], b = s[i]; if (a.loc.endsDay || b.loc.endsDay && b.loc.fixed && a.loc.fixed) continue;
+    const t = legOf(a.loc, b.loc, day)?.min ?? 0, free = b.start - a.end - t; if (free >= GAP_MIN) out.push({ day, a, b, from: a.end, to: b.start, free });
+  }
+  // Seara: după ultima oprire, dacă ziua se termină devreme
+  const last = s[s.length - 1]; if (!last.loc.endsDay && !s.some((x) => x.loc.endsDay) && last.end <= 21 * 60) out.push({ day, a: last, b: null, from: last.end, to: Math.min(DAY_END, 22 * 60), free: Math.min(DAY_END, 22 * 60) - last.end, tail: true });
+  for (const g of out) g.zone = zoneNear([g.a?.loc, g.b?.loc]);
+  return out;
+}
+// Ce încape într-o fereastră: locuri dorite (fără zi) și recomandări, deschise atunci, cu ocolul socotit
+function gapIdeas(g, plan = planDay(g.day)) {
+  const day = g.day, A = g.a ? g.a.loc : baseLoc(), B = g.b?.loc, ess = plan.ess, used = new Set(allLocs().filter((l) => DAYS.includes(l.day)).map((l) => fold(l.title)));
+  const direct = B ? (legOf(A, B, day)?.min ?? 0) : 0, out = [];
+  const cands = [...allLocs().filter((l) => isPool(l) && !isRemoved(l.id)).map((l) => ({ loc: l, wanted: true })), ...ALTERNATIVES.map((x, i) => ({ loc: altAsLoc(i), wanted: false })).filter((c) => !used.has(fold(c.loc.title)))];
+  for (const c of cands) {
+    const loc = c.loc, e = enriched(loc), p = coordsOf(loc); if (!p) continue; const k = catKey(e.cat);
+    if (e.closed?.includes(day) || (day === 'sun' && k === 'shop' && !/du|dum|zilnic|daily|7\/7/i.test(e.hours || ''))) continue;
+    const [open, close0] = OPEN[k] || OPEN.none; const cl = e.closes?.[day] ? (([h, m]) => h * 60 + m)(e.closes[day].split(':').map(Number)) : close0;
+    const tIn = legOf(A, loc, day)?.min ?? 0, tOut = B ? (legOf(loc, B, day)?.min ?? 0) : 0, stay = Math.min(stayOf(loc), g.tail ? 90 : 75);
+    const start = up5(Math.max(g.from + (g.a ? tIn : 0), open, g.head ? DAY_START + tIn : 0)), end = start + stay;
+    if (end > Math.min(cl, B ? g.to - tOut : g.to)) continue;
+    const detour = g.a ? tIn + tOut - direct : tOut; if (detour > (c.wanted ? 45 : 30)) continue;
+    const need = (k === 'sweet' && ess.sweet < 2) || (k === 'coffee' && ess.coffee < 2 && start < 17 * 60) || (k === 'food' && ((!ess.lunch && start >= 12 * 60 && start < 15 * 60 + 30) || (!ess.dinner && start >= 19 * 60)));
+    const score = detour - (c.wanted ? 18 : 0) - (need ? 14 : 0) - (e.free ? 4 : 0) + (k === 'food' && !need ? 12 : 0);
+    out.push({ loc, wanted: c.wanted, need, start, end, tIn, detour, score, k });
+  }
+  out.sort((x, y) => x.score - y.score);
+  // Varietate: cel mult două din aceeași categorie în primele idei
+  const seen = {}, pick = []; for (const x of out) { if ((seen[x.k] = (seen[x.k] || 0) + 1) > 2 && pick.length < 4) continue; pick.push(x); if (pick.length >= 8) break; }
+  return pick;
+}
+const gapWhere = (g) => g.zone ? `prin ${g.zone}` : g.a ? `lângă ${shortTitle(g.a.loc.title)}` : 'pornind de la cazare';
+function ideaRowHTML(g, x, i) {
+  const e = enriched(x.loc), why = [x.wanted ? 'dorit' : '', x.need ? (x.k === 'sweet' ? 'vă mai trebuie un dulce' : x.k === 'coffee' ? 'încă o cafea azi' : 'masa zilei') : '', e.free ? 'gratis' : ''].filter(Boolean)[0];
+  return `<div class="li tight idea k-${x.k}"><button data-action="open-detail" data-id="${esc(x.loc.id)}" class="flex items-center gap-3 flex-1 min-w-0 text-left">${thumbHTML(e, 40)}<span class="min-w-0"><span class="block font-medium truncate">${esc(x.loc.title)}</span><span class="block cap truncate">${hhmm(x.start)}–${hhmm(x.end)} · ${x.detour <= 3 ? 'pe drum' : `+${fmtMin(x.detour)} ocol`}${why ? ` · <b class="idea-why">${why}</b>` : ''}</span></span></button>
+    <button data-action="gap-place" data-day="${g.day}" data-id="${esc(x.loc.id)}" data-time="${hhmm(x.start)} – ${hhmm(x.end)}" class="icon-btn ol press" aria-label="Pune ${esc(x.loc.title)} la ${hhmm(x.start)}" title="Pune aici">${icon('add', 'i-20', 'color: var(--brand)')}</button></div>`;
+}
+function gapHTML(g, idx, plan) {
+  const ideas = gapIdeas(g, plan), when = g.head ? `până la ${hhmm(g.to)}` : g.tail ? `după ${hhmm(g.from)}` : `${hhmm(g.from)} – ${hhmm(g.to)}`;
+  return `<li class="gap"><div class="tm"></div><div class="rail"><span class="gap-ic">${icon('more_time', 'i-18')}</span></div><div class="body"><div class="gap-card">
+    <div class="gap-h"><b>${g.tail ? 'Seară liberă' : g.head ? 'Dimineață liberă' : `${fmtMin(g.free)} libere`}</b><span class="cap">${when} · ${esc(gapWhere(g))}</span></div>
+    ${ideas.length ? `<div class="card list mt-2">${ideas.slice(0, 2).map((x, i) => ideaRowHTML(g, x, i)).join('')}</div>${ideas.length > 2 ? `<button data-action="gap-open" data-day="${g.day}" data-gap="${idx}" class="btn btn-text btn-sm press mt-1">${icon('lightbulb', 'i-18')} Încă ${ideas.length - 2} idei prin zonă</button>` : ''}` : `<p class="cap mt-1">Timp de plimbare, nimic din listă nu încape pe drum.</p>`}
+  </div></div></li>`;
+}
+function openGap(day, idx) {
+  const plan = planDay(day), g = gapsOf(day, plan)[idx]; if (!g) return; const ideas = gapIdeas(g, plan);
+  openSheet(`${sheetHead(`${DAY_LABEL[day]} · ${g.head ? `până la ${hhmm(g.to)}` : g.tail ? `după ${hhmm(g.from)}` : `${hhmm(g.from)} – ${hhmm(g.to)}`}`, g.tail ? 'Seară liberă' : g.head ? 'Dimineață liberă' : `${fmtMin(g.free)} libere`)}
+    <p class="t-2 mb-3">${esc(gapWhere(g)[0].toUpperCase() + gapWhere(g).slice(1))}${g.a ? `, după ${esc(shortTitle(g.a.loc.title))}` : ''}${g.b ? ` și înainte de ${esc(shortTitle(g.b.loc.title))}` : ''}. Ce e deschis atunci și încape cu drum cu tot:</p>
+    ${ideas.length ? `<div class="card list">${ideas.map((x, i) => ideaRowHTML(g, x, i)).join('')}</div>` : '<p class="t-2">Nimic din listă nu încape aici. E timp de plimbare.</p>'}
+    <button data-action="open-add" class="btn btn-outline press mt-3 mb-3 w-full">${icon('add_location_alt', 'i-18')} Alt loc</button>`);
+}
+async function gapPlace(day, id, time) {
+  const loc = findLoc(id); if (!loc) return; buzz(16);
+  if (loc.isAlt) {
+    const x = ALTERNATIVES[loc.altIndex], k = catKey(x.cat), data = { title: x.title.slice(0, 120), day, cat: k === 'none' ? 'fun' : k, time, desc: [x.note, x.price ? `Preț: ${x.price}` : ''].filter(Boolean).join('\n').slice(0, 1500), addedBy: PEOPLE.includes(me()) ? me() : 'Daniel', mapLink: mapsSearch(x.title) };
+    if (typeof x.lat === 'number') { data.lat = x.lat; data.lng = x.lng; } if (x.address) data.address = x.address.slice(0, 200); if (x.hours) data.hours = String(x.hours).slice(0, 120);
+    closeModals(); const nid = await saveLocation(data); toast(`„${shortTitle(x.title)}”: ${DAY_LABEL[day]}, ${time}.`, 'event', 4000); setTimeout(() => goToLoc(nid, day), 300); return;
+  }
+  closeModals(); scheduleId = id; const prev = { day: loc.day, time: loc.time };
+  if (loc.isCustom) { const { id: _i, isCustom, createdAt, ...data } = loc; await saveLocation({ ...data, day, time }, id); }
+  else { const days = { ...(state.shared.days || {}), [id]: day }, times = { ...(state.shared.times || {}), [id]: time }; state.shared.days = days; state.shared.times = times; renderAll(); await saveShared({ days, times }); }
+  toast(`„${shortTitle(loc.title)}”: ${DAY_LABEL[day]}, ${time}.`, 'event', 5000, { label: 'Anulează', run: () => moveLoc(id, prev.day, prev.time, true) });
+  setTimeout(() => goToLoc(id, day), 300);
+}
+
+// ---------- Ziua ca în calendar: blocuri pe ore, mutate prin tragere (și pe telefon) ----------
+// Pe telefon: țineți apăsat pe un loc ≈ 0,4 s, apoi trageți. Marginea de jos îl lungește sau scurtează.
+// Pe laptop: trageți direct cu mouse-ul; în centrul de comandă și în altă zi. Alt+↑/↓ mută cu 15 minute.
+const planMode = () => (lsGet(LS.planMode, 'list') === 'cal' ? 'cal' : 'list');
+function calHTML(day) {
+  const plan = planDay(day), slots = plan.slots; if (!slots.length) return '';
+  const gaps = gapsOf(day, plan), ppm = isDesk() ? 1.6 : 1.5;
+  let t0 = Math.min(...slots.map((x) => x.start), ...gaps.map((g) => g.from)), t1 = Math.max(...slots.map((x) => x.end), ...gaps.map((g) => g.to));
+  t0 = Math.floor(t0 / 60) * 60; t1 = Math.ceil(t1 / 60) * 60; const y = (m) => Math.round((m - t0) * ppm), H = y(t1);
+  const hours = []; for (let m = t0; m <= t1; m += 60) hours.push(m);
+  const bad = new Set(plan.issues.flatMap((is) => [is.a.loc.id, is.b.loc.id])), nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  const lane = slots.map((sl, i) => (i && sl.start < slots[i - 1].end - 4 ? 'lane-r' : slots[i + 1] && slots[i + 1].start < sl.end - 4 ? 'lane-l' : ''));
+  let html = '';
+  slots.forEach((sl, i) => {
+    const loc = sl.loc, e = enriched(loc), ck = catKey(e.cat), c = cat(e.cat), top = y(sl.start), h = Math.max(26, y(sl.end) - top - 2), v = !!state.shared.visited[loc.id], sk = !!state.shared.skipped[loc.id], fixed = !!loc.fixed;
+    if (i && sl.leg && sl.travel) { const a = slots[i - 1], lt = y(a.end), lh = Math.min(y(sl.start), y(a.end + sl.travel)) - lt; if (lh >= 14) html += `<div class="cal-leg" style="top:${lt}px;height:${lh}px">${icon(sl.leg.icon, 'i-16')}<span>${fmtMin(sl.leg.min)}</span></div>`; }
+    const label = `${hhmm(sl.start)}–${hhmm(sl.end)}: ${loc.title}${fixed ? ', oră fixă' : ', țineți apăsat ca să-l mutați'}`;
+    html += `<div class="cal-blk k-${ck} ${lane[i]} ${fixed ? 'fixed' : ''} ${v ? 'done' : ''} ${sk ? 'skipped' : ''} ${bad.has(loc.id) ? 'bad' : ''} ${h < 40 ? 'tiny' : ''}" ${fixed ? '' : `data-drag-id="${esc(loc.id)}" data-start="${sl.start}" data-end="${sl.end}"`} data-action="open-detail" data-id="${esc(loc.id)}" role="button" tabindex="0" style="top:${top}px;height:${h}px" aria-label="${esc(label)}" title="${esc(label)}">
+      <span class="cal-t">${icon(smartIcon(e), 'i-16')}<span class="truncate">${esc(shortTitle(loc.title))}</span>${fixed ? icon('lock', 'i-16', 'opacity:.55;margin-left:auto') : bad.has(loc.id) ? icon('warning', 'i-16 ms-fill', 'color: var(--red);margin-left:auto') : v ? icon('check_circle', 'i-16 ms-fill', 'color: var(--green);margin-left:auto') : ''}</span>
+      ${h >= 40 ? `<span class="cal-m">${sl.auto ? '~' : ''}${hhmm(sl.start)}–${hhmm(sl.end)} · ${esc(loc.catLabel || c.label)}</span>` : ''}
+      ${fixed ? '' : '<span class="drag-rs" aria-hidden="true"></span>'}
+    </div>`;
+  });
+  gaps.forEach((g, gi) => {
+    const from = g.a ? g.from + (g.b ? (legOf(g.a.loc, g.b.loc, day)?.min ?? 0) : 0) : g.from, top = y(from) + 2, h = y(g.to) - top - 4; if (h < 26) return;
+    const n = gapIdeas(g, plan).length;
+    html += `<button class="cal-gap press" data-action="gap-open" data-day="${day}" data-gap="${gi}" style="top:${top}px;height:${h}px">${icon('more_time', 'i-18')}<span><b>${g.tail ? 'Seară liberă' : g.head ? 'Dimineață liberă' : fmtMin(g.free) + ' libere'}</b>${n ? ` · ${n} idei ${esc(gapWhere(g))}` : ''}</span></button>`;
+  });
+  return `<p class="cap cal-hint">${icon('drag_pan', 'i-16')} ${isDesk() ? 'Trageți un loc ca să-l mutați, de marginea de jos ca să-l lungiți.' : 'Țineți apăsat pe un loc, apoi trageți-l. Marginea de jos îl lungește.'} Golurile arată ce încape prin zonă.</p>
+    <div class="cal" style="--hour:${60 * ppm}px"><div class="cal-axis" style="height:${H}px">${hours.map((m) => `<span style="top:${y(m)}px">${hhmm(m)}</span>`).join('')}</div>
+    <div class="cal-b" data-dz data-day="${day}" data-t0="${t0}" data-ppm="${ppm}" style="height:${H}px">${todayKey() === day && nowMin > t0 && nowMin < t1 ? `<div class="hq-now" style="top:${y(nowMin)}px"></div>` : ''}${html}</div></div>`;
+}
+// Mută un loc (oră și, opțional, zi). Revenirea la ora din program șterge suprascrierea.
+async function moveLoc(id, day, time) {
+  const loc = findLoc(id); if (!loc) return;
+  if (loc.isCustom) { const { id: _i, isCustom, createdAt, movedTime, ...data } = loc; await saveLocation({ ...data, day, time: time || 'Flexibil' }, id); return; }
+  const base = ITINERARY.find((l) => l.id === id), days = { ...(state.shared.days || {}), [id]: base && base.day === day ? null : day }, times = { ...(state.shared.times || {}), [id]: !time || (base && base.time === time) ? null : time };
+  state.shared.days = days; state.shared.times = times; renderAll(); await saveShared({ days, times });
+}
+function dropCheck(id, day, ns, ne) {
+  const loc = findLoc(id), e = loc && enriched(loc); if (!loc) return { lvl: 'ok', msg: '' };
+  const others = planDay(day, id).slots.filter((x) => !state.shared.skipped[x.loc.id]); let prev = null, next = null;
+  for (const x of others) { if (x.start <= ns) prev = x; else if (!next) next = x; }
+  if (e.closed?.includes(day)) return { lvl: 'bad', msg: `închis ${DAY_LABEL[day].split(' ')[0].toLowerCase()}` };
+  const ov = others.find((x) => x.start < ne - 4 && x.end > ns + 4); if (ov) return { lvl: 'bad', msg: `peste ${shortTitle(ov.loc.title)}` };
+  const tin = prev ? (legOf(prev.loc, loc, day)?.min ?? 0) : 0, tout = next ? (legOf(loc, next.loc, day)?.min ?? 0) : 0;
+  if (prev && prev.end + tin > ns + 5) return { lvl: 'warn', msg: `${fmtMin(tin)} drum de la ${shortTitle(prev.loc.title)}` };
+  if (next && ne + tout > next.start + 5) return { lvl: 'warn', msg: `${fmtMin(tout)} până la ${shortTitle(next.loc.title)}` };
+  const cl = e.closes?.[day]; if (cl) { const [h, m] = cl.split(':').map(Number); if (ne > h * 60 + m) return { lvl: 'warn', msg: `închide la ${cl}` }; }
+  const [o, c] = OPEN[catKey(e.cat)] || OPEN.none; if (ns < o - 15 || ne > c + 15) return { lvl: 'warn', msg: 'poate fi închis atunci' };
+  return { lvl: 'ok', msg: prev && tin ? `${fmtMin(tin)} drum, încape` : 'încape' };
+}
+const DRAG = { s: null, suppress: 0 };
+function dragArm(blk, x, y, mode, input) {
+  const zone = blk.closest('[data-dz]'); if (!zone) return; dragCancel(true);
+  const s = DRAG.s = { blk, zone, id: blk.dataset.dragId, mode, input, x0: x, y0: y, sy0: scrollY, x, y, start: +blk.dataset.start, end: +blk.dataset.end, day: zone.dataset.day, active: false };
+  s.ns = s.start; s.ne = s.end;
+  if (input === 'touch') { if (mode === 'resize') dragActivate(); else s.timer = setTimeout(dragActivate, 380); }
+}
+function dragActivate() {
+  const s = DRAG.s; if (!s || s.active) return; s.active = true; buzz(18);
+  const r = s.blk.getBoundingClientRect(); s.ghost = document.createElement('div'); s.ghost.className = 'drag-ghost'; s.ghost.style.cssText = `top:${s.blk.style.top};height:${r.height}px;left:${s.blk.offsetLeft}px;width:${r.width}px`; s.zone.appendChild(s.ghost);
+  s.tip = document.createElement('div'); s.tip.className = 'drag-tip'; s.blk.appendChild(s.tip);
+  s.blk.classList.add('dragging'); document.body.classList.add('is-dragging'); dragMove(s.x, s.y);
+  const loop = () => { const d = DRAG.s; if (!d || !d.active) return; const edge = 72, v = d.y < edge ? -Math.ceil((edge - d.y) / 6) : d.y > innerHeight - edge ? Math.ceil((d.y - innerHeight + edge) / 6) : 0; if (v) { scrollBy(0, v); dragMove(d.x, d.y); } d.raf = requestAnimationFrame(loop); }; s.raf = requestAnimationFrame(loop);
+}
+function dragMove(x, y) {
+  const s = DRAG.s; if (!s) return; s.x = x; s.y = y;
+  if (!s.active) { if (s.input === 'mouse' && Math.hypot(x - s.x0, y - s.y0) > 5) dragActivate(); return; }
+  // În centrul de comandă locul poate trece și în altă zi
+  const under = document.elementFromPoint(x, y)?.closest('[data-dz]'); if (under && under !== s.zone && under.dataset.t0 && s.zone.parentElement?.parentElement === under.parentElement?.parentElement && s.mode === 'move') { s.zone = under; s.day = under.dataset.day; under.appendChild(s.blk); }
+  const ppm = +s.zone.dataset.ppm, t0 = +s.zone.dataset.t0, dm = Math.round(((y + scrollY) - (s.y0 + s.sy0)) / ppm / 5) * 5, dur = s.end - s.start;
+  if (s.mode === 'move') { s.ns = Math.max(6 * 60, Math.min(23 * 60 + 30 - dur, s.start + dm)); s.ne = s.ns + dur; } else { s.ns = s.start; s.ne = Math.max(s.start + 10, Math.min(23 * 60 + 45, s.end + dm)); }
+  s.blk.style.top = `${Math.round((s.ns - t0) * ppm)}px`; s.blk.style.height = `${Math.max(26, Math.round((s.ne - s.ns) * ppm) - 2)}px`;
+  const ck = dropCheck(s.id, s.day, s.ns, s.ne); s.blk.dataset.lvl = ck.lvl;
+  const t = `${s.day !== s.zone.dataset.day ? '' : ''}${s.day !== DRAG.s.blk.dataset.day0 && DRAG.s.blk.dataset.day0 ? DAY_LABEL[s.day] + ' · ' : ''}${hhmm(s.ns)}–${hhmm(s.ne)}${ck.msg ? ' · ' + ck.msg : ''}`;
+  if (s.tip.textContent !== t) { s.tip.textContent = t; if (s.lastLvl !== ck.lvl || s.lastNs !== s.ns) buzz(4); } s.lastLvl = ck.lvl; s.lastNs = s.ns;
+}
+function dragCleanup() { const s = DRAG.s; if (!s) return; clearTimeout(s.timer); cancelAnimationFrame(s.raf); s.ghost?.remove(); s.tip?.remove(); s.blk.classList.remove('dragging'); document.body.classList.remove('is-dragging'); DRAG.s = null; return s; }
+function dragCancel(quiet) { const s = DRAG.s; if (!s) return; const was = s.active; dragCleanup(); if (was && !quiet) rerenderDrag(); }
+const rerenderDrag = () => { if (state.view === 'hq') renderHQ(); else renderDay(); };
+async function dragEnd() {
+  const s = DRAG.s; if (!s) return; if (!s.active) { dragCleanup(); return; }
+  dragCleanup(); DRAG.suppress = Date.now() + 450;
+  const day0 = findLoc(s.id)?.day; if (s.ns === s.start && s.ne === s.end && s.day === day0) { rerenderDrag(); return; }
+  const loc = findLoc(s.id); if (!loc) return rerenderDrag(); const prev = { day: loc.day, time: loc.time }, time = `${hhmm(s.ns)} – ${hhmm(s.ne)}`;
+  buzz(12); await moveLoc(s.id, s.day, time);
+  toast(`${shortTitle(loc.title)}: ${s.day !== prev.day ? DAY_LABEL[s.day] + ', ' : ''}${time}`, 'schedule', 5000, { label: 'Anulează', run: () => moveLoc(s.id, prev.day, prev.time) });
+}
+function dragInit() {
+  document.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch' || e.button !== 0) return; const blk = e.target.closest('[data-drag-id]'); if (!blk || e.target.closest('a, input')) return; blk.dataset.day0 = blk.closest('[data-dz]')?.dataset.day || ''; dragArm(blk, e.clientX, e.clientY, e.target.closest('.drag-rs') ? 'resize' : 'move', 'mouse'); });
+  document.addEventListener('pointermove', (e) => { if (DRAG.s?.input === 'mouse') dragMove(e.clientX, e.clientY); });
+  document.addEventListener('pointerup', () => { if (DRAG.s?.input === 'mouse') dragEnd(); });
+  document.addEventListener('touchstart', (e) => { if (e.touches.length > 1) return dragCancel(); const blk = e.target.closest('[data-drag-id]'); if (!blk) return; const t = e.touches[0]; blk.dataset.day0 = blk.closest('[data-dz]')?.dataset.day || ''; dragArm(blk, t.clientX, t.clientY, e.target.closest('.drag-rs') ? 'resize' : 'move', 'touch'); }, { passive: true });
+  document.addEventListener('touchmove', (e) => { const s = DRAG.s; if (!s || s.input !== 'touch') return; const t = e.touches[0]; if (!s.active) { if (Math.hypot(t.clientX - s.x0, t.clientY - s.y0) > 9) dragCleanup(); return; } if (e.cancelable) e.preventDefault(); dragMove(t.clientX, t.clientY); }, { passive: false });
+  document.addEventListener('touchend', () => { const s = DRAG.s; if (s?.input === 'touch') { if (s.active) dragEnd(); else dragCleanup(); } });
+  document.addEventListener('touchcancel', () => dragCancel());
+  document.addEventListener('click', (e) => { if (Date.now() < DRAG.suppress) { e.stopPropagation(); e.preventDefault(); } }, true);
+  document.addEventListener('contextmenu', (e) => { if (e.target.closest('[data-drag-id]')) e.preventDefault(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && DRAG.s?.active) { dragCancel(); return; }
+    const blk = e.target.closest?.('[data-drag-id]'); if (!blk) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); blk.click(); return; }
+    if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); const d = e.key === 'ArrowUp' ? -15 : 15, id = blk.dataset.dragId, loc = findLoc(id); if (!loc) return; const ns = +blk.dataset.start + d, ne = +blk.dataset.end + d, day = blk.closest('[data-dz]').dataset.day; moveLoc(id, day, `${hhmm(ns)} – ${hhmm(ne)}`).then(() => { toast(`${shortTitle(loc.title)}: ${hhmm(ns)} – ${hhmm(ne)}`, 'schedule'); setTimeout(() => $(`[data-drag-id="${CSS.escape(id)}"]`)?.focus(), 60); }); }
+  });
+}
+
+// ---------- „Suntem aici acum”: reface restul zilei din punctul și ora reale ----------
+const hereState = { day: null, at: null, pt: null, ptName: '' };
+function nowMinute() { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+// Reface ziua pornind dintr-un punct (lat/lng) la o oră dată: ce mai prindem, în ce ordine, ce pică
+function replanFrom(day, pt, atMin) {
+  const origin = { id: '__here', title: 'Unde sunteți', lat: pt.lat, lng: pt.lng };
+  const fixed = [], movable = [];
+  for (const l of dayItems(day)) { if (state.shared.visited[l.id]) continue; const r = parseRange(withTime(l).time);
+    if (l.fixed && r) fixed.push({ loc: l, start: r.from, end: r.to }); else movable.push(l); }
+  fixed.sort((a, b) => a.start - b.start);
+  const placed = [], dropped = []; let cur = origin, t = atMin, pool = movable.slice();
+  const nextFixed = () => fixed.find((f) => f.end > t);
+  while (pool.length) {
+    let best = null;
+    for (const loc of pool) { const e = enriched(loc), p = coordsOf(loc); if (!p) { continue; }
+      const k = catKey(e.cat), [open, close0] = OPEN[k] || OPEN.none;
+      const cl = e.closes?.[day] ? (([h, m]) => h * 60 + m)(e.closes[day].split(':').map(Number)) : close0;
+      if (e.closed?.includes(day)) continue;
+      const tIn = legOf(cur, loc, day)?.min ?? 0, stay = stayOf(loc), start = up5(Math.max(t + tIn, open)), end = start + stay;
+      const nf = nextFixed(); const capFixed = nf ? nf.start - (legOf(loc, nf.loc, day)?.min ?? 0) : DAY_END;
+      if (end > Math.min(cl, capFixed)) continue;
+      const need = (k === 'sweet') || (k === 'food');
+      const cost = tIn + start * 0.02 - (need ? 8 : 0);
+      if (!best || cost < best.cost) best = { loc, start, end, tIn, cost };
+    }
+    if (!best) break;
+    placed.push(best); pool = pool.filter((l) => l !== best.loc); cur = best.loc; t = best.end;
+  }
+  for (const loc of pool) dropped.push(loc);
+  // Intercalează opririle fixe rămase (zborul) la locul lor
+  const seq = [...placed.map((x) => ({ ...x, moved: true })), ...fixed.filter((f) => f.end > atMin).map((f) => ({ loc: f.loc, start: f.start, end: f.end, fixed: true }))].sort((a, b) => a.start - b.start);
+  return { seq, dropped, origin };
+}
+function hereIdeasHTML() {
+  const { day, at, pt } = hereState; const r = replanFrom(day, pt, at);
+  let prev = { id: '__here', title: hereState.ptName || 'aici', lat: pt.lat, lng: pt.lng };
+  const rows = r.seq.map((x) => { const e = enriched(x.loc), leg = legOf(prev, x.loc, day); prev = x.loc;
+    return `<div class="li tight k-${catKey(e.cat)}">${leg && leg.min ? `<span class="here-leg">${icon(leg.icon, 'i-16')} ${fmtMin(leg.min)}</span>` : '<span class="here-leg t-3">start</span>'}
+      <button data-action="open-detail" data-id="${esc(x.loc.id)}" class="flex items-center gap-2 flex-1 min-w-0 text-left">${thumbHTML(e, 38)}<span class="min-w-0"><span class="block font-medium truncate">${esc(x.loc.title)}${x.fixed ? ' ' + icon('lock', 'i-14', 'opacity:.5') : ''}</span><span class="block cap">${hhmm(x.start)}–${hhmm(x.end)}</span></span></button></div>`;
+  }).join('');
+  const drop = r.dropped.length ? `<div class="here-drop mt-3"><div class="cap mb-1">Nu mai încap azi (le puteți muta sau sări):</div>${r.dropped.map((l) => `<span class="chip sm">${esc(shortTitle(l.title))}</span>`).join('')}</div>` : '';
+  return `<div class="card list">${rows || '<div class="li t-2">Nimic de reordonat.</div>'}</div>${drop}
+    <div class="flex gap-2 mt-4 pb-2"><button data-action="here-apply" class="btn btn-primary btn-lg press flex-1">${icon('update', 'i-18')} Rearanjează de aici</button></div>
+    <p class="cap pb-3">Pornind ${esc(hereState.ptName ? 'de la ' + hereState.ptName : 'din punctul ales')}, la ${hhmm(at)}. Se schimbă doar orele; puteți da Anulează.</p>`;
+}
+function openHereSheet() {
+  const day = DAYS.includes(state.day) ? state.day : todayKey() || 'sat'; hereState.day = day;
+  hereState.at = hereState.at || nowMinute(); if (!hereState.pt) { if (state.pos) { hereState.pt = { lat: state.pos.lat, lng: state.pos.lng }; hereState.ptName = 'poziția ta'; } }
+  const times = []; for (let m = 8 * 60; m <= 21 * 60; m += 15) times.push(m);
+  const body = `${sheetHead('Suntem aici acum', 'Reface restul zilei')}
+    <div class="here-set">
+      <div class="field"><span>Ziua</span><div class="flex flex-wrap gap-2" id="hereDays">${DAYS.map((d) => `<button data-action="here-day" data-day="${d}" class="chip press ${d === hereState.day ? 'on' : ''}">${DAY_LABEL[d]}</button>`).join('')}</div></div>
+      <label class="field mt-3"><span>Ora</span><select id="hereTime" class="input">${times.map((m) => `<option value="${m}" ${Math.abs(m - hereState.at) < 8 ? 'selected' : ''}>${hhmm(m)}</option>`).join('')}</select></label>
+      <div class="field mt-3"><span>Unde sunteți</span>
+        <div class="flex flex-wrap gap-2">
+          <button data-action="here-gps" class="chip press ${hereState.ptName === 'poziția ta' ? 'on' : ''}">${icon('my_location', 'i-18')} Poziția mea</button>
+          <button data-action="here-pick" class="chip press">${icon('location_on', 'i-18')} Aleg pe hartă</button>
+        </div>
+        <div class="cap mt-1" id="herePtLabel">${hereState.pt ? esc(hereState.ptName || 'punct ales pe hartă') : 'Alegeți poziția ca să refac ziua'}</div>
+      </div>
+    </div>
+    <div id="hereResult" class="mt-2">${hereState.pt ? hereIdeasHTML() : ''}</div>`;
+  openSheet(body);
+}
+function hereRefresh() { const r = $('#hereResult'); if (r) r.innerHTML = hereState.pt ? hereIdeasHTML() : ''; const l = $('#herePtLabel'); if (l) l.textContent = hereState.pt ? (hereState.ptName || 'punct ales pe hartă') : 'Alegeți poziția ca să refac ziua'; }
+async function hereApply() {
+  const { day, at, pt } = hereState; const r = replanFrom(day, pt, at);
+  const snap = r.seq.filter((x) => x.moved).map((x) => ({ id: x.loc.id, day: findLoc(x.loc.id)?.day, time: findLoc(x.loc.id)?.time }));
+  for (const x of r.seq) if (x.moved) await moveLoc(x.loc.id, day, `${hhmm(x.start)} – ${hhmm(x.end)}`);
+  closeModals(); buzz(16); setView('plan'); if (state.day !== day) switchDay(day); else renderDay();
+  toast(`Ziua refăcută din ${hhmm(at)}.`, 'update', 6000, { label: 'Anulează', run: async () => { for (const s of snap) await moveLoc(s.id, s.day, s.time); } });
+}
+
 // ---------- PWA ----------
 function setupPWA() {
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); state.installPrompt = e; $('#installBtn')?.classList.remove('hidden'); });
@@ -1908,6 +2176,14 @@ document.addEventListener('click', (e) => {
     'pick-cancel': () => stopPick(), 'pick-confirm': confirmPick,
     'goto-warn': () => { const w = $('[data-warn]'); if (w) { w.scrollIntoView({ behavior: 'smooth', block: 'center' }); w.querySelector('.watch')?.classList.add('flash'); } },
     'choose': () => chooseSkip(el.dataset.skip), 'shift': () => shiftTime(id, el.dataset.time),
+    'plan-mode': () => { lsSet(LS.planMode, el.dataset.mode); renderDay(); },
+    'gap-place': () => gapPlace(el.dataset.day, el.dataset.id, el.dataset.time),
+    'gap-open': () => openGap(el.dataset.day, Number(el.dataset.gap)),
+    'here-open': openHereSheet,
+    'here-day': () => { hereState.day = el.dataset.day; $$('#hereDays .chip').forEach((c) => c.classList.toggle('on', c === el)); hereRefresh(); },
+    'here-gps': () => { if (state.pos) { hereState.pt = { lat: state.pos.lat, lng: state.pos.lng }; hereState.ptName = 'poziția ta'; $$('#hereDays .chip, .here-set .chip').forEach((c) => c.dataset.action === 'here-gps' && c.classList.add('on')); hereRefresh(); } else { toast('Caut poziția… deschide Harta și apasă „Unde sunt”.', 'my_location', 4000); startRadar(); } },
+    'here-pick': () => { closeModals(); herePick(); },
+    'here-apply': hereApply,
   };
   actions[a]?.();
 });
@@ -1918,6 +2194,7 @@ document.addEventListener('submit', (e) => {
 document.addEventListener('change', async (e) => {
   if (e.target.matches('.bucket-check')) { if (e.target.checked) { buzz(); const r = e.target.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + r.height / 2); } bucketSet(e.target.dataset.person, e.target.dataset.id, { done: e.target.checked }); }
   if (e.target.id === 'photoInput' && e.target.files?.[0] && state.photoTarget) { try { await savePhoto(state.photoTarget, e.target.files[0]); } catch (err) { console.error(err); toast('Nu am putut salva poza: ' + (err.message || err), 'image'); } }
+  if (e.target.id === 'hereTime') { hereState.at = +e.target.value; hereRefresh(); }
 });
 if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) $$('.kbd').forEach((k) => { k.textContent = 'Ctrl K'; });
 document.addEventListener('input', (e) => { if (e.target.id === 'sharedNotes') onNotesInput(); if (e.target.id === 'bucketSearch') $('#bucketPickList').innerHTML = pickListHTML(e.target.value); if (e.target.id === 'addQ') onAddQuery(e.target.value); if (e.target.id === 'srchQ') renderSearch(e.target.value); });
@@ -1927,6 +2204,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { if (state.picking) stopPick(); addState = null; closeModals(); } if (e.key === 'Enter' && e.target.id === 'addQ') { e.preventDefault(); const first = $('#addBody [data-action="add-choose"]'); if (first) first.click(); } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderDay(); renderNextStop(); loadWeather(); if (state.radarOn) startRadar(); } });
 
+window.__pos = (lat, lng) => { state.pos = { lat, lng, acc: 20 }; };
 window.__plan = (d) => { const p = planDay(d); return { check: `prânz ${p.ess.lunch ? '✓' : '✗'} cină ${p.ess.dinner ? '✓' : '✗'} cafele ${p.ess.coffee} dulciuri ${p.ess.sweet}`, level: p.level, free: p.free, slots: p.slots.map((x) => `${hhmm(x.start)}-${hhmm(x.end)}${x.auto ? '*' : ''} ${x.loc.title}${x.travel ? ' (+' + x.travel + ')' : ''}`), issues: p.issues.map((i) => `${i.type} ${i.a.loc.title} → ${i.b.loc.title} ${i.late || i.over || ''}`) }; };
 
 // ---------- Start ----------
@@ -1935,7 +2213,7 @@ loadLocal(); renderNotes(); renderWeather(); loadWeather(); setSyncStatus('conne
 state.day = todayKey() || 'thu'; renderDay(); renderNextStop(); renderHome();
 const hasShare = new URL(location.href).searchParams.has('text') || new URL(location.href).searchParams.has('url');
 setView(hasShare ? 'plan' : isDesk() ? lsGet(LS.viewDesk, 'hq') : lsGet(LS.view, 'plan'));
-renderMe(); setupPWA(); connectFirebase(); handleShareTarget();
+renderMe(); setupPWA(); connectFirebase(); handleShareTarget(); dragInit();
 if (!hasMe()) setTimeout(() => openWhoAmI(true), 500); else maybePromptInstall();
 setInterval(() => { renderNextStop(); if (state.view === 'hq') renderHQHero(); }, 60000);
 // Fereastra trece între telefon și desktop (laptop micșorat, tabletă rotită)
