@@ -1068,7 +1068,7 @@ function scheduleSheetHTML(loc) {
   return `${sheetHead(esc(loc.title), isPool(loc) ? 'În ce zi?' : 'Mută în altă zi')}
     ${s.day !== 'pool' ? `<p class="t-2 mb-3">Cel mai aproape de <b style="font-weight: 500; color: var(--text)">${esc(s.nearTitle)}</b> (${DAY_LABEL[s.day]}, ${fmtDist(s.dist)}).</p>` : ''}
     <div class="flex flex-wrap gap-2" id="schedDays">${DAYS.map((d) => `<button type="button" data-action="sched-day" data-day="${d}" data-time="${esc(d === s.day ? s.time : '')}" class="chip press ${(loc.day === d) || (isPool(loc) && d === s.day) ? 'on' : ''}">${DAY_LABEL[d]}${d === s.day ? ' · recomandat' : closed.includes(d) ? ' · închis' : ''}</button>`).join('')}</div>
-    <label class="field mt-4"><span>Ora (opțional)</span><input type="text" id="schedTime" maxlength="60" value="${esc(loc.time && loc.time !== 'Flexibil' ? loc.time : s.time && s.time !== 'Flexibil' ? s.time : '')}" placeholder="Ex: 17:30 – 18:30"></label>
+    <div class="mt-4">${timePickerHTML('schedTime', loc.time && loc.time !== 'Flexibil' ? loc.time : s.time && s.time !== 'Flexibil' ? s.time : '', { label: 'Ora', suggest: s.time && s.time !== 'Flexibil' ? s.time : '', dur: stayOf(loc) })}</div>
     <div class="flex gap-2 mt-4 pb-3"><button type="button" data-action="sched-save" class="btn btn-primary btn-lg press flex-1">Pune în program</button>${!isPool(loc) ? `<button type="button" data-action="sched-pool" class="btn btn-outline btn-lg press">La dorite</button>` : ''}</div>`;
 }
 function openSchedule(id) { const loc = findLoc(id); if (!loc || loc.fixed || id === 'home' || id.startsWith('alt-')) return; scheduleId = id; openSheet(scheduleSheetHTML(loc)); }
@@ -1319,7 +1319,7 @@ function renderAdd() {
       ${s.noFit ? `<div class="watch mt-3"><div class="font-medium">${icon('warning', 'i-18 ms-fill', 'color: #F29900')} ${DAY_LABEL[s.day]} e plină în zona asta</div><div class="t-2 mt-1">${s.clash ? `Se suprapune cu <b>${esc(shortTitle(s.clash.title))}</b>` : `Nu rămâne timp de drum până la <b>${esc(shortTitle(s.next?.title || s.afterTitle))}</b>`}. Dacă îl adăugați, alegeți apoi în program pe care mergeți.</div>${s.alt ? `<button data-action="add-day" data-day="${s.alt.day}" data-time="${esc(s.alt.time)}" class="btn btn-sm btn-tonal press mt-3">${icon('event', 'i-18')} Încape ${DAY_LABEL[s.alt.day]}, ${s.alt.time.split(' ')[0]}</button>` : ''}</div>` : ''}` : pl.lat != null ? `<div class="card-flat p-3 mt-4 t-2">E departe de tot ce aveți în program, așa că l-am pus la „Dorite”. Alegeți o zi când vreți.</div>` : ''}
     <h3 class="ttl-3 mt-5 mb-2">Când</h3>
     <div class="flex flex-wrap gap-2">${DAYS.map((d) => dayBtn(d, `${DAY_SHORT[d][0]} ${DAY_SHORT[d][1]}`)).join('')}${dayBtn('pool', 'Dorite')}</div>
-    ${day !== 'pool' ? `<label class="field mt-3"><span>Ora</span><input id="addTime" type="text" maxlength="60" value="${esc(a.time && a.time !== 'Flexibil' ? a.time : '')}" placeholder="Flexibil (apare la finalul zilei)"></label>` : ''}
+    ${day !== 'pool' ? `<div class="mt-3">${timePickerHTML('addTime', a.time && a.time !== 'Flexibil' ? a.time : '', { label: 'Ora', suggest: a.suggestion?.day === day && a.suggestion?.time && a.suggestion.time !== 'Flexibil' ? a.suggestion.time : '', dur: MIN_STAY[catKey(a.cat)] || 60 })}</div>` : ''}
     <h3 class="ttl-3 mt-5 mb-2">Ce fel de loc</h3>
     <div class="flex flex-wrap gap-2">${CAT_KEYS.map((k) => `<button data-action="add-cat" data-cat="${k}" class="chip press ${a.cat === k ? 'on' : ''}">${icon(CAT[k].icon, 'i-18')}${CAT[k].label}</button>`).join('')}</div>
     <h3 class="ttl-3 mt-5 mb-2">Pe bucketlist-ul lui</h3>
@@ -1999,11 +1999,10 @@ function hereIdeasHTML() {
 function openHereSheet() {
   const day = DAYS.includes(state.day) ? state.day : todayKey() || 'sat'; hereState.day = day;
   hereState.at = hereState.at || nowMinute(); if (!hereState.pt) { if (state.pos) { hereState.pt = { lat: state.pos.lat, lng: state.pos.lng }; hereState.ptName = 'poziția ta'; } }
-  const times = []; for (let m = 8 * 60; m <= 21 * 60; m += 15) times.push(m);
   const body = `${sheetHead('Suntem aici acum', 'Reface restul zilei')}
     <div class="here-set">
       <div class="field"><span>Ziua</span><div class="flex flex-wrap gap-2" id="hereDays">${DAYS.map((d) => `<button data-action="here-day" data-day="${d}" class="chip press ${d === hereState.day ? 'on' : ''}">${DAY_LABEL[d]}</button>`).join('')}</div></div>
-      <label class="field mt-3"><span>Ora</span><select id="hereTime" class="input">${times.map((m) => `<option value="${m}" ${Math.abs(m - hereState.at) < 8 ? 'selected' : ''}>${hhmm(m)}</option>`).join('')}</select></label>
+      <div class="mt-3">${timePickerHTML('hereTime', hhmm(Math.round(hereState.at / 5) * 5), { label: 'Ora de acum', single: true })}</div>
       <div class="field mt-3"><span>Unde sunteți</span>
         <div class="flex flex-wrap gap-2">
           <button data-action="here-gps" class="chip press ${hereState.ptName === 'poziția ta' ? 'on' : ''}">${icon('my_location', 'i-18')} Poziția mea</button>
@@ -2143,6 +2142,55 @@ function openMore() {
       <button data-action="toggle-theme" class="li press">${icon('dark_mode', 't-blue')}<span class="flex-1 text-left">Temă întunecată / deschisă</span></button>
     </div>`);
 }
+// ---------- Selector de oră: rezumat mare, bandă de ore, minute, durată ----------
+// Fără tastatură: totul din atingeri, gândit pentru degetul mare. Valoarea stă într-un input ascuns
+// („17:30 – 18:30”, sau „” pentru Flexibil), ca restul codului să o citească la fel ca înainte.
+const TP_DUR = [15, 30, 45, 60, 90, 120, 180];
+function tpParse(v) { const r = parseRange(v || ''); if (r) return { s: r.from, d: Math.max(5, r.to - r.from) }; const m = /(\d{1,2}):(\d{2})/.exec(v || ''); return m ? { s: +m[1] * 60 + +m[2], d: null } : null; }
+const tpValue = (s, d, single) => (single ? hhmm(s) : `${hhmm(s)} – ${hhmm(s + d)}`);
+const tpSum = (s, d, single) => (single ? hhmm(s) : `${hhmm(s)} – ${hhmm(s + d)}<span class="tp-dur">${fmtMin(d)}</span>`);
+function timePickerHTML(id, value, o = {}) {
+  const cur = tpParse(value), single = !!o.single, flex = !cur && !single, sug = o.suggest ? tpParse(o.suggest) : null;
+  const st = cur?.s ?? sug?.s ?? o.start ?? 12 * 60, d = cur?.d ?? sug?.d ?? o.dur ?? 60, h0 = Math.floor(st / 60), m0 = st % 60;
+  const hours = []; for (let h = 7; h <= 23; h++) hours.push(h);
+  const opts = esc(JSON.stringify(o));
+  return `<div class="tp ${flex ? 'is-flex' : ''}" data-tp="${id}" data-s="${st}" data-d="${d}" data-o="${opts}" ${single ? 'data-single="1"' : ''}>
+    <input type="hidden" id="${id}" value="${esc(flex ? '' : tpValue(st, d, single))}">
+    <div class="tp-head">
+      <div class="min-w-0"><div class="tp-label">${esc(o.label || 'Ora')}</div><div class="tp-sum" aria-live="polite">${flex ? 'Flexibil' : tpSum(st, d, single)}</div></div>
+      <div class="tp-nudge"><button type="button" data-action="tp-nudge" data-n="-5" class="icon-btn ol press" aria-label="Cu 5 minute mai devreme">${icon('remove', 'i-18')}</button><button type="button" data-action="tp-nudge" data-n="5" class="icon-btn ol press" aria-label="Cu 5 minute mai târziu">${icon('add', 'i-18')}</button></div>
+    </div>
+    ${!single || sug ? `<div class="tp-quick">${!single ? `<button type="button" data-action="tp-flex" class="chip press tp-flex ${flex ? 'on' : ''}">${icon('auto_awesome', 'i-18')} Flexibil</button>` : ''}${sug ? `<button type="button" data-action="tp-set" data-s="${sug.s}" data-d="${sug.d ?? d}" class="chip press tp-sug">${icon('near_me', 'i-18')} Recomandat ${hhmm(sug.s)}</button>` : ''}</div>` : ''}
+    <div class="tp-sec">${single ? '' : '<div class="tp-k">Începe la</div>'}
+      <div class="tp-hours" role="listbox" aria-label="Ora">${hours.map((h) => `<button type="button" data-action="tp-h" data-h="${h}" class="tp-h press ${!flex && h === h0 ? 'on' : ''}" role="option" aria-selected="${!flex && h === h0}">${String(h).padStart(2, '0')}</button>`).join('')}</div>
+      <div class="tp-mins">${[0, 15, 30, 45].map((m) => `<button type="button" data-action="tp-m" data-m="${m}" class="tp-m press ${!flex && m === m0 ? 'on' : ''}">:${String(m).padStart(2, '0')}</button>`).join('')}</div>
+    </div>
+    ${single ? '' : `<div class="tp-sec"><div class="tp-k">Cât stați</div><div class="tp-durs">${TP_DUR.map((x) => `<button type="button" data-action="tp-d" data-d="${x}" class="chip press ${!flex && x === d ? 'on' : ''}">${fmtMin(x)}</button>`).join('')}</div></div>`}
+  </div>`;
+}
+function tpUpdate(el, patch) {
+  const root = el.closest('.tp'); if (!root) return; const single = !!root.dataset.single, inp = root.querySelector('input'), sum = root.querySelector('.tp-sum');
+  if (patch.flex) {
+    root.classList.add('is-flex'); inp.value = ''; sum.textContent = 'Flexibil';
+    root.querySelectorAll('.on').forEach((b) => b.classList.remove('on')); root.querySelector('.tp-flex')?.classList.add('on');
+  } else {
+    let st = +root.dataset.s, d = +root.dataset.d;
+    if (patch.s != null) st = patch.s; if (patch.h != null) st = patch.h * 60 + (st % 60); if (patch.m != null) st = Math.floor(st / 60) * 60 + patch.m;
+    if (patch.n) st += patch.n; if (patch.d != null) d = patch.d; st = Math.max(6 * 60, Math.min(23 * 60 + 55, st));
+    root.dataset.s = st; root.dataset.d = d; root.classList.remove('is-flex'); inp.value = tpValue(st, d, single); sum.innerHTML = tpSum(st, d, single);
+    root.querySelector('.tp-flex')?.classList.remove('on');
+    root.querySelectorAll('.tp-h').forEach((b) => { const on = +b.dataset.h === Math.floor(st / 60); b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+    root.querySelectorAll('.tp-m').forEach((b) => b.classList.toggle('on', +b.dataset.m === st % 60));
+    root.querySelectorAll('.tp-durs .chip').forEach((b) => b.classList.toggle('on', +b.dataset.d === d));
+    tpCenter(root);
+  }
+  sum.classList.remove('bump'); void sum.offsetWidth; sum.classList.add('bump'); buzz(6);
+  inp.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function tpCenter(root, smooth = true) { const on = root.querySelector('.tp-h.on'), strip = root.querySelector('.tp-hours'); if (on && strip) strip.scrollTo({ left: on.offsetLeft - strip.clientWidth / 2 + on.offsetWidth / 2, behavior: smooth && !RM() ? 'smooth' : 'auto' }); }
+function tpSetValue(id, v) { const root = $(`[data-tp="${id}"]`); if (!root) return; let o = {}; try { o = JSON.parse(root.dataset.o || '{}'); } catch {} root.outerHTML = timePickerHTML(id, v, o); }
+new MutationObserver(() => $$('.tp:not([data-mounted])').forEach((r) => { r.dataset.mounted = '1'; requestAnimationFrame(() => tpCenter(r, false)); })).observe(document.body, { childList: true, subtree: true });
+
 // ---------- PWA ----------
 function setupPWA() {
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); state.installPrompt = e; $('#installBtn')?.classList.remove('hidden'); });
@@ -2249,9 +2297,9 @@ document.addEventListener('click', (e) => {
     'book': () => openBook(id), 'book-done': () => bookToggle(id), 'book-copy': () => { const loc = findLoc(id); if (loc) copyText(bookMessage(loc), 'Mesajul e copiat: lipiți-l în WhatsApp, Instagram sau e-mail.'); },
     'note-add': () => noteAdd(id), 'note-del': () => noteDel(id, el.dataset.i), 'note-who': () => { lsSet(LS.me, PEOPLE_META[el.dataset.person].name); const t = $('#noteText')?.value || ''; refreshDetail(); if ($('#noteText')) { $('#noteText').value = t; $('#noteText').focus(); } },
     'coll-open': () => openCollection(el.dataset.coll), 'coll-filter': () => { collState.filter = el.dataset.f; renderCollectionSheet(); }, 'coll-visit': async () => { await toggleVisited(id, el); renderCollectionSheet(); },
-    'open-coffee': () => coffeeQuick(el), 'coffee-quick': () => coffeeQuick(el), 'coffee-here': () => coffeeQuick(el, el.dataset.place), 'sfx-toggle': toggleSfx, 'open-more': openMore, 'tip-toggle': () => { state.tipOpen = !state.tipOpen; el.classList.toggle('open', state.tipOpen); el.setAttribute('aria-expanded', state.tipOpen); const ic = el.lastElementChild; if (ic) ic.replaceWith(htmlEl(icon(state.tipOpen ? 'expand_less' : 'expand_more', 'i-20 t-3'))); }, 'more-go': () => { closeModals(); setView(el.dataset.view); scrollTo(0, 0); }, 'ps-close': () => $('#playerDlg').classList.add('hidden'), 'open-home': openHome, 'copy-address': () => copyText('Carrer de Pellaires 35, 08019 Barcelona', 'Adresa a fost copiată.'), 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
+    'open-coffee': () => coffeeQuick(el), 'coffee-quick': () => coffeeQuick(el), 'coffee-here': () => coffeeQuick(el, el.dataset.place), 'sfx-toggle': toggleSfx, 'open-more': openMore, 'tp-h': () => tpUpdate(el, { h: +el.dataset.h }), 'tp-m': () => tpUpdate(el, { m: +el.dataset.m }), 'tp-d': () => tpUpdate(el, { d: +el.dataset.d }), 'tp-nudge': () => tpUpdate(el, { n: +el.dataset.n }), 'tp-flex': () => tpUpdate(el, { flex: true }), 'tp-set': () => tpUpdate(el, { s: +el.dataset.s, d: +el.dataset.d }), 'tip-toggle': () => { state.tipOpen = !state.tipOpen; el.classList.toggle('open', state.tipOpen); el.setAttribute('aria-expanded', state.tipOpen); const ic = el.lastElementChild; if (ic) ic.replaceWith(htmlEl(icon(state.tipOpen ? 'expand_less' : 'expand_more', 'i-20 t-3'))); }, 'more-go': () => { closeModals(); setView(el.dataset.view); scrollTo(0, 0); }, 'ps-close': () => $('#playerDlg').classList.add('hidden'), 'open-home': openHome, 'copy-address': () => copyText('Carrer de Pellaires 35, 08019 Barcelona', 'Adresa a fost copiată.'), 'coffee-undo': coffeeUndo, 'open-weather': openWeather,
     'counter': () => bumpCounter(el.dataset.key, Number(el.dataset.delta), el), 'bucket-new': () => openBucketEditor(el.dataset.person), 'bucket-edit': () => { const it = bucketOf(el.dataset.person).find((x) => x.id === id); if (it) openBucketEditor(el.dataset.person, it); }, 'bucket-pick': () => bucketPick(el.dataset.loc), 'bucket-toggle': () => { const l = findLoc(id); if (l) bucketToggle(el.dataset.person, l); }, 'bucket-save': bucketSave, 'bucket-delete': bucketDelete, 'bucket-newloc': bucketNewLoc,
-    'schedule': () => openSchedule(id), 'sched-day': () => { $$('#schedDays .chip').forEach((c) => c.classList.toggle('on', c === el)); if (el.dataset.time && el.dataset.time !== 'Flexibil') $('#schedTime').value = el.dataset.time; }, 'sched-save': () => scheduleSave(), 'sched-pool': () => scheduleSave('pool'),
+    'schedule': () => openSchedule(id), 'sched-day': () => { $$('#schedDays .chip').forEach((c) => c.classList.toggle('on', c === el)); if (el.dataset.time && el.dataset.time !== 'Flexibil') tpSetValue('schedTime', el.dataset.time); }, 'sched-save': () => scheduleSave(), 'sched-pool': () => scheduleSave('pool'),
     'add-alt': () => addAlternative(Number(el.dataset.index)),
     'add-clear': () => { addState.q = ''; addState.results = []; addState.link = null; renderAdd(); $('#addQ')?.focus(); },
     'add-paste': async () => { try { const t = await navigator.clipboard.readText(); if (t) { $('#addQ').value = t; handleLinkText(t); } else toast('Clipboard-ul e gol.', 'content_paste'); } catch { toast('Nu am acces la clipboard. Lipește în câmpul de căutare.', 'content_paste'); $('#addQ')?.focus(); } },
@@ -2283,7 +2331,7 @@ document.addEventListener('submit', (e) => {
 document.addEventListener('change', async (e) => {
   if (e.target.matches('.bucket-check')) { if (e.target.checked) { buzz(14); sfx('power'); const r = e.target.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + r.height / 2); scorePop(r.left + r.width / 2, r.top, `+${PTS.bucket}`); } else sfx('undo'); bucketSet(e.target.dataset.person, e.target.dataset.id, { done: e.target.checked }); }
   if (e.target.id === 'photoInput' && e.target.files?.[0] && state.photoTarget) { try { await savePhoto(state.photoTarget, e.target.files[0]); } catch (err) { console.error(err); toast('Nu am putut salva poza: ' + (err.message || err), 'image'); } }
-  if (e.target.id === 'hereTime') { hereState.at = +e.target.value; hereRefresh(); }
+  if (e.target.id === 'hereTime') { const t = tpParse(e.target.value); if (t) { hereState.at = t.s; hereRefresh(); } }
 });
 if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) $$('.kbd').forEach((k) => { k.textContent = 'Ctrl K'; });
 document.addEventListener('input', (e) => { if (e.target.id === 'sharedNotes') onNotesInput(); if (e.target.id === 'bucketSearch') $('#bucketPickList').innerHTML = pickListHTML(e.target.value); if (e.target.id === 'addQ') onAddQuery(e.target.value); if (e.target.id === 'srchQ') renderSearch(e.target.value); });

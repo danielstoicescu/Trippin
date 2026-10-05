@@ -1118,3 +1118,31 @@ body.is-dragging { -webkit-user-select: none; user-select: none; }
 .arc-btn .px { font-size: 13px; }
 .btn-coffee .px { font-size: 13px; }
 .score-pop { font-size: 22px; font-weight: 800; }
+
+/* Selector de oră: rezumat mare, bandă de ore glisabilă, minute, durată */
+.tp { padding: 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.tp-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tp-label { font-size: 12px; color: var(--text-2); }
+.tp-sum { font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; }
+.tp-sum.bump { animation: hit .3s var(--spring); }
+.tp-dur { display: inline-block; margin-left: 8px; padding: 2px 9px; border-radius: 99px; font-size: 13px; line-height: 18px; font-weight: 600; letter-spacing: 0; vertical-align: 5px; color: var(--brand); background: var(--brand-soft); }
+.tp.is-flex .tp-sum { color: var(--text-2); }
+.tp-nudge { display: flex; gap: 6px; flex-shrink: 0; }
+.tp-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tp-sec { margin-top: 14px; transition: opacity .2s; }
+.tp.is-flex .tp-sec { opacity: .6; }
+.tp-k { margin-bottom: 6px; font-size: 12px; color: var(--text-2); }
+.tp-hours { display: flex; gap: 6px; margin: 0 -14px; padding: 2px 14px 4px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent); mask: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
+.tp-hours::-webkit-scrollbar { display: none; }
+.tp-h, .tp-m { height: 48px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; transition: background-color .15s, color .15s, transform .15s var(--spring); }
+.tp-h { flex: 0 0 auto; width: 50px; scroll-snap-align: center; }
+.tp-mins { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.tp-h.on, .tp-m.on { border-color: transparent; background: var(--blue); color: var(--on-blue); box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); transform: scale(1.04); }
+.tp-durs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tp-durs .chip { height: 40px; padding: 0 14px; }
+.tp-sug { border-color: color-mix(in srgb, var(--cat-red) 30%, var(--line)); background: var(--cab-bg); color: var(--score); }
+@media (max-width: 360px) { .tp-sum { font-size: 22px; } .tp-nudge .icon-btn { width: 36px; height: 36px; } }
+.tp-sum .tp-dur { display: table; margin: 4px 0 0; vertical-align: 0; }
+.tp-head { align-items: flex-start; }
+.tp-nudge { margin-top: 4px; }
