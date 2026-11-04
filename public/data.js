@@ -47,6 +47,21 @@ export const DAY_TIPS = {
   mon: 'Zborul W4 3178 e la 20:15 din T2. Rucsacii merg la check-out cu voi, apoi îi lăsați după Encants la Locker Barcelona, lângă Plaça Catalunya (8:30 – 21:30). Pe la 17:15 îi luați, 8 minute pe jos până la Passeig de Gràcia și trenul R2 Nord direct la T2 (≈ 25 min). La aeroport pe la 18:05. Fără bagaje de cală: check-in online în aplicația Wizz, direct la securitate.',
 };
 
+// Înainte de Barcelona: plecarea din Otopeni (ora României, cu o oră înaintea Spaniei)
+export const PRE_DEPART = {
+  thu: {
+    title: 'Otopeni → Barcelona T2 · W4 3175',
+    note: 'Ora României. În Spania e cu o oră mai puțin.',
+    steps: [
+      ['04:30', 'La aeroport, la Plecări', 'Check-in-ul online făcut în aplicația Wizz, cărțile de îmbarcare pe telefon. Fără bagaje de cală: direct la securitate.'],
+      ['05:45', 'Se închide îmbarcarea', 'Poarta apare pe ecrane. După 5:45 nu mai intrați la bord, deci fiți la poartă din timp.'],
+      ['06:15', 'Decolare', 'Zborul durează ≈ 3 h 20 min.'],
+      ['08:35', 'Aterizare la Barcelona T2 (ora Spaniei)', 'De aici: pe jos la gara din T2 și trenul R2 Nord de 9:08 spre Sants.'],
+    ],
+    tips: ['Buletin sau pașaport pentru toți trei.', 'Rucsacii pe dimensiunile din rezervarea Wizz; lichidele în recipiente de max. 100 ml, într-o pungă transparentă.', 'Încărcați telefoanele: biletele de tren și cărțile de îmbarcare sunt pe ele.'],
+  },
+};
+
 export const ITINERARY = [
   // JOI 5 NOV · Ziua adrenalinei
   { id: 'thu-landing', fixed: true, icon: 'flight_land', day: 'thu', time: '08:35 – 08:55',
@@ -74,10 +89,10 @@ export const ITINERARY = [
     lat: 41.3832, lng: 2.1415, approx: true, radius: 150 },
   { id: 'thu-train', fixed: true, minStay: 80, day: 'thu', time: '10:33 – 11:57', arrive: { title: 'PortAventura', placeQuery: 'Estación de Port Aventura', lat: 41.0840, lng: 1.1620 },
     img: {file: 'Estació de Port Aventura 01 2018.jpg', q: 'Estació de Port Aventura'}, site: 'https://rodalies.gencat.cat/en/horaris/', budget: '≈ 25–30 € pentru trei (regional) · Avant/AVE + taxi ≈ 80–110 €', zone: 'salou', cat: 'art', catLabel: 'Tren spre PortAventura',
-    title: 'Tren R17 Sants → PortAventura · 10:33', short: 'Sosire la Salou-Port Aventura pe la 11:57',
-    desc: 'Trenul R17 de 10:33 din Barcelona-Sants ajunge la Salou-Port Aventura la 11:57 (direct, ≈ 1 h 24). R17 merge doar de câteva ori pe zi: următorul e pe la 12:33, deci nu-l pierdeți. Pe 3 noiembrie linia a fost întreruptă câteva ore între Tarragona și Salou (incident, cu autobuz înlocuitor); verificați dimineață în aplicația Rodalies. Dacă nu circulă: (2) Avant/AVE Sants → Camp de Tarragona (≈ 35 min) + taxi ≈ 20 min → ~11:35; (3) regional R14/R15/R16 până la Tarragona (la 30 min, ≈ 1h10) + taxi 12 min. Verificați orele exacte în aplicația Renfe/Rodalies cu o zi înainte.',
+    title: 'Tren R17 Sants → PortAventura · 10:33', short: 'Pe panou: „R17” spre „Port Aventura” · peronul apare cu ≈ 10 min înainte',
+    desc: 'În gară: pe panou căutați „R17” cu destinația „Port Aventura”. Peronul apare cu ≈ 10 minute înainte de plecare. Trenul R17 de 10:33 din Barcelona-Sants ajunge la Salou-Port Aventura la 11:57 (direct, ≈ 1 h 24). R17 merge doar de câteva ori pe zi: următorul e pe la 12:33, deci nu-l pierdeți. Pe 3 noiembrie linia a fost întreruptă câteva ore între Tarragona și Salou (incident, cu autobuz înlocuitor); verificați dimineață în aplicația Rodalies. Dacă nu circulă: (2) Avant/AVE Sants → Camp de Tarragona (≈ 35 min) + taxi ≈ 20 min → ~11:35; (3) regional R14/R15/R16 până la Tarragona (la 30 min, ≈ 1h10) + taxi 12 min. Verificați orele exacte în aplicația Renfe/Rodalies cu o zi înainte.',
     address: 'Estació de Barcelona-Sants → Estació de PortAventura', placeQuery: 'Estació de Barcelona-Sants', hours: 'Plecare 10:33 · următorul ≈ 12:33', price: '≈ 9 €/pers dus · fără loc rezervat',
-    tips: ['Biletul: din aplicația Renfe (Barcelona-Sants → Port Aventura, joi 5 nov, trenul de 10:33) sau de la automatele roșii Renfe/Rodalies din Sants. T-casual nu e valabil până acolo.', 'Pe panou căutați „R17” cu destinația „Port Aventura”; peronul apare cu ≈ 10 minute înainte.', 'Gara Salou-Port Aventura e la 10–15 minute pe jos de intrarea în parc.'],
+    tips: ['Biletul: din aplicația Renfe (Barcelona-Sants → Port Aventura, joi 5 nov, trenul de 10:33) sau de la automatele roșii Renfe/Rodalies din Sants. T-casual nu e valabil până acolo.', 'Gara Salou-Port Aventura e la 10–15 minute pe jos de intrarea în parc.'],
     lat: 41.3791, lng: 2.1402, radius: 300 },
   { id: 'thu-bags', fixed: true, icon: 'luggage', minStay: 15, day: 'thu', time: '12:05 – 12:20',
     img: {q: 'PortAventura World entrance'}, site: 'https://www.portaventuraworld.com/en/preguntas-frecuentes/hoteles-de-portaventura', zone: 'salou', cat: 'none', catLabel: 'Bagaje',

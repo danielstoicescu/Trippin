@@ -1,5 +1,5 @@
 // Trippin · Barcelona – Mara (13), Anne & Daniel. Offline-first, mobil, stil Google Flights.
-import { TRIP, ZONES, DAY_ZONES, DAY_TIPS, DAY_THEMES, NEAR_HOME, PACK_DEFAULTS, PHRASES, SUN, WEATHER_NOTE, DAY_OPPS, ITINERARY, ALTERNATIVES, CURATED, PEOPLE_META, BUCKET_DEFAULTS, COFFEE_TYPES, MEAL_SLOTS, PHOTOS } from './data.js';
+import { TRIP, ZONES, DAY_ZONES, DAY_TIPS, DAY_THEMES, NEAR_HOME, PACK_DEFAULTS, PHRASES, SUN, WEATHER_NOTE, DAY_OPPS, ITINERARY, ALTERNATIVES, CURATED, PEOPLE_META, BUCKET_DEFAULTS, COFFEE_TYPES, MEAL_SLOTS, PHOTOS, PRE_DEPART } from './data.js';
 import { ICONS } from './icons.js';
 
 const TRIP_ID = TRIP.id;
@@ -468,9 +468,17 @@ function renderDay() {
     <button data-action="plan-mode" data-mode="list" class="seg-b press ${cal ? '' : 'on'}" role="tab" aria-selected="${!cal}">${icon('view_agenda', 'i-18')} Listă</button>
     <button data-action="plan-mode" data-mode="cal" class="seg-b press ${cal ? 'on' : ''}" role="tab" aria-selected="${cal}">${icon('calendar_view_day', 'i-18')} Calendar</button>
   </div><button data-action="here-open" class="btn btn-sm btn-tonal press here-cta">${icon('near_me', 'i-18')} Suntem aici acum</button></div>`;
-  c.innerHTML = toggle + (list.length ? (cal ? (calHTML(state.day) || timelineHTML(list)) : timelineHTML(list)) : `<div class="card-flat p-6 text-center t-2">Nimic pentru filtrul ales.<br><button data-action="open-add" class="btn btn-text press mt-2">Adaugă un loc</button></div>`);
+  c.innerHTML = preDepartHTML(state.day) + toggle + (list.length ? (cal ? (calHTML(state.day) || timelineHTML(list)) : timelineHTML(list)) : `<div class="card-flat p-6 text-center t-2">Nimic pentru filtrul ales.<br><button data-action="open-add" class="btn btn-text press mt-2">Adaugă un loc</button></div>`);
   $('#opps').innerHTML = state.filter === 'all' ? oppsHTML(state.day) : '';
   renderPool(); renderZones(); observeReveal();
+}
+function preDepartHTML(day) {
+  const p = PRE_DEPART?.[day]; if (!p || state.filter !== 'all') return '';
+  return `<section class="pre-dep mt-4" aria-label="Înainte de Barcelona">
+    <div class="pre-dep-h">${icon('flight_takeoff', 'i-22')}<div class="min-w-0"><div class="cap">Înainte de Barcelona · ${esc(p.note)}</div><div class="ttl-3">${esc(p.title)}</div></div></div>
+    <ol class="pre-dep-steps">${p.steps.map(([t, h, d], i) => `<li class="${i === 1 ? 'key' : ''}"><span class="pd-t tabular">${t}</span><span class="pd-dot" aria-hidden="true"></span><span class="pd-b"><b>${esc(h)}</b><span class="cap">${esc(d)}</span></span></li>`).join('')}</ol>
+    <ul class="pre-dep-tips">${p.tips.map((x) => `<li>${icon('check', 'i-16')}<span>${esc(x)}</span></li>`).join('')}</ul>
+  </section>`;
 }
 function renderPool() {
   const el = $('#pool'); if (!el) return; const pool = allLocs().filter((l) => isPool(l)); if (!pool.length) { el.innerHTML = removedHTML(); return; }
