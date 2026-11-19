@@ -1,8 +1,10 @@
 // Trippin · Transilvania – Daniel: LIFT la Porumbacu & Via Transilvanica. Offline-first, mobil, stil Google Flights.
 import { TRIP, ZONES, DAY_ZONES, DAY_TIPS, DAY_THEMES, NEAR_HOME, PACK_DEFAULTS, PHRASES, SUN, WEATHER_NOTE, DAY_OPPS, ITINERARY, ALTERNATIVES, CURATED, PEOPLE_META, BUCKET_DEFAULTS, COFFEE_TYPES, MEAL_SLOTS, PHOTOS, PRE_DEPART, CONTACTS } from './data.js';
 import { ICONS } from './icons.js';
+import { VT_ORANGE, VT_STAGES, VT_PLACES, VT_BORNE } from './vt.js';
 
 const TRIP_ID = TRIP.id;
+const VT_WALK_DAYS = TRIP.walkDays || [];
 const DAYS = ['fri', 'sat', 'sun', 'mon', 'tue'];
 const DAY_LABEL = { fri: 'Vineri 20', sat: 'Sâmbătă 21', sun: 'Duminică 22', mon: 'Luni 23', tue: 'Marți 24', pool: 'Dorite' };
 const DAY_LONG = { fri: 'Vineri, 20 noiembrie', sat: 'Sâmbătă, 21 noiembrie', sun: 'Duminică, 22 noiembrie', mon: 'Luni, 23 noiembrie', tue: 'Marți, 24 noiembrie' };
@@ -268,6 +270,7 @@ function legOf(a, b, day) {
   const d = distanceM(pa, pb); if (d < 60) return null;
   const lin = b.legIn || (b.isCustom ? enriched(b).legIn : null); if (lin) return { d, ...lin };
   if (d > 20000) return { d, min: Math.round((d / 1000) * 0.8 + 15), mode: 'transit', icon: 'train', label: 'cu trenul sau mașina' };
+  if (VT_WALK_DAYS.includes(day)) return { d, min: walkMin(d), mode: 'walking', icon: 'directions_walk', label: 'pe jos, pe Via Transilvanica' };
   if ((TRIP.driveDays || []).includes(day) && d > 4000) return { d, min: Math.round((d / 1000) * 1.5 + 6), mode: 'driving', icon: 'directions_car', label: 'cu mașina' };
   if (d > 2200) return { d, min: transitMin(d), mode: 'transit', icon: 'directions_bus', label: 'autobuz sau mașină' };
   return { d, min: walkMin(d), mode: 'walking', icon: 'directions_walk', label: 'pe jos' };
@@ -587,7 +590,7 @@ function detailHTML(raw) {
     ${loc.isAlt && !loc.pick ? '' : `<div class="react-card mt-4"><div class="cap mb-2">${SOLO ? 'Cum ți se pare?' : 'Cum vi se pare?'}</div>${reactionRowHTML(id, true)}</div>`}
     ${mealSlotOf(loc) && DAYS.includes(loc.day) ? `<div class="mt-4">${mealOptsHTML(mealSlotOf(loc))}</div>` : ''}
     ${recLineHTML(loc) ? `<div class="rec-line rec-big mt-4">${icon('lightbulb', 'i-18 ms-fill', 'color: var(--star)')}<span><b>${recOf(loc).verb}:</b> ${esc(recOf(loc).rec)}</span></div>` : ''}
-    ${loc.desc || loc.note ? `<p class="mt-5" style="font-size: 15px; line-height: 23px">${esc(loc.desc || loc.note)}</p>` : ''}
+    ${loc.desc || loc.note ? `<p class="mt-5" style="font-size: 15px; line-height: 23px; white-space: pre-line">${esc(loc.desc || loc.note)}</p>` : ''}
     ${info ? `<div class="card list mt-5">${info}</div>` : ''}
     ${variants}${loc.isAlt ? '' : persons}${loc.isAlt && !loc.pick ? '' : commentsHTML(id)}${review}${popular}${tips}${links}<div style="height:16px"></div>`;
 }
@@ -1646,12 +1649,28 @@ function locate() { startRadar(); if (state.pos && state.map) state.map.setView(
 // ---------- Harta ----------
 function ensureMap() {
   if (state.map || !window.L || !$('#map')) return;
-  const map = L.map('map', { zoomControl: false }).setView([41.39, 2.17], 13);
+  const map = L.map('map', { zoomControl: false }).setView([46.0, 24.45], 9);
   const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map); let tileFails = 0; tiles.on('tileerror', () => { if (++tileFails === 6) tiles.setUrl('https://tile.openstreetmap.de/{z}/{x}/{y}.png'); });
   const lbl = () => map.getContainer().classList.toggle('labels-on', map.getZoom() >= 15); map.on('zoomend', lbl); lbl();
   map.on('dragstart', () => { state.focusHold = null; });
   map.on('contextmenu', (e) => { if (state.picking) return; buzz(20); addAt({ lat: e.latlng.lat, lng: e.latlng.lng }); });
-  state.map = map; setTimeout(() => map.invalidateSize(), 60);
+  addVTLayer(map); state.map = map; setTimeout(() => map.invalidateSize(), 60);
+}
+// Via Transilvanica: traseul oficial în portocaliul VT, logo-ul VT în sate, bornele numerotate (de la zoom 13)
+function addVTLayer(map) {
+  const fmtKm = (k) => String(k).replace('.', ',');
+  VT_STAGES.forEach((st) => {
+    L.polyline(st.line, { color: '#FFFFFF', weight: 9, opacity: 0.9, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(map);
+    const pl = L.polyline(st.line, { color: VT_ORANGE, weight: 5, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }).addTo(map);
+    pl.bindTooltip(`Via Transilvanica · etapa ${st.n}: ${esc(st.title)} · ${fmtKm(st.km)} km · +${st.up} m`, { sticky: true, className: 'pin-lbl' });
+  });
+  VT_PLACES.forEach((p) => {
+    const m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: `<div style="width:30px;height:30px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:grid;place-items:center"><img src="vendor/vt/vt-logo.svg" alt="" style="width:24px;height:24px"></div>`, iconSize: [30, 30], iconAnchor: [15, 15] }), zIndexOffset: 200 }).addTo(map);
+    m.bindTooltip(`<b>${esc(p.title)}</b> · km ${fmtKm(p.km)} de la Biertan<br>${esc(p.note)}`, { direction: 'top', offset: [0, -14], className: 'pin-lbl' });
+  });
+  const borne = L.layerGroup(VT_BORNE.map((b) => L.marker([b.lat, b.lng], { icon: L.divIcon({ className: '', html: '<img src="vendor/vt/borna.png" alt="" style="width:11px;height:26px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))">', iconSize: [11, 26], iconAnchor: [5, 26] }), zIndexOffset: 100 })
+    .bindTooltip(`Borna VT ${esc(b.n)} · km ${fmtKm(b.km)} de la Biertan`, { direction: 'top', offset: [0, -24], className: 'pin-lbl' })));
+  const sync = () => { if (map.getZoom() >= 13) borne.addTo(map); else borne.remove(); }; map.on('zoomend', sync); sync();
 }
 function homeMarker() { if (!state.map || state.homeMarker) return; const b = TRIP.base; state.homeMarker = L.marker([b.lat, b.lng], { icon: L.divIcon({ className: '', html: `<div class="pin home">${icon('hotel', 'i-16 ms-fill')}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] }), zIndexOffset: 500 }).addTo(state.map); state.homeMarker.on('click', () => openHome()); }
 function updateMeMarker() { if (!state.map || !state.pos) return; const ll = [state.pos.lat, state.pos.lng]; if (!state.meMarker) state.meMarker = L.marker(ll, { icon: L.divIcon({ className: '', html: '<div class="me"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }), zIndexOffset: 1000 }).addTo(state.map); else state.meMarker.setLatLng(ll); }
@@ -1663,7 +1682,7 @@ function coreBounds(pts) {
 function renderMap() {
   renderDates(); if (!state.map) return; state.markers.forEach((m) => m.remove()); state.markers = []; state.markerById = {}; state.focusMarker?.remove(); state.focusMarker = null; const bounds = []; let n = 0; const list = dayItems(state.day);
   const label = (m, l) => m.bindTooltip(esc(shortTitle(l.title || '')), { permanent: true, direction: 'bottom', offset: [0, 10], className: 'pin-lbl' });
-  const line = list.map(coordsOf).filter(Boolean).map((p) => [p.lat, p.lng]); if (line.length > 1) state.markers.push(L.polyline(line, { color: '#1A73E8', weight: 3, opacity: 0.55, dashArray: '2 8', lineCap: 'round' }).addTo(state.map));
+  const line = list.map(coordsOf).filter(Boolean).map((p) => [p.lat, p.lng]); if (line.length > 1 && !VT_WALK_DAYS.includes(state.day)) state.markers.push(L.polyline(line, { color: '#1A73E8', weight: 3, opacity: 0.55, dashArray: '2 8', lineCap: 'round' }).addTo(state.map));
   for (const loc of list) { const p = coordsOf(loc); n++; if (!p) continue; const ck = catKey(enriched(loc).cat), cls = state.shared.visited[loc.id] ? 'pin done' : `pin k-${ck}`, badge = ck === 'coffee' || ck === 'sweet' ? `<i class="pin-b">${icon(ck === 'coffee' ? 'coffee' : 'videocam', 'ms-fill', 'width:11px;height:11px')}</i>` : ''; const m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: `<div class="${cls}">${n}${badge}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] }) }).addTo(state.map); m.on('click', () => openDetail(loc.id)); label(m, loc); state.markers.push(m); state.markerById[loc.id] = m; bounds.push([p.lat, p.lng]); }
   for (const loc of list) (enriched(loc).variants || []).forEach((v, i) => { if (typeof v.lat !== 'number') return; const m = L.marker([v.lat, v.lng], { icon: L.divIcon({ className: '', html: `<div class="pin custom" style="width:22px;height:22px;font-size:10px">${i + 1}</div>`, iconSize: [22, 22], iconAnchor: [11, 11] }) }).addTo(state.map); m.on('click', () => openDetail(loc.id)); state.markers.push(m); });
   for (const z of DAY_ZONES[state.day] || []) ALTERNATIVES.forEach((a, i) => { if (a.zone !== z || typeof a.lat !== 'number') return; const m = L.marker([a.lat, a.lng], { icon: L.divIcon({ className: '', html: '<div class="pin alt">+</div>', iconSize: [20, 20], iconAnchor: [10, 10] }) }).addTo(state.map); m.on('click', () => openDetail('alt-' + i)); label(m, a); state.markers.push(m); state.markerById['alt-' + i] = m; });
@@ -1842,10 +1861,10 @@ function renderHQ() {
 // Harta din centru: ziua la care vă uitați e colorată și numerotată, restul tripului rămâne gri, pentru context
 function ensureHQMap() {
   if (!state.hqMap && window.L && $('#hqMap')) {
-    const map = L.map('hqMap', { zoomControl: true, scrollWheelZoom: false }).setView([41.39, 2.17], 12);
+    const map = L.map('hqMap', { zoomControl: true, scrollWheelZoom: false }).setView([46.0, 24.45], 9);
     const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map); let fails = 0; tiles.on('tileerror', () => { if (++fails === 6) tiles.setUrl('https://tile.openstreetmap.de/{z}/{x}/{y}.png'); });
     map.on('click focus', () => map.scrollWheelZoom.enable()); map.on('mouseout blur', () => map.scrollWheelZoom.disable());
-    state.hqMap = map; renderHQMap();
+    addVTLayer(map); state.hqMap = map; renderHQMap();
   }
   setTimeout(() => { state.hqMap?.invalidateSize(); hqFit(); }, 80);
 }
