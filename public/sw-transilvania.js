@@ -1,5 +1,5 @@
 // Service worker: aplicația se deschide și fără semnal (pe munte, pe traseu, în tren).
-const VERSION = '202611192008';
+const VERSION = '202611192010';
 const CACHE = `tva-transilvania-${VERSION}`;
 const ASSETS = [
   '/transilvania/', '/transilvania/index.html', '/transilvania/app.js', '/transilvania/data.js', '/transilvania/icons.js', '/transilvania/version.js', '/transilvania/styles.css', '/transilvania/firebase-config.js', '/transilvania/manifest.webmanifest',
