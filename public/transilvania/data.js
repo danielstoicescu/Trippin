@@ -59,11 +59,11 @@ export const DAY_THEMES = {
 };
 
 export const DAY_TIPS = {
-  fri: 'Plecarea e la 5:30 de la liceul „Dimitrov” (numele exact de verificat), cu colega care te duce cu mașina la Porumbacu. Vreme: 5…12°, ploaie slabă, rafale ~54 km/h, apus la 16:47. Tema weekendului: workshopul „Facilitate with impact”, cu Alina Marian. Titlul de lucru al reel-ului: „02 · Facilitare” (îl confirmi din agendă). Alina e facilitatoare nouă în serie: îi ceri acordul pentru filmare înainte de primul cadru cu fața ei. Primul cadru al episodului e „Teaching Forward · LIFT — Porumbacu, 20–22 nov” scris în carnet. În pauza de prânz suni pentru cazare în Biertan (duminică) și Richiș (luni). Dacă pleci duminică cu trenul, rezervi și taxiul Mediaș → Biertan: are o singură mașină.',
-  sat: 'Vreme: 4…13°, înnorat, uscat, apus la 16:46. Singura zi bună de exterior: AeroPress-ul dimineața între 7:30 și 8:30, lumina de aur de la 16:00. Seara descarci clipurile și pregătești 5–6 carduri pentru duminică.',
-  sun: 'Vreme: 2…10°, uscat, frig. Nu știi când se termină cursul, așa că ai toate variantele spre Biertan pe ore în cardul „Porumbacu → Biertan” și în Contacte. Pe scurt: cel mai simplu e un lift cu mașina, direct (~70 km, ~1h25) sau până în Sibiu. Cu trenul, din Porumbacu pleacă spre Sibiu la 12:53, 17:19 și 22:27. Stația cea mai apropiată de Biertan e Mediaș (24 km, taxi ~30 min). Ultima variantă în aceeași seară: 17:19 → Mediaș 20:28 → taxi. Dacă o pierzi: 22:27 până în Sibiu, dormi acolo, luni 7:15 → Mediaș 8:46 → taxi, și tot pleci pe jos la prânz.',
-  mon: 'Vreme: 0…5°, ploaie 12–13 mm, rafale ~55 km/h, apus la 16:44, întuneric la 17:17. Dimineața e în Biertan (cetatea, ștampila, Ruinarium Café, magazinul Adi Impex). Pleci pe jos la 12:00: 11,3 km până la Richiș, pe drum de pământ, prin pădure și vie, fără magazin și fără izvor pe hartă. Apa o iei din Biertan. Ajungi pe la 15:45, înainte de apus. Dacă ajungi devreme și ai chef, Nemșa e la încă 3,6 km (~1 h). Pe ploaie torențială există și scurtătura pe asfalt, DJ141B: 5,7 km, ~1h15 (Google Maps), fără marcaje VT.',
-  tue: 'Vreme: −1…+1°, se simte −6°, uscat. Ziua lungă: 23,4 km din Richiș până în Mediaș (3,6 până la Nemșa, încă 5,3 până la Moșna, apoi ~14,5 km de pădure fără nimic). Pleci la 7:30, odată cu răsăritul. În Moșna cumperi tot ce-ți trebuie. Poate fi polei la coborârea asfaltată spre Mediaș. Trenul spre București e la 16:45; dacă întârzii, IR 23:42 (sosire 6:50) sau o noapte în Mediaș.',
+  fri: 'Plecarea e la 5:30 de la liceul „Dimitrov” (numele exact de verificat), cu colega care te duce cu mașina la Porumbacu. Vreme: 6…13°, ploaie slabă. Dimineața e cod portocaliu de vânt în zona joasă a județului Sibiu (01:00–10:00, rafale 70–90 km/h), apoi cod galben până la 16:00. Apus la 16:47. Tema weekendului: workshopul „Facilitate with impact”, cu Alina Marian. Titlul de lucru al reel-ului: „02 · Facilitare” (îl confirmi din agendă). Alina e facilitatoare nouă în serie: îi ceri acordul pentru filmare înainte de primul cadru cu fața ei. Primul cadru al episodului e „Teaching Forward · LIFT — Porumbacu, 20–22 nov” scris în carnet. În pauza de prânz suni pentru cazare în Biertan (duminică) și Richiș (luni). Dacă pleci duminică cu trenul, rezervi și taxiul Mediaș → Biertan: are o singură mașină.',
+  sat: 'Vreme: 6…14°, averse slabe, vânt slab, apus la 16:46. Singura zi bună de exterior: AeroPress-ul dimineața între 7:30 și 8:30, lumina de aur de la 16:00. Seara descarci clipurile și pregătești 5–6 carduri pentru duminică.',
+  sun: 'Vreme: 1…9°, uscat, se simte −3°. Nu știi când se termină cursul, așa că ai toate variantele spre Biertan pe ore în cardul „Porumbacu → Biertan” și în Contacte. Pe scurt: cel mai simplu e un lift cu mașina, direct (~70 km, ~1h25) sau până în Sibiu. Cu trenul, din Porumbacu pleacă spre Sibiu la 12:53, 17:19 și 22:27. Stația cea mai apropiată de Biertan e Mediaș (24 km, taxi ~30 min). Ultima variantă în aceeași seară: 17:19 → Mediaș 20:28 → taxi. Dacă o pierzi: 22:27 până în Sibiu, dormi acolo, luni 7:15 → Mediaș 8:46 → taxi, și tot pleci pe jos la prânz.',
+  mon: 'Vreme: 0…5°, ploaie 13–14 mm (lapoviță spre munte), rafale ~55–57 km/h după model, apus la 16:44, întuneric la 17:17. Dacă se dă cod de vânt sau rafalele trec de ~60 km/h: planul B din avertizare (pe asfalt, fără pădure). Dimineața e în Biertan (cetatea, ștampila, Ruinarium Café, magazinul Adi Impex). Pleci pe jos la 12:00: 11,3 km până la Richiș, pe drum de pământ, prin pădure și vie, fără magazin și fără izvor pe hartă. Apa o iei din Biertan. Ajungi pe la 15:45, înainte de apus. Dacă ajungi devreme și ai chef, Nemșa e la încă 3,6 km (~1 h). Pe ploaie torențială există și scurtătura pe asfalt, DJ141B: 5,7 km, ~1h15 (Google Maps), fără marcaje VT.',
+  tue: 'Vreme: −2…+1°, se simte −5°, averse de ninsoare (1–2,5 cm), rafale ~40–48 km/h. Ziua lungă: 23,4 km din Richiș până în Mediaș (3,6 până la Nemșa, încă 5,3 până la Moșna, apoi ~14,5 km de pădure fără nimic). Pleci la 7:30, odată cu răsăritul. În Moșna cumperi tot ce-ți trebuie. Poate fi polei la coborârea asfaltată spre Mediaș. Trenul spre București e la 16:45; dacă întârzii, IR 23:42 (sosire 6:50) sau o noapte în Mediaș.',
 };
 
 export const PRE_DEPART = {};
@@ -244,7 +244,7 @@ export const ITINERARY = [
     title: 'Pe jos: Biertan → Richiș', short: '11,3 km · bornele 608–622 · pădure, vie, drum de pământ',
     desc: 'Drum secundar puțin circulat, ~4,5 km de pădure, apoi coastele cu vie ale Richișului, coborâre pe lângă un lan și ~400 m de asfalt la intrarea în Richiș (descrierea oficială a etapei). Pe ploaie, foarte probabil noroi. Oficial, etapa întreagă (14,9 km) are 4h30; pe noroi socotește ~3h30–4h până la Richiș. Pe hartă: linia portocalie e traseul oficial, iar bornele VT 608–622 îți arată unde ești.',
     address: 'Richiș, Sibiu', placeQuery: 'Richiș, Sibiu', hours: 'Etapa 33 întreagă: 14,9 km · +492 m · dificultate „ușor” · până la Richiș: 11,3 km',
-    tips: ['Apa doar din sate: între Biertan și Richiș nu e niciun izvor marcat.', 'Câinii din sate și de la stâne: fără contact vizual, pas egal, bețele la îndemână.', 'Urmează marcajele și GPX-ul oficial (actualizat 19.08.2026): traseul a fost refăcut în ultimii ani în zona Biertan – Richiș – Mediaș.', 'Pe vreme foarte rea: varianta pe asfalt, pe DJ141B, are 5,7 km, ~1h15 pe jos (Google Maps), aproape plat, dar fără marcaje VT, fără borne și cu mașini.', 'Telefonul în pungă zip între cadre; laveta pentru obiectiv.'],
+    tips: ['Pădure, după descrierea oficială: ~4,5 km pe drumul secundar de după Biertan; restul e vie, câmp și drum de pământ. Pe vânt puternic (cod de vânt, rafale peste ~60 km/h) mergi pe asfalt, pe DJ141B.', 'Apa doar din sate: între Biertan și Richiș nu e niciun izvor marcat.', 'Câinii din sate și de la stâne: fără contact vizual, pas egal, bețele la îndemână.', 'Urmează marcajele și GPX-ul oficial (actualizat 19.08.2026): traseul a fost refăcut în ultimii ani în zona Biertan – Richiș – Mediaș.', 'Pe vreme foarte rea: varianta pe asfalt, pe DJ141B, are 5,7 km, ~1h15 pe jos (Google Maps), aproape plat, dar fără marcaje VT, fără borne și cu mașini.', 'Telefonul în pungă zip între cadre; laveta pentru obiectiv.'],
     ...BIERTAN, approx: true, radius: 600 },
   { id: 'mon-film', minStay: 15, day: 'mon', time: '15:45 – 16:00', zone: 'richis', cat: 'sweet', catLabel: 'Filmare pe ploaie',
     title: 'Ce iese din ziua de ploaie', short: 'Marcaje · noroi · biserici prin ceață',
@@ -289,7 +289,7 @@ export const ITINERARY = [
     title: 'Moșna → Mediaș prin pădure', short: '~14,5 km fără sat · bornele 631–645 · polei posibil la coborâre',
     desc: '~14,5 km de pădure și drum de pământ, fără sat și fără izvor marcat, apoi asfalt la intrarea în Mediaș, unde poate fi polei la coborâre. Pământul înghețat ține mai bine decât noroiul de luni. Oficial, etapa are 5h; un jurnal de toamnă dă 7h15 pentru Nemșa – Mediaș.',
     address: 'Mediaș, Sibiu', placeQuery: 'Mediaș, Sibiu',
-    tips: ['Pe frig, Pixelul stă în buzunarul de la piept; filmul Zenitului îl derulezi încet.', 'Dacă la Moșna ești după 11:00, trenul de 16:45 devine strâns: ai ca rezervă IR 23:42 sau o noapte în Mediaș.'],
+    tips: ['Pădure, după descrierea oficială: ~4,5 km de urcare și coborâre prin pădure (inclusiv pini) după Moșna, apoi poieni și asfalt spre Mediaș. Pe vânt puternic: taxi din Moșna până în Mediaș.', 'Pe frig, Pixelul stă în buzunarul de la piept; filmul Zenitului îl derulezi încet.', 'Dacă la Moșna ești după 11:00, trenul de 16:45 devine strâns: ai ca rezervă IR 23:42 sau o noapte în Mediaș.'],
     ...MOSNA_LAURA, radius: 900 },
   { id: 'tue-friends', minStay: 45, day: 'tue', time: '15:00 – 15:45', zone: 'medias', cat: 'coffee', catLabel: 'Recompensa · ultima ștampilă',
     rec: 'un filtru de specialitate după 23 km',
@@ -338,6 +338,18 @@ export const ALTERNATIVES = [
 ];
 
 export const CURATED = {};
+
+// Avertizări (apar sus în Plan, în zilele vizate). Surse: comunicatele ANM preluate de presa locală pe 19 nov 2026.
+export const ALERTS = [
+  { days: ['fri'], level: 'portocaliu', icon: 'air', title: 'Cod portocaliu de vânt · vineri 01:00 – 10:00',
+    when: 'Zona joasă a județului Sibiu: rafale 70–90 km/h · munte 800–1200 m: 100–130 km/h (portocaliu) · peste 1200 m (Bâlea, Păltiniș): peste 140 km/h (cod roșu) · apoi cod galben până la 16:00 (50–70 km/h)',
+    text: 'Plecarea de la 5:30 cade în fereastra codului portocaliu. Înainte să pleci verifici traficul (Waze, infotrafic): pe Valea Oltului (DN7) restricțiile de lucrări s-au ridicat pe 16 noiembrie și pe 19 noiembrie nu era raportată nicio închidere din cauza vântului; pe DN1 prin Făgăraș bate vânt lateral, pe câmp deschis. Nu opriți sub copaci sau lângă stâlpi. Dacă la plecare bate tare, o plecare pe la 7:00–8:00 scurtează timpul petrecut în cod. Porumbacu de Sus e la 437 m, sub zona cu cod roșu: nu urcați spre creastă.',
+    links: [['Avertizările ANM', 'https://www.meteoromania.ro/avertizari/'], ['Ora de Sibiu, 19 nov', 'https://www.oradesibiu.ro/2026/11/19/cod-portocaliu-de-vant-la-sibiu-in-noaptea-de-joi-spre-vineri-cod-rosu-pe-fagaras-si-cindrel/'], ['Sibiu Independent, 19 nov', 'https://sibiuindependent.ro/2026/11/19/cod-rosu-de-vant-la-balea-si-paltinis-rafale-de-pana-la-90-km-h-in-municipiul-sibiu/']] },
+  { days: ['mon', 'tue'], level: 'galben', icon: 'park', title: 'Vânt pe Via Transilvanica · planul B',
+    when: 'Luni rafale ~55–57 km/h, marți ~40–48 km/h după model · pentru luni și marți ANM n-a dat încă avertizări',
+    text: 'Regula: dacă ANM dă cod de vânt pentru județul Sibiu sau rafalele trec de ~60 km/h, eviți pădurea (risc de crengi căzute).\nPădurea, după descrierea oficială a etapelor: ~4,5 km pe drumul secundar de după Biertan și ~4,5 km după Moșna (inclusiv pini). Restul e vie, câmp, drum de pământ și asfalt la intrarea în sate.\nLuni: Biertan → Richiș pe asfalt, pe DJ141B: 5,7 km, ~1h15, fără pădure.\nMarți: Richiș → Nemșa → Moșna pe drum de pământ și prin sate, apoi taxi Moșna → Mediaș, sau tot drumul cu taxiul.\nTaxi: Cornel Irimie, 0740 585 568 (Biertan, Richiș, Copșa Mare, gările Mediaș și Sighișoara). Pe autogari.ro nu apare niciun autobuz din Biertan, Richiș, Nemșa sau Moșna spre Mediaș: întrebi gazda de microbuze locale.',
+    links: [['Avertizările ANM', 'https://www.meteoromania.ro/avertizari/'], ['Prognoza meteoblue Sibiu', 'https://www.meteoblue.com/en/romania/weather-sibiu']] },
+];
 
 // Contacte și link-uri utile, sus în tab-ul „Contacte”. `tel` în format internațional, `show` = cum se afișează.
 export const CONTACTS = [
@@ -448,8 +460,8 @@ export const NEAR_HOME = [
 ];
 
 export const PACK_DEFAULTS = [
-  { cat: 'Haine în straturi', icon: 'checkroom', items: ['2 tricouri tehnice sau merinos (fără bumbac pe traseu)', 'Polar sau bluză de lână', 'Geacă puf sau sintetică ușoară', 'Geacă de ploaie cu glugă + pantaloni de ploaie', 'Pantaloni de drum + colanți termo pentru marți', 'Căciulă, buff, mănuși subțiri pentru ecran + mănuși groase', '3 perechi de șosete de lână (una mereu uscată)', 'Haine curate pentru curs, lenjerie pe 4–5 zile'] },
-  { cat: 'Încălțăminte', icon: 'directions_walk', items: ['Bocanci impermeabili, deja purtați', 'Papuci ușori pentru sală și cazare', 'Parazăpezi scurți (opțional, pentru noroi)'] },
+  { cat: 'Haine în straturi', icon: 'checkroom', items: ['2 tricouri tehnice sau merinos (fără bumbac pe traseu)', 'Polar sau bluză de lână', 'Geacă puf sau sintetică ușoară', 'Geacă de ploaie cu glugă + pantaloni de ploaie', 'Pantaloni de drum + colanți termo pentru marți', 'Căciulă, buff, mănuși subțiri pentru ecran + mănuși groase', 'Ochelari pentru vânt și ninsoare', '3 perechi de șosete de lână (una mereu uscată)', 'Haine curate pentru curs, lenjerie pe 4–5 zile'] },
+  { cat: 'Încălțăminte', icon: 'directions_walk', items: ['Bocanci impermeabili, deja purtați', 'Papuci ușori pentru sală și cazare', 'Parazăpezi scurți (noroi luni, ninsoare marți)', 'Microcrampoane ușoare (opțional, pentru polei marți)'] },
   { cat: 'Echipament de drum', icon: 'route', items: ['Rucsac 30–40 L + husă de ploaie', 'Sac impermeabil pentru haine și electronice', 'Frontală + baterii', 'Bețe de trekking', 'GPX-ul etapelor 33 și 34, offline', 'Pungi de gunoi, șervețele umede'] },
   { cat: 'Hrană & apă', icon: 'water_drop', items: ['Termos 0,5–0,75 L', 'Sticlă de 1 L (apa doar din sate)', 'Gustări pe 2 zile: nuci, ciocolată, batoane, brânză, pâine', 'AeroPress Go + cafea măcinată + filtre'] },
   { cat: 'Siguranță & prim ajutor', icon: 'local_pharmacy', items: ['Plasturi pentru bășici, pansamente, bandă', 'Ibuprofen sau paracetamol, medicamentele tale, dezinfectant', 'Folie de supraviețuire, fluier'] },
@@ -462,13 +474,13 @@ export const PHRASES = [];
 // Răsărit / lumină de aur (soarele sub 6°) / apus / întuneric (sfârșitul crepusculului civil), ora României,
 // calculat astronomic. Temperaturile: prognoza Open-Meteo din 19 nov (Porumbacu Vin–Dum, Mediaș Lun–Mar).
 export const SUN = {
-  fri: { rise: '7:29', gold: '16:01', set: '16:47', dusk: '17:20', temp: '12°/5°', place: 'Porumbacu' },
-  sat: { rise: '7:30', gold: '16:00', set: '16:46', dusk: '17:19', temp: '13°/4°', place: 'Porumbacu' },
-  sun: { rise: '7:31', gold: '15:59', set: '16:45', dusk: '17:18', temp: '10°/2°', place: 'Porumbacu' },
+  fri: { rise: '7:29', gold: '16:01', set: '16:47', dusk: '17:20', temp: '13°/6°', place: 'Porumbacu' },
+  sat: { rise: '7:30', gold: '16:00', set: '16:46', dusk: '17:19', temp: '14°/6°', place: 'Porumbacu' },
+  sun: { rise: '7:31', gold: '15:59', set: '16:45', dusk: '17:18', temp: '9°/1°', place: 'Porumbacu' },
   mon: { rise: '7:34', gold: '15:56', set: '16:44', dusk: '17:17', temp: '5°/0°', place: 'Biertan – Richiș' },
-  tue: { rise: '7:36', gold: '15:56', set: '16:43', dusk: '17:16', temp: '1°/−1°', place: 'Richiș – Mediaș' },
+  tue: { rise: '7:36', gold: '15:56', set: '16:43', dusk: '17:16', temp: '1°/−2°', place: 'Richiș – Mediaș' },
 };
-export const WEATHER_NOTE = 'Final de noiembrie în Transilvania: weekendul blând (până la 13°), apoi un front rece. Luni plouă toată ziua (12–15 mm, vânt), marți îngheață (−1…+1°, se simte −6°). Zile scurte: apus pe la 16:45, întuneric pe la 17:17.';
+export const WEATHER_NOTE = 'Vineri dimineață: cod portocaliu de vânt în zona joasă a județului Sibiu (01:00–10:00, rafale 70–90 km/h), cod roșu la munte peste 1200 m (Bâlea, Păltiniș: peste 140 km/h). Weekendul e blând (până la 14°), apoi se răcește: luni plouă toată ziua (13–14 mm), marți îngheață, cu averse de ninsoare (−2…+1°). Zile scurte: apus pe la 16:45, întuneric pe la 17:17. Prognoza Open-Meteo actualizată pe 19 nov seara; avertizările ANM pe meteoromania.ro.';
 
 // Fără variante de masă votate: programul are o singură masă pe slot.
 export const MEAL_SLOTS = {};

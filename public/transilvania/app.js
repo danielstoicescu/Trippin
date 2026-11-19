@@ -1,5 +1,5 @@
 // Trippin · Transilvania – Daniel: LIFT la Porumbacu & Via Transilvanica. Offline-first, mobil, stil Google Flights.
-import { TRIP, ZONES, DAY_ZONES, DAY_TIPS, DAY_THEMES, NEAR_HOME, PACK_DEFAULTS, PHRASES, SUN, WEATHER_NOTE, DAY_OPPS, ITINERARY, ALTERNATIVES, CURATED, PEOPLE_META, BUCKET_DEFAULTS, COFFEE_TYPES, MEAL_SLOTS, PHOTOS, PRE_DEPART, CONTACTS } from './data.js';
+import { TRIP, ZONES, DAY_ZONES, DAY_TIPS, DAY_THEMES, NEAR_HOME, PACK_DEFAULTS, PHRASES, SUN, WEATHER_NOTE, DAY_OPPS, ITINERARY, ALTERNATIVES, CURATED, PEOPLE_META, BUCKET_DEFAULTS, COFFEE_TYPES, MEAL_SLOTS, PHOTOS, PRE_DEPART, CONTACTS, ALERTS } from './data.js';
 import { ICONS } from './icons.js';
 import { VT_ORANGE, VT_STAGES, VT_PLACES, VT_BORNE } from './vt.js';
 
@@ -483,9 +483,21 @@ function renderDay() {
     <button data-action="plan-mode" data-mode="list" class="seg-b press ${cal ? '' : 'on'}" role="tab" aria-selected="${!cal}">${icon('view_agenda', 'i-18')} Listă</button>
     <button data-action="plan-mode" data-mode="cal" class="seg-b press ${cal ? 'on' : ''}" role="tab" aria-selected="${cal}">${icon('calendar_view_day', 'i-18')} Calendar</button>
   </div><button data-action="here-open" class="btn btn-sm btn-tonal press here-cta">${icon('near_me', 'i-18')} Suntem aici acum</button></div>`;
-  c.innerHTML = preDepartHTML(state.day) + toggle + (list.length ? (cal ? (calHTML(state.day) || timelineHTML(list)) : timelineHTML(list)) : `<div class="card-flat p-6 text-center t-2">Nimic pentru filtrul ales.<br><button data-action="open-add" class="btn btn-text press mt-2">Adaugă un loc</button></div>`);
+  c.innerHTML = alertsHTML(state.day) + preDepartHTML(state.day) + toggle + (list.length ? (cal ? (calHTML(state.day) || timelineHTML(list)) : timelineHTML(list)) : `<div class="card-flat p-6 text-center t-2">Nimic pentru filtrul ales.<br><button data-action="open-add" class="btn btn-text press mt-2">Adaugă un loc</button></div>`);
   $('#opps').innerHTML = state.filter === 'all' ? oppsHTML(state.day) : '';
   renderPool(); renderZones(); observeReveal();
+}
+// Avertizări meteo (ANM) și planuri B, sus în ziua vizată
+function alertsHTML(day) {
+  const list = (ALERTS || []).filter((a) => a.days.includes(day)); if (!list.length || state.filter !== 'all') return '';
+  const LV = { roșu: ['var(--red)', 'var(--red-soft)', 'Cod roșu'], portocaliu: ['#E8710A', 'rgba(232,113,10,.12)', 'Cod portocaliu'], galben: ['#B26A00', 'rgba(242,194,0,.16)', 'Atenție'] };
+  return list.map((a) => { const [fg, bg, lbl] = LV[a.level] || LV.galben; return `<section class="mt-4" style="border:1.5px solid ${fg};background:${bg};border-radius:16px;padding:14px 16px">
+    <div class="flex items-center gap-2 mb-1" style="color:${fg}">${icon(a.icon || 'warning', 'i-20 ms-fill')}<span style="font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase">${lbl}</span></div>
+    <div class="font-medium" style="font-size:16px;line-height:22px">${esc(a.title)}</div>
+    <div class="cap mt-1">${esc(a.when)}</div>
+    <p class="mt-2" style="font-size:14px;line-height:21px;white-space:pre-line">${esc(a.text)}</p>
+    ${(a.links || []).length ? `<div class="flex flex-wrap gap-2 mt-3">${a.links.map(([t, u]) => `<button data-action="open-link" data-href="${esc(u)}" class="chip press">${icon('open_in_new', 'i-16')} ${esc(t)}</button>`).join('')}</div>` : ''}
+  </section>`; }).join('');
 }
 function preDepartHTML(day) {
   const p = PRE_DEPART?.[day]; if (!p || state.filter !== 'all') return '';
