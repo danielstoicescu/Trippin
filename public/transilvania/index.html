@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ro" class="light">
+<head>
+  <base href="/transilvania/">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>tripp.in.transilvania</title>
+  <meta name="description" content="Ghidul meu de drum: weekend de curs LIFT la Porumbacu de Sus și Via Transilvanica până la Mediaș, 20–24 noiembrie 2026." />
+  <meta name="theme-color" content="#FFFFFF" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Trippin" />
+  <link rel="preload" href="vendor/fonts/google-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="vendor/fonts/fonts.css">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+  <script>try { if (localStorage.getItem('tva_theme') === 'dark') document.documentElement.classList.replace('light', 'dark'); } catch (e) {}</script>
+</head>
+
+<body>
+  <header class="appbar" id="appbar">
+    <div class="wrap appbar-in">
+      <div class="logo" aria-label="trip·in·Transilvania"><span class="logo-mark" aria-hidden="true"><svg viewBox="160 110 244 292" width="20" height="24"><path d="M256 396 C198 318 166 277 166 214 a90 90 0 1 1 180 0 C346 277 314 318 256 396 Z" fill="#DA121A"/><circle cx="256" cy="205" r="41" fill="#fff"/><circle cx="372" cy="150" r="24" fill="#FCDD09" stroke="#DA121A" stroke-width="6"/></svg></span><span class="logo-word" aria-hidden="true">trip<i class="logo-dot"></i>in<i class="logo-dot"></i>Transilvania</span><span id="syncDot" class="sync-dot" data-mode="connecting" role="status" aria-label="Se conectează"></span></div>
+      <div class="flex-1"></div>
+      <button id="meChip" data-action="whoami" class="me-chip unset press" aria-label="Alege cine ești"></button>
+      <button id="weather" data-action="open-weather" class="wx press" aria-label="Vremea"></button>
+      <button data-action="toggle-theme" class="icon-btn press" aria-label="Schimbă tema"><span id="themeIcon" class="inline-flex"></span></button>
+    </div>
+    <div class="daybar" id="dayBar" role="tablist" aria-label="Schimbă ziua"><div class="wrap daybar-in" id="dayBarIn"></div></div>
+  </header>
+
+  <div id="radarBanner" class="hidden fixed left-0 right-0 z-[850]" style="top: calc(64px + env(safe-area-inset-top))">
+    <div class="wrap"><div class="card flex items-center gap-3 p-3" style="box-shadow: var(--shadow-2)">
+      <span class="cat-ic c-art"><span class="material-symbols-rounded">near_me</span></span>
+      <div class="min-w-0 flex-1"><div class="cap">Sunteți aproape de</div><div id="radarBannerTitle" class="ttl-3 truncate">…</div><div id="radarBannerMeta" class="cap truncate">…</div></div>
+      <a id="radarBannerNav" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-primary press">Traseu</a>
+      <button data-action="close-banner" class="icon-btn sm press" aria-label="Închide"><span class="material-symbols-rounded i-20">close</span></button>
+    </div></div>
+  </div>
+
+  <!-- ============ Desktop: bara laterală (apare doar pe ecrane late) ============ -->
+  <aside class="side" id="side" aria-label="Navigare">
+    <div class="side-brand">
+      <div class="logo" aria-label="trip·in·Transilvania"><span class="logo-mark" aria-hidden="true"><svg viewBox="160 110 244 292" width="20" height="24"><path d="M256 396 C198 318 166 277 166 214 a90 90 0 1 1 180 0 C346 277 314 318 256 396 Z" fill="#DA121A"/><circle cx="256" cy="205" r="41" fill="#fff"/><circle cx="372" cy="150" r="24" fill="#FCDD09" stroke="#DA121A" stroke-width="6"/></svg></span><span class="logo-word side-lbl" aria-hidden="true">trip<i class="logo-dot"></i>in<i class="logo-dot"></i>Transilvania</span></div>
+      <div class="side-trip side-lbl"><span class="tricolor"></span> LIFT la Porumbacu & Via Transilvanica<br>20–24 noiembrie 2026</div>
+    </div>
+    <button data-action="open-add" class="side-add press" title="Adaugă un loc"><span class="material-symbols-rounded i-22">add_location_alt</span><span class="side-lbl">Adaugă un loc</span></button>
+    <button data-action="open-search" class="side-btn side-srch press" title="Caută (⌘K sau /)"><span class="material-symbols-rounded">search</span><span class="side-lbl">Caută</span><kbd class="kbd side-lbl">⌘K</kbd></button>
+    <nav class="side-nav">
+      <button data-action="view" data-view="hq" class="side-btn press" title="Centru de comandă"><span class="material-symbols-rounded">space_dashboard</span><span class="side-lbl">Centru de comandă</span></button>
+      <button data-action="view" data-view="plan" class="side-btn press" title="Plan pe zile"><span class="material-symbols-rounded">calendar_month</span><span class="side-lbl">Plan pe zile</span></button>
+      <button data-action="view" data-view="explore" class="side-btn press" title="Hartă"><span class="material-symbols-rounded">map</span><span class="side-lbl">Hartă</span></button>
+      <button data-action="view" data-view="us" class="side-btn press" title="Shot list"><span class="material-symbols-rounded">videocam</span><span class="side-lbl">Shot list</span></button>
+      <button data-action="view" data-view="pack" class="side-btn press" title="Bagaj"><span class="material-symbols-rounded">luggage</span><span class="side-lbl">Bagaj</span></button>
+      <button data-action="view" data-view="info" class="side-btn press" title="Contacte"><span class="material-symbols-rounded">call</span><span class="side-lbl">Contacte</span></button>
+    </nav>
+    <div class="side-foot">
+      <div id="sideLevel" class="side-level" aria-label="Nivelul echipei"></div>
+      <button id="sideMe" data-action="whoami" class="me-chip unset press" aria-label="Alege cine ești"></button>
+      <div class="side-row">
+        <button id="sideWx" data-action="open-weather" class="wx press" aria-label="Vremea"></button>
+        <button data-action="toggle-theme" class="icon-btn press" aria-label="Schimbă tema"><span id="sideThemeIcon" class="inline-flex"></span></button>
+      </div>
+      <div class="side-sync side-lbl"><span id="sideSync" class="sync-dot" data-mode="connecting"></span><span id="sideSyncText">Se conectează…</span></div>
+    </div>
+  </aside>
+
+  <main class="wrap">
+    <!-- ============ CENTRU DE COMANDĂ (doar desktop) ============ -->
+    <section id="view-hq" data-view="hq" class="hidden hq">
+      <div id="hqHero" class="hq-hero"></div>
+      <div class="hq-grid">
+        <div class="hq-board-panel" id="hqBoard"></div>
+        <div class="hq-map-col">
+          <div class="hq-map-panel">
+            <div id="hqMap" role="application" aria-label="Harta tripului"></div>
+            <div id="hqMapBar" class="hq-map-bar"></div>
+          </div>
+          <div id="hqMapNote" class="hq-map-note"></div>
+        </div>
+      </div>
+      <div id="hqPanels" class="hq-panels"></div>
+    </section>
+
+    <!-- ============ PLAN ============ -->
+    <section id="view-plan" data-view="plan">
+      <header class="page-head">
+        <div class="kicker"><span>Plan</span><span class="dot-sep" aria-hidden="true"></span><span id="planEyebrow" class="ov-date">LIFT & Via Transilvanica</span><span id="planCountdown" class="ov-pill"></span></div>
+        <h1 class="h-display" id="planHeadline">Vineri, 20 noiembrie</h1>
+        <p class="page-sub" id="planSub"></p>
+        <div id="tripProgress"></div>
+      </header>
+      <button data-action="open-search" class="search plan-search press w-full mt-4" aria-label="Caută în tot tripul"><span class="material-symbols-rounded">search</span><span class="flex-1 text-left t-2">Caută un loc, o zi, „traseu”, „duminică”…</span><kbd class="kbd">⌘K</kbd></button>
+      <div class="dates mt-5" id="dates" role="tablist" aria-label="Zilele excursiei"></div>
+      <div class="d-cols plan-cols">
+        <div class="d-main">
+          <div id="daySummary" class="mt-3"></div>
+          <div id="nextStop" class="mt-3"></div>
+          <div class="chips mt-5" id="filters"></div>
+          <div id="dayTip"></div>
+          <div class="sec"><div class="sec-h"><h2 class="ttl-2">Programul zilei</h2><span class="cap">bifa = am fost</span></div></div>
+          <div id="itinerary"></div>
+        </div>
+        <div class="d-side">
+          <div id="opps"></div>
+          <div id="pool"></div>
+          <div id="zones"></div>
+        </div>
+      </div>
+      <footer class="sec pb-6 flex items-center gap-3">
+        <button data-action="refresh" class="btn btn-sm btn-outline press"><span class="material-symbols-rounded i-18">sync</span> Actualizează</button>
+        <div class="cap min-w-0">Versiunea <span id="buildStamp" class="tabular">…</span>. Dacă ceva arată ciudat, apasă Actualizează.</div>
+      </footer>
+    </section>
+
+    <!-- ============ HARTĂ ============ -->
+    <section id="view-explore" data-view="explore" class="hidden">
+      <header class="page-head">
+        <div class="kicker"><span>Hartă</span></div>
+        <h1 class="h-display">Explorează</h1>
+        <p class="page-sub">Locurile zilei pe hartă, ce e lângă voi și colecțiile</p>
+      </header>
+      <div class="d-cols exp-cols">
+      <div class="d-main">
+      <div class="map-wrap mt-4">
+        <div id="map" role="application" aria-label="Harta zilei"></div>
+        <div class="map-top">
+          <div class="search float w-full srch-pill"><button data-action="open-search" class="srch-go press" aria-label="Caută un loc pe hartă"><span class="material-symbols-rounded">search</span><span class="flex-1 text-left t-2" style="font-size: 16px">Caută un loc pe hartă</span></button><button data-action="open-add" class="icon-btn sm press" aria-label="Adaugă un loc nou" title="Adaugă un loc nou"><span class="material-symbols-rounded i-20">add_location_alt</span></button></div>
+          <div class="chips mt-2" id="mapDays" style="margin: 8px 0 0; padding: 0"></div>
+        </div>
+        <button data-action="locate" class="map-fab icon-btn solid press" style="bottom: 132px; width: 48px; height: 48px" aria-label="Unde sunt"><span class="material-symbols-rounded">my_location</span></button>
+        <button data-action="here-open" class="map-fab icon-btn solid press" style="bottom: 76px; width: 48px; height: 48px" aria-label="Suntem aici acum: reface ziua" title="Suntem aici acum"><span class="material-symbols-rounded">near_me</span></button>
+        <button data-action="day-route" class="map-fab btn btn-primary press" style="bottom: 16px; left: 12px; right: auto; box-shadow: var(--shadow-2)"><span class="material-symbols-rounded i-20">route</span> Traseul zilei</button>
+        <div id="pickBar" class="hidden absolute left-3 right-3 bottom-4 z-[650]">
+          <div class="card p-3 flex items-center gap-3" style="box-shadow: var(--shadow-2)">
+            <div class="min-w-0 flex-1"><div class="ttl-3">Mută harta pe loc</div><div id="pickHint" class="cap truncate">Pinul roșu arată locul ales</div></div>
+            <button data-action="pick-cancel" class="btn btn-text press">Renunță</button>
+            <button data-action="pick-confirm" class="btn btn-primary press">Aici</button>
+          </div>
+        </div>
+        <div id="crosshair" class="crosshair hidden"><span class="material-symbols-rounded ms-fill i-48">location_on</span></div>
+      </div>
+      <p id="radarStatus" class="cap mt-3 flex gap-2"><span class="material-symbols-rounded i-16">info</span><span>Ține apăsat pe hartă ca să adaugi locul de acolo. Radarul te anunță la ~150 m de un loc din program.</span></p>
+      </div>
+      <div class="d-side">
+      <div id="nextStopExplore" class="mt-4"></div>
+      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Lângă tine</h2></div></div>
+      <div id="nearbyList" class="card list"></div>
+      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Colecții</h2><span class="cap">de făcut / făcute</span></div></div>
+      <div id="collections"></div>
+      </div>
+      </div>
+    </section>
+
+    <!-- ============ BUCKETLIST ============ -->
+    <section id="view-us" data-view="us" class="hidden">
+      <header class="page-head">
+        <div class="kicker"><span>Shot list</span></div>
+        <h1 class="h-display">Shot list ep02</h1>
+        <p class="page-sub">Cadrele pentru „Meanwhile, at Teaching Forward”: bifez pe măsură ce le filmez</p>
+      </header>
+      <div id="usBoard" class="mt-4"></div>
+      <div class="tabs" id="peopleTabs"></div>
+      <div id="usContent" class="pt-4"></div>
+    </section>
+
+    <!-- ============ INFO ============ -->
+    <section id="view-info" data-view="info" class="hidden">
+      <header class="page-head">
+        <div class="kicker"><span>Contacte</span></div>
+        <h1 class="h-display">Contacte</h1>
+        <p class="page-sub">Apel dintr-o atingere, numere de copiat, linkuri pentru drum</p>
+      </header>
+      <div class="d-cols info-cols">
+      <div class="d-main">
+      <div id="contacts"></div>
+      <div id="bookings"></div>
+      <div id="homeInfo" class="mt-4"></div>
+      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Notițe comune</h2></div>
+        <label class="field"><span>Adresă, cod ușă, wifi, rezervări</span><textarea id="sharedNotes" rows="5" maxlength="2000" placeholder="Ex: adresa exactă de la organizatori, camera, wifi. Cazarea din Nemșa confirmată, taxiul luni la 7:30."></textarea></label>
+        <div id="notesStatus" class="cap mt-1">&nbsp;</div>
+      </div>
+      </div>
+      <div class="d-side">
+      <div id="nearHome"></div>
+      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Vremea pe 7 zile</h2><span class="cap">Porumbacu · Mediaș</span></div>
+        <div id="wxInfo"></div>
+      </div>
+      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Setări</h2></div>
+        <div class="card list">
+          <a href="https://www.google.com/maps/search/?api=1&query=farmacie" target="_blank" rel="noopener" class="li press"><span class="material-symbols-rounded t-green">local_pharmacy</span><span class="flex-1">Farmacie aproape</span><span class="material-symbols-rounded t-3 i-20">chevron_right</span></a>
+          <button data-action="whoami" class="li press"><span class="material-symbols-rounded t-blue">sports_esports</span><span class="flex-1 text-left">Jucătorul arcade</span><span class="material-symbols-rounded t-3 i-20">chevron_right</span></button>
+          <div id="syncText" class="li"></div>
+          <button data-action="toggle-theme" class="li press theme-row"><span class="material-symbols-rounded t-blue">dark_mode</span><span class="flex-1 text-left">Temă întunecată / deschisă</span></button>
+          <button data-action="sfx-toggle" class="li press"><span class="material-symbols-rounded t-blue">volume_up</span><span class="flex-1 text-left">Sunete arcade</span><span class="cap" data-sfx-label>Sunet pornit</span></button>
+        </div>
+      </div>
+      <div class="sec"><div class="sec-h"><h2 class="ttl-2">Trimite aplicația</h2></div>
+        <div class="flex gap-2"><input id="shareUrl" readonly class="input flex-1 min-w-0" style="font-size: 13px"><button data-action="copy-link" class="btn btn-outline press">Copiază</button></div>
+        <div class="flex flex-wrap gap-2 mt-3">
+          <a id="whatsappShareBtn" href="#" target="_blank" rel="noopener" class="btn btn-tonal press">WhatsApp</a>
+          <button data-action="copy-summary" class="btn btn-outline press">Copiază programul</button>
+          <button data-action="open-install" class="btn btn-outline press"><span class="material-symbols-rounded i-18">download</span> Instalează</button>
+          <button data-action="install" id="installBtn" class="hidden btn btn-primary press">Instalează acum</button>
+        </div>
+      </div>
+      <div class="sec pb-6"><div class="sec-h"><h2 class="ttl-2">Cum adaugi locuri</h2></div>
+        <p class="t-2">Apasă <b>Adaugă</b> și scrie 2–3 litere din nume: caută direct pe hartă și îl pune singur în ziua în care sunteți prin zonă. Pe <b>Hartă</b>, ține apăsat pe orice punct. Din Instagram: apasă pe locația de sub numele contului (sau pe profilul localului) → Share → Trippin; numele vine singur. Din TikTok și Google Maps: Share → Trippin sau lipește linkul în căutare.</p>
+      </div>
+      </div>
+      </div>
+    </section>
+
+    <!-- ============ BUGET ============ -->
+    <section id="view-budget" data-view="budget" class="hidden">
+      <header class="page-head">
+        <div class="kicker"><span>Buget</span></div>
+        <h1 class="h-display">Cheltuieli</h1>
+        <p class="page-sub">Cât cheltuiesc, în lei</p>
+      </header>
+      <div id="budget"></div>
+    </section>
+
+    <!-- ============ BAGAJ ============ -->
+    <section id="view-pack" data-view="pack" class="hidden">
+      <header class="page-head">
+        <div class="kicker"><span>Bagaj</span></div>
+        <h1 class="h-display">De împachetat</h1>
+        <p class="page-sub">Rucsacul pentru curs și pentru cele două etape pe Via Transilvanica</p>
+      </header>
+      <div id="packing"></div>
+    </section>
+
+    <!-- ============ TRADUCERE ============ -->
+    <section id="view-translate" data-view="translate" class="hidden">
+      <header class="page-head">
+        <div class="kicker"><span>Traducere</span></div>
+        <h1 class="h-display">Fraze utile</h1>
+        <p class="page-sub">Cu pronunție</p>
+      </header>
+      <div id="phrases"></div>
+    </section>
+  </main>
+
+  <nav class="nav" aria-label="Navigare">
+    <div class="nav-in" id="navIn">
+      <button data-action="view" data-view="plan" class="nav-btn press"><span class="ind"><span class="material-symbols-rounded">calendar_month</span></span>Plan</button>
+      <button data-action="view" data-view="explore" class="nav-btn press"><span class="ind"><span class="material-symbols-rounded">map</span></span>Hartă</button>
+      <button data-action="view" data-view="us" class="nav-btn press"><span class="ind"><span class="material-symbols-rounded">videocam</span></span>Shot list</button>
+      <button data-action="view" data-view="pack" class="nav-btn press"><span class="ind"><span class="material-symbols-rounded">luggage</span></span>Bagaj</button>
+      <button data-action="view" data-view="info" class="nav-btn press"><span class="ind"><span class="material-symbols-rounded">call</span></span>Contacte</button>
+    </div>
+  </nav>
+  <button data-action="open-add" id="fab" class="fab press" aria-label="Adaugă un loc"><span class="material-symbols-rounded">add_location_alt</span><span class="lbl">Adaugă</span></button>
+
+  <div id="detailSheet" class="scrim hidden" data-modal><div class="sheet" id="detailBody"></div></div>
+  <div id="addSheet" class="scrim hidden" data-modal><div class="sheet" id="addBody"></div></div>
+  <div id="coffeeSheet" class="scrim hidden" data-modal><div class="sheet" id="coffeeBody"></div></div>
+  <div id="playerDlg" class="scrim ps-scrim hidden" data-modal><div class="ps-dlg" id="playerBody" role="dialog" aria-modal="true" aria-labelledby="psTitle"></div></div>
+
+  <div id="toast" class="snackbar off" role="status"><span id="toastIcon" class="inline-flex shrink-0" style="color: #8AB4F8"></span><span id="toastMessage" class="flex-1">Mesaj</span><button id="toastAction" class="hidden btn btn-sm press" style="color: #8AB4F8; padding: 0 8px"></button></div>
+  <input type="file" id="photoInput" accept="image/*" class="hidden">
+
+  <script src="version.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
