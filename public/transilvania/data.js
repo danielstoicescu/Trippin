@@ -8,7 +8,7 @@ export const TRIP = {
   id: 'transilvania-aventura',
   start: '2026-11-20',
   end: '2026-11-24',
-  startAt: '2026-11-20T05:00:00+02:00',
+  startAt: '2026-11-20T04:50:00+02:00',
   endAt: '2026-11-24T16:45:00+02:00',
   days: { fri: '2026-11-20', sat: '2026-11-21', sun: '2026-11-22', mon: '2026-11-23', tue: '2026-11-24' },
   walkDays: ['mon', 'tue'],
@@ -51,7 +51,7 @@ export const DAY_ZONES = {
 
 // Numele zilelor, după specific
 export const DAY_THEMES = {
-  fri: { name: 'Sosirea la poalele Făgărașului', short: 'Sosire', icon: 'landscape', color: '#5353E9', sub: 'Trezire 5:00, AeroPress de drum · plecare 5:30 de la Liceul Iulia Hasdeu · workshop „Facilitate with impact” cu Alina Marian · „Teaching Forward · LIFT” în carnet · agenda · primul cerc · seara cu lămpi' },
+  fri: { name: 'Sosirea la poalele Făgărașului', short: 'Sosire', icon: 'landscape', color: '#5353E9', sub: 'Trezire 4:50, AeroPress de drum · plecare 5:30 de la Liceul Iulia Hasdeu · workshop „Facilitate with impact” cu Alina Marian · „Teaching Forward · LIFT” în carnet · agenda · primul cerc · seara cu lămpi' },
   sat: { name: 'Ziua cu lumina bună', short: 'Lumină', icon: 'photo_camera', color: '#D93025', sub: 'AeroPress cu Făgărașul · sesiuni și facilitatori · snap-uri de notițe · Zenit la geam · apus 16:46' },
   sun: { name: 'Cercul de final & drumul spre Biertan', short: 'Final', icon: 'route', color: '#E8710A', sub: 'Cardurile cu o frază · ultimul cerc · portretul de grup pe Zenit · spre Biertan: toate variantele, pe ore · noaptea în Biertan' },
   mon: { name: 'Biertan, apoi pe jos până la Richiș', short: 'Richiș', icon: 'rainy', color: '#EF7D00', sub: 'Dimineața în Biertan · la prânz pe Via Transilvanica · 11,3 km până la Richiș · ploaie, noroi · noaptea în Richiș' },
@@ -59,7 +59,7 @@ export const DAY_THEMES = {
 };
 
 export const DAY_TIPS = {
-  fri: 'Trezirea la 5:00, AeroPress-ul de drum în termos, plecare la 5:10. La 5:30 te întâlnești cu colega la Liceul Iulia Hasdeu și mergeți cu mașina ei la Porumbacu. Vreme: 6…13°, ploaie slabă. Dimineața e cod portocaliu de vânt în zona joasă a județului Sibiu (01:00–10:00, rafale 70–90 km/h), apoi cod galben până la 16:00. Apus la 16:47. Tema weekendului: workshopul „Facilitate with impact”, cu Alina Marian. Titlul de lucru al reel-ului: „02 · Facilitare” (îl confirmi din agendă). Alina e facilitatoare nouă în serie: îi ceri acordul pentru filmare înainte de primul cadru cu fața ei. Primul cadru al episodului e „Teaching Forward · LIFT — Porumbacu, 20–22 nov” scris în carnet. În pauza de prânz suni pentru cazare în Biertan (duminică) și Richiș (luni). Dacă pleci duminică cu trenul, rezervi și taxiul Mediaș → Biertan: are o singură mașină.',
+  fri: 'Trezirea la 4:50, AeroPress-ul de drum în termos, plecare la 5:10. La 5:30 te întâlnești cu colega la Liceul Iulia Hasdeu și mergeți cu mașina ei la Porumbacu. Vreme: 6…13°, ploaie slabă. Dimineața e cod portocaliu de vânt în zona joasă a județului Sibiu (01:00–10:00, rafale 70–90 km/h), apoi cod galben până la 16:00. Apus la 16:47. Tema weekendului: workshopul „Facilitate with impact”, cu Alina Marian. Titlul de lucru al reel-ului: „02 · Facilitare” (îl confirmi din agendă). Alina e facilitatoare nouă în serie: îi ceri acordul pentru filmare înainte de primul cadru cu fața ei. Primul cadru al episodului e „Teaching Forward · LIFT — Porumbacu, 20–22 nov” scris în carnet. În pauza de prânz suni pentru cazare în Biertan (duminică) și Richiș (luni). Dacă pleci duminică cu trenul, rezervi și taxiul Mediaș → Biertan: are o singură mașină.',
   sat: 'Vreme: 6…14°, averse slabe, vânt slab, apus la 16:46. Singura zi bună de exterior: AeroPress-ul dimineața între 7:30 și 8:30, lumina de aur de la 16:00. Seara descarci clipurile și pregătești 5–6 carduri pentru duminică.',
   sun: 'Vreme: 1…9°, uscat, se simte −3°. Nu știi când se termină cursul, așa că ai toate variantele spre Biertan pe ore în cardul „Porumbacu → Biertan” și în Contacte. Pe scurt: cel mai simplu e un lift cu mașina, direct (~70 km, ~1h25) sau până în Sibiu. Cu trenul, din Porumbacu pleacă spre Sibiu la 12:53, 17:19 și 22:27. Stația cea mai apropiată de Biertan e Mediaș (24 km, taxi ~30 min). Ultima variantă în aceeași seară: 17:19 → Mediaș 20:28 → taxi. Dacă o pierzi: 22:27 până în Sibiu, dormi acolo, luni 7:15 → Mediaș 8:46 → taxi, și tot pleci pe jos la prânz.',
   mon: 'Vreme: 0…5°, ploaie 13–14 mm (lapoviță spre munte), rafale ~55–57 km/h după model, apus la 16:44, întuneric la 17:17. Dacă se dă cod de vânt sau rafalele trec de ~60 km/h: planul B din avertizare (pe asfalt, fără pădure). Dimineața e în Biertan (cetatea, ștampila, Ruinarium Café, magazinul Adi Impex). Pleci pe jos la 12:00: 11,3 km până la Richiș, pe drum de pământ, prin pădure și vie, fără magazin și fără izvor pe hartă. Apa o iei din Biertan. Ajungi pe la 15:45, înainte de apus. Dacă ajungi devreme și ai chef, Nemșa e la încă 3,6 km (~1 h). Pe ploaie torențială există și scurtătura pe asfalt, DJ141B: 5,7 km, ~1h15 (Google Maps), fără marcaje VT.',
@@ -70,9 +70,9 @@ export const PRE_DEPART = {};
 
 export const ITINERARY = [
   // VINERI 20 · Sosirea
-  { id: 'fri-wake', minStay: 10, day: 'fri', time: '05:00 – 05:10', zone: 'porumbacu', cat: 'coffee', catLabel: 'Cafeaua de drum · AeroPress',
-    title: 'Trezirea și AeroPress-ul de drum', short: '5:00 · cafeaua în termos, plecare la 5:10',
-    desc: 'Te trezești la 5:00 și faci AeroPress-ul de drum direct în termos. Ca să-ți ajungă 10 minute: de seara pui cafeaua măcinată în AeroPress, cana-termos lângă fierbător și rucsacul la ușă.',
+  { id: 'fri-wake', minStay: 20, day: 'fri', time: '04:50 – 05:10', zone: 'porumbacu', cat: 'coffee', catLabel: 'Cafeaua de drum · AeroPress',
+    title: 'Trezirea și AeroPress-ul de drum', short: '4:50 · cafeaua în termos, plecare la 5:10',
+    desc: 'Te trezești la 4:50 și faci AeroPress-ul de drum direct în termos. Ca să fie liniștit în 20 de minute: de seara pui cafeaua măcinată în AeroPress, cana-termos lângă fierbător și rucsacul la ușă.',
     address: 'Acasă, București', placeQuery: 'Colegiul Național Iulia Hasdeu București',
     tips: ['De seara: apa în fierbător, cafeaua măcinată și filtrul în AeroPress, termosul alături.', 'Pleci la 5:10: până la liceu sunt 19 minute.'] },
   { id: 'fri-depart', fixed: true, icon: 'directions_car', minStay: 15, day: 'fri', time: '05:30 – 05:45', zone: 'porumbacu', cat: 'shop', catLabel: 'Plecarea',
